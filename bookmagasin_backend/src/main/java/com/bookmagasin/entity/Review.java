@@ -1,12 +1,13 @@
 package com.bookmagasin.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
-
 @Entity
 @Table(name = "review")
 @Data
@@ -17,8 +18,9 @@ public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
+    @Column(name = "rate")
     private int rate;
+    @Column(name="content")
     private String content;
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -27,10 +29,12 @@ public class Review {
 
     @ManyToOne
     @JoinColumn(name = "book_id")
+    @JsonManagedReference
     private Book book;
 
     @ManyToOne
     @JoinColumn(name="user_id")
+    @JsonManagedReference
     private User createBy;
 
     public Review(int rate, String content, Date createAt, Book book, User createBy) {
@@ -40,4 +44,5 @@ public class Review {
         this.book = book;
         this.createBy = createBy;
     }
+
 }

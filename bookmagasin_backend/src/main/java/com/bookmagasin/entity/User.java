@@ -1,5 +1,8 @@
 package com.bookmagasin.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
@@ -35,12 +38,19 @@ public class User {
     protected String avatarUrl;
 
     @OneToOne(mappedBy = "user",cascade = CascadeType.ALL)
+    @JsonBackReference
     private Account account;
 
     @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
+    @JsonIgnore  // Bỏ qua trường account khi tuần tự hóa User
     private List<UserNotification> userNotifications;
 
+    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
+    @JsonBackReference
+    private List<Cart> carts;
+
     @OneToMany(mappedBy = "createBy",cascade = CascadeType.ALL)
+    @JsonBackReference
     private List<Review> reviews;
 
     public User(String fullName, Date dateOfBirth, String gender, String phoneNumber, String address, String avatarUrl, Account account, List<UserNotification> userNotifications, List<Review> reviews) {

@@ -1,0 +1,91 @@
+/* Toàn màn hình căn giữa */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #f3f4f6;
+  font-family: Arial, sans-serif;
+}
+
+/* Khung login */
+.login-box {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Tiêu đề */
+.login-box h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #1f2937;
+}
+
+/* Input chung */
+.login-box input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.login-box input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* Label */
+.login-box label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* Button */
+.login-box button {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 10px;
+  background: #3b82f6;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.login-box button:hover {
+  background: #2563eb;
+}
+
+/* Link đăng ký */
+.login-box p {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.login-box p a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.login-box p a:hover {
+  text-decoration: underline;
+}
+
+.login-container {
+  background: url("https://i.pinimg.com/1200x/99/ca/fa/99cafa3761f98027138c12ffc49b18f9.jpg")
+    no-repeat center center;
+  background-size: cover;
+}

@@ -1,4 +1,4 @@
-package com.bookmagasin.repository.impl;
+package com.bookmagasin.repository;
 
 import com.bookmagasin.entity.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;

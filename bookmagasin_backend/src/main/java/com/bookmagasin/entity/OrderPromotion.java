@@ -23,8 +23,7 @@ public class OrderPromotion {
     @JoinColumn(name = "promotion_id")
     private Promotion promotion;
 
-    //private Double discountAmount;
-
-
+    @Column(name = "discount_amount")
+    private Double discountAmount;
 
 }

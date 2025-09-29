@@ -1,2 +1,16 @@
-package com.bookmagasin.web.dtoResponse;public class CategoryResponseDto {
+package com.bookmagasin.web.dtoResponse;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CategoryResponseDto {
+    private int id;
+    private String name;
+    private List<Integer> bookIds; // chỉ trả id các book
 }

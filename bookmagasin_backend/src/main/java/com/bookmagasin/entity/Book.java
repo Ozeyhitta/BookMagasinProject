@@ -35,7 +35,7 @@ public class Book {
 
     @OneToOne(fetch = FetchType.EAGER,cascade = CascadeType.ALL)
     @JoinColumn(name = "book_detail_id")
-    @JsonManagedReference
+    @JsonBackReference
     private BookDetail bookDetail;
 
     @OneToMany(mappedBy = "book",cascade = CascadeType.ALL)
@@ -46,6 +46,20 @@ public class Book {
     private Author author;
 
     @OneToMany(mappedBy = "book",cascade = CascadeType.ALL)
+    @JsonBackReference
+    private List<Cart> carts;
+
+    @ManyToMany
+    @JoinTable(
+            name = "book_category", // Tên bảng trung gian
+            joinColumns = @JoinColumn(name = "book_id"), // Cột khóa ngoại trong bảng trung gian
+            inverseJoinColumns = @JoinColumn(name = "category_id") // Cột khóa ngoại của bảng Category
+    )
+
+    private List<Category> categories; // Mối quan hệ với Category
+
+    @OneToMany(mappedBy = "book",cascade = CascadeType.ALL)
+    @JsonBackReference
     private List<Review> reviews;
 
 }

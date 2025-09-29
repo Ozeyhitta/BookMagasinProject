@@ -3,11 +3,15 @@ package com.bookmagasin.service.impl;
 import com.bookmagasin.entity.User;
 import com.bookmagasin.repository.UserRepository;
 import com.bookmagasin.service.UserService;
+import com.bookmagasin.web.dto.UserDto;
+import com.bookmagasin.web.dtoResponse.UserResponseDto;
+import com.bookmagasin.web.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -15,48 +19,50 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
     @Override
-    public User saveUser(User user) {
-        return userRepository.save(user);
-    }
-
-    @Override
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
-    @Override
-    public Optional<User> getUserById(Integer id) {
-        return userRepository.findById(id);
+    public UserResponseDto createUser(UserDto dto) {
+        User user= UserMapper.toEntity(dto);
+        User saved=userRepository.save(user);
+        return UserMapper.toResponseDto(saved);
 
     }
 
     @Override
-    public Optional<User> getUserByPhoneNumber(String phoneNumber) {
-        return userRepository.findByPhoneNumber(phoneNumber);
+    public List<UserResponseDto> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(UserMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public User getUserByFullName(String fullName) {
-        return userRepository.findByFullName(fullName);
+    public Optional<UserResponseDto> getUserById(Integer id) {
+        return userRepository.findById(id)
+                .map(UserMapper::toResponseDto);
     }
 
     @Override
-    public boolean existsByPhoneNumber(String phoneNumber) {
-        return userRepository.existsByPhoneNumber(phoneNumber);
+    public Optional<UserResponseDto> getUserByPhoneNumber(String phoneNumber) {
+        return userRepository.findByPhoneNumber(phoneNumber)
+                .map(UserMapper::toResponseDto);
     }
 
     @Override
-    public boolean existsByFullName(String fullName) {
-        return userRepository.existsByFullName(fullName);
+    public UserResponseDto updateUser(Integer id, UserDto dto) {
+        User user=userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setFullName(dto.getFullName());
+        user.setDateOfBirth(dto.getDateOfBirth());
+        user.setGender(dto.getGender());
+        user.setPhoneNumber(dto.getPhoneNumber());
+        user.setAddress(dto.getAddress());
+        user.setAvatarUrl(dto.getAvatarUrl());
+
+        User updated=userRepository.save(user);
+        return UserMapper.toResponseDto(updated);
     }
 
     @Override
     public void deleteUserById(Integer id) {
         userRepository.deleteById(id);
-    }
-
-    @Override
-    public void deleteUser(User user) {
-        userRepository.delete(user);
     }
 }

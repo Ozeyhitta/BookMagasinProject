@@ -1,10 +1,12 @@
 package com.bookmagasin.web.dto;
 
+import com.bookmagasin.entity.Category;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -17,5 +19,8 @@ public class BookDto {
     private int edition;
     private int authorId;       // chỉ map id thay vì cả Author entity
     private int bookDetailId; // tương tự cho BookDetail
+    private List<Integer> categoryIds;
+
 
 }
+

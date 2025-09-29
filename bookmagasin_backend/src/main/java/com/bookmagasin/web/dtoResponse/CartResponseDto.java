@@ -1,2 +1,21 @@
-package com.bookmagasin.web.dtoResponse;public class CartResponseDto {
+package com.bookmagasin.web.dtoResponse;
+
+import com.bookmagasin.web.dto.BookDto;
+import com.bookmagasin.web.dto.UserDto;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.Date;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CartResponseDto {
+    private int id;
+    private UserDto user;
+    private BookDto book;
+    private Date createAt;
+    private Date updateAt;
+
 }

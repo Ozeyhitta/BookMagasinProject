@@ -28,7 +28,4 @@ public class Payment {
 
     @OneToOne(mappedBy = "payment")
     private Order order;
-
-
-
 }

@@ -1,5 +1,6 @@
 package com.bookmagasin.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,6 +26,7 @@ public class UserNotification {
     @ManyToOne
     @MapsId("notificationId")
     @JoinColumn(name = "notification_id")
+    @JsonBackReference(value = "notification-user-notification") // Tránh vòng lặp khi tuần tự hóa Notification
     private Notification notification;
 
     @Column(name = "is_read")

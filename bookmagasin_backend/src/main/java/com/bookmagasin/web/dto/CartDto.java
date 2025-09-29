@@ -1,2 +1,13 @@
-package com.bookmagasin.web.dto;public class CartDto {
+package com.bookmagasin.web.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class CartDto {
+    private int userId;
+    private int bookId;
 }

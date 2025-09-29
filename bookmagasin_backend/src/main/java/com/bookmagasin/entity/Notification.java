@@ -1,5 +1,7 @@
 package com.bookmagasin.entity;
 
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -29,6 +31,7 @@ public class Notification {
     private Date sendDate;
 
     @OneToMany(mappedBy = "notification",cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonManagedReference(value = "notification-user-notification") // Quản lý mối quan hệ 1 - nhiều
     private List<UserNotification> userNotifications;
 
 

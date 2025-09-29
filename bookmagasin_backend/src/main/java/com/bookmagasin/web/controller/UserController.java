@@ -3,8 +3,10 @@ package com.bookmagasin.web.controller;
 import com.bookmagasin.entity.User;
 import com.bookmagasin.service.UserService;
 import com.bookmagasin.web.dto.UserDto;
+import com.bookmagasin.web.dtoResponse.UserResponseDto;
 import com.bookmagasin.web.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,50 +24,50 @@ public class UserController {
 
     // CREATE
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@RequestBody UserDto userDto) {
-        User saved = userService.saveUser(UserMapper.toEntity(userDto));
-        return ResponseEntity.ok(UserMapper.toDto(saved));
+    public ResponseEntity<UserResponseDto> createUser(@RequestBody UserDto dto) {
+        UserResponseDto created=userService.createUser(dto);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     // READ ALL
     @GetMapping
-    public ResponseEntity<List<UserDto>> getAllUsers() {
-        List<UserDto> users = userService.getAllUsers()
-                .stream().map(UserMapper::toDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(users);
+    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
     // READ BY ID
     @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable Integer id) {
-        Optional<User> userOpt = userService.getUserById(id);
-        return userOpt.map(user -> ResponseEntity.ok(UserMapper.toDto(user)))
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable Integer id) {
+        return userService.getUserById(id)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // DELETE
+    // Get user by phone
+    @GetMapping("/phone/{phone}")
+    public ResponseEntity<UserResponseDto> getUserByPhone(@PathVariable String phone) {
+        return userService.getUserByPhoneNumber(phone)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponseDto> updateUser(@PathVariable Integer id,@RequestBody UserDto dto){
+        try {
+            UserResponseDto updated=userService.updateUser(id,dto);
+            return ResponseEntity.ok(updated);
+
+        }catch (RuntimeException e){
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Delete user
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Integer id) {
         userService.deleteUserById(id);
         return ResponseEntity.noContent().build();
     }
 
-    // UPDATE
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Integer id, @RequestBody UserDto userDto) {
-        Optional<User> existing = userService.getUserById(id);
-        if (existing.isPresent()) {
-            User user = existing.get();
-            user.setFullName(userDto.getFullName());
-            user.setDateOfBirth(userDto.getDateOfBirth());
-            user.setGender(userDto.getGender());
-            user.setPhoneNumber(userDto.getPhoneNumber());
-            user.setAddress(userDto.getAddress());
-            user.setAvatarUrl(userDto.getAvatarUrl());
-            User updated = userService.saveUser(user);
-            return ResponseEntity.ok(UserMapper.toDto(updated));
-        }
-        return ResponseEntity.notFound().build();
-    }
+
 }
