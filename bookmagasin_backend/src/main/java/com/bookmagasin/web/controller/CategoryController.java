@@ -1,13 +1,11 @@
 package com.bookmagasin.web.controller;
 
 
-import com.bookmagasin.entity.Category;
 import com.bookmagasin.service.CategoryService;
 import com.bookmagasin.web.dto.CategoryDto;
 import com.bookmagasin.web.dtoResponse.CategoryResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

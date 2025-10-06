@@ -13,6 +13,8 @@ public interface AccountService {
     AccountResponseDto update(int id,AccountDto dto);
     AccountResponseDto getById(int id);
     AccountResponseDto getByEmail(String email);
+    Optional<Account> findEntityByEmail(String email);
+
     List<AccountResponseDto> getAll();
     boolean existsByEmail(String email);
     void deletedById(int id);

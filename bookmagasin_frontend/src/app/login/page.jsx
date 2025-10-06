@@ -5,10 +5,40 @@ import "./login.css";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Email:", email, "Password:", password);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Sai email hoặc mật khẩu");
+      }
+
+      const data = await res.json();
+      console.log("Login success:", data);
+
+      // Lưu token vào localStorage (để gọi API sau)
+      localStorage.setItem("token", data.token);
+
+      // Redirect sang trang chính (ví dụ /dashboard)
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,8 +66,12 @@ export default function LoginPage() {
             />
           </div>
 
-          <button type="submit">Đăng nhập</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
         </form>
+
+        {error && <p style={{ color: "red" }}>{error}</p>}
 
         <p>
           Chưa có tài khoản? <a href="/register">Đăng ký</a>

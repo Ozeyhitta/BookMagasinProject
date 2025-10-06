@@ -4,8 +4,15 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: #f3f4f6;
+
   font-family: Arial, sans-serif;
+  background: #b18cff;
+  background: linear-gradient(
+    90deg,
+    rgba(177, 140, 255, 1) 0%,
+    rgba(86, 164, 247, 1) 50%,
+    rgba(27, 95, 247, 1) 100%
+  );
 }
 
 /* Khung login */
@@ -42,6 +49,10 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
+.login-box input:hover {
+  border-color: #93c5fd;
+}
+
 /* Label */
 .login-box label {
   font-size: 14px;
@@ -54,17 +65,18 @@
   width: 100%;
   margin-top: 1rem;
   padding: 10px;
-  background: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   border: none;
   border-radius: 8px;
   font-weight: bold;
   color: #fff;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: 0.3s;
 }
 
 .login-box button:hover {
-  background: #2563eb;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: scale(1.03);
 }
 
 /* Link đăng ký */
@@ -84,8 +96,8 @@
   text-decoration: underline;
 }
 
-.login-container {
+/* .login-container {
   background: url("https://i.pinimg.com/1200x/99/ca/fa/99cafa3761f98027138c12ffc49b18f9.jpg")
     no-repeat center center;
   background-size: cover;
-}
+} */

@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -70,6 +71,12 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new RuntimeException("Account not found with email: " + email));
         return AccountMapper.toResponseDto(account);
     }
+
+    @Override
+    public Optional<Account> findEntityByEmail(String email) {
+        return accountRepository.findByEmail(email);
+    }
+
 
     @Override
     public List<AccountResponseDto> getAll() {
