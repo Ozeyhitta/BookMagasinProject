@@ -10,7 +10,7 @@ export default function Header() {
         <div className="contact-info">
           <span>📞 028.73008182</span>
           <span>✉️ hotro@vinabook.com</span>
-          <span>📍 332 Lũy Bán Bích, Phường Tân Phú, TP. Hồ Chí Minh</span>
+          <span>📍 1 Võ Văn Ngân, Phường Thủ Đức, Thành phố Hồ Chí Minh</span>
         </div>
 
         <div className="account">
