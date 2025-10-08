@@ -16,6 +16,7 @@ export default function Header() {
         <div className="account">
           <a href="#">TÀI KHOẢN</a>
           <a href="#">ĐĂNG XUẤT</a>
+          <a href="#">ĐĂNG NHẬP</a>
         </div>
       </div>
 
