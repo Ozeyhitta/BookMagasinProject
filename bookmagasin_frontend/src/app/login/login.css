@@ -101,3 +101,16 @@
     no-repeat center center;
   background-size: cover;
 } */
+.extra-links {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.extra-links a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.extra-links a:hover {
+  text-decoration: underline;
+}

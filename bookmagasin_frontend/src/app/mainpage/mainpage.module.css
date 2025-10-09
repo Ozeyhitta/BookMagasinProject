@@ -1,25 +1,38 @@
-.mainContainer {
-  display: flex;
-  gap: 20px;
-  padding: 20px;
-  background-color: #faf9f7;
+body {
+  background-color: #fff !important;
 }
 
-/* Khung danh mục */
+.mainWrapper {
+  background-color: #fff;
+  padding-bottom: 40px;
+}
+
+.layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 20px auto;
+}
+
+/* ==== DANH MỤC ==== */
 .categoryBox {
   width: 250px;
   background-color: #fff;
   border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
   padding: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .categoryTitle {
   font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
   color: #333;
+  border-left: 4px solid #007600;
+  padding-left: 6px;
 }
 
 .categoryList {
@@ -32,12 +45,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 6px;
+  padding: 8px 5px;
   color: #333;
   font-size: 15px;
   cursor: pointer;
-  border-radius: 3px;
-  transition: all 0.2s ease-in-out;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
 .categoryItem:hover {
@@ -46,51 +59,55 @@
 }
 
 .arrow {
-  font-weight: bold;
   color: #aaa;
+  font-weight: bold;
 }
 
-/* Khu vực banner */
-.bannerArea {
+/* ==== BANNER ==== */
+.rightContent {
   flex: 1;
-  position: relative;
-  background-color: #fff;
-  border-radius: 4px;
-  overflow: hidden;
-  height: 260px;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+}
+
+.bannerArea {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  background-color: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 25px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
 }
 
 .bannerImage {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 6px;
   transition: opacity 0.4s ease;
-  border-radius: 4px;
 }
 
-/* Nút điều hướng trái/phải */
 .navButton {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.4); /* 🔹 Đổi thành nền đen mờ */
+  background: rgba(0, 0, 0, 0.4);
   border: none;
   border-radius: 50%;
-  width: 35px;
-  height: 35px;
-  color: white; /* 🔹 Icon trắng cho nổi bật */
+  width: 38px;
+  height: 38px;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s;
 }
 
 .navButton:hover {
-  background: rgba(0, 0, 0, 0.6); /* 🔹 Tối hơn khi hover */
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .navButton:first-of-type {
@@ -99,4 +116,83 @@
 
 .navButton:last-of-type {
   right: 10px;
+}
+
+/* ==== SẢN PHẨM ==== */
+.productSection {
+  background-color: #fff;
+  margin-top: 20px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #007600;
+  margin-bottom: 15px;
+  border-left: 5px solid #007600;
+  padding-left: 10px;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+
+.productCard {
+  position: relative;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.productCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.discountTag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: #e53935;
+  color: #fff;
+  padding: 3px 7px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 3px;
+}
+
+.productImage {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.productInfo {
+  padding: 10px;
+  text-align: center;
+}
+
+.productTitle {
+  font-size: 15px;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.productPrice {
+  font-size: 14px;
+  color: #e53935;
+  font-weight: 600;
+}
+
+.header-icons {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  margin-left: 20px;
 }

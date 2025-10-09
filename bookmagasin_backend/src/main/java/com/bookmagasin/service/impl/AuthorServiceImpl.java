@@ -56,5 +56,6 @@ public class AuthorServiceImpl implements AuthorService {
     public void deleteById(int id) {
         authorRepository.deleteById(id);
     }
+
 }
 

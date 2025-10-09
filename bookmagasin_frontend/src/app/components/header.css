@@ -98,3 +98,51 @@
 .cart strong {
   color: #1d7b3a;
 }
+
+/* --- ICON THÔNG BÁO & GIỎ HÀNG --- */
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.header-icons {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  color: #555;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.icon-item .icon {
+  width: 26px;
+  height: 26px;
+  margin-bottom: 4px;
+}
+
+.icon-item:hover {
+  color: #1d7b3a;
+  transform: translateY(-2px);
+}
+
+/* --- Phần tư vấn bán hàng --- */
+.cart-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 13px;
+  color: #333;
+}
+
+.cart-info strong {
+  color: #1d7b3a;
+  font-size: 15px;
+}
