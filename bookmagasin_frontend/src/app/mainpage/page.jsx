@@ -38,34 +38,49 @@ export default function MainPage() {
       section: "Sách Mới Nổi Bật",
       items: [
         {
-          title: "How To Be Free",
-          price: "90,000đ",
-          discount: "-30%",
-          img: "https://cdn-media.sforum.vn/storage/app/media/wp-content/uploads/2023/11/nhung-cau-noi-hay-ve-sach-thumbnail.jpg",
-        },
-        {
-          title: "How To Make Money",
-          price: "150,000đ",
-          discount: "-20%",
-          img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_eqSFRsNitxuUT1Jc-6AjD-wGvU2cx04o4g&s",
-        },
-        {
-          title: "How To Have A Life",
-          price: "77,000đ",
-          discount: "-30%",
-          img: "https://tailieutienganh.edu.vn/public/files/upload/default/images/Phuong-phap-hoc/tron-bo-tu-vung-tieng-anh-theo-chu-de-sach-langgo.jpg",
-        },
-        {
-          title: "Lối Nhỏ Đầu Tiên",
-          price: "189,000đ",
+          title: "Quà Tết Độc Lập - Những Lá Thư Hồi Chiến",
+          price: "269.000 đ",
+          originalPrice: "299.000 đ",
           discount: "-10%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/i/m/image_195512.jpg",
+          img: "https://i.pinimg.com/1200x/06/8e/d8/068ed8e1d2deec70d3cd66175dcd2a79.jpg",
+          badge: "Xứ hướng ~",
+          stockCount: 417,
         },
         {
-          title: "Chúng Ta Đã Hiểu Lầm",
-          price: "132,000đ",
-          discount: "-25%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/i/m/image_195513.jpg",
+          title: "Tủ Sách Thanh Niên - Mãi Mãi Tuổi Hai Mươi",
+          price: "114.500 đ",
+          originalPrice: "135.000 đ",
+          discount: "-15%",
+          img: "https://cdn0.fahasa.com/media/catalog/product/8/9/8935280920040.jpg",
+          badge: "ĐỌC QUYỀN",
+          stockCount: 619,
+        },
+        {
+          title: "Mura Đỏ - Ấn Bản Bìa Cứng - Kèm Hộp & Chữ Ký Scan",
+          price: "247.500 đ",
+          originalPrice: "275.000 đ",
+          discount: "-10%",
+          img: "https://cdn0.fahasa.com/media/catalog/product/m/u/muado-combo.jpg",
+          badge: "Mới",
+          stockCount: 417,
+        },
+        {
+          title: "English Grammar In Use With Answers",
+          price: "356.000 đ",
+          originalPrice: "375.000 đ",
+          discount: "-5%",
+          img: "https://cdn0.fahasa.com/media/catalog/product/9/7/9781108457651.jpg",
+          stockCount: 148,
+          isComingSoon: true,
+        },
+        {
+          title: "Boxset Nguyên Tội Của Takopi - Tập 1 + Tập 2",
+          price: "95.000 đ",
+          originalPrice: "100.000 đ",
+          discount: "-5%",
+          img: "https://cdn0.fahasa.com/media/catalog/product/b/o/boxset-nguyen-toi-cua-takopi.jpg",
+          isComingSoon: true,
+          stockStatus: "low",
         },
       ],
     },
@@ -74,33 +89,44 @@ export default function MainPage() {
       items: [
         {
           title: "Tôi Là Bêtô",
-          price: "65,000đ",
+          price: "65.000 đ",
+          originalPrice: "75.000 đ",
           discount: "-15%",
           img: "https://cdn0.fahasa.com/media/catalog/product/t/o/toilabeto.jpg",
+          badge: "Mới",
+          stockCount: 234,
         },
         {
           title: "Mắt Biếc",
-          price: "80,000đ",
+          price: "80.000 đ",
+          originalPrice: "95.000 đ",
           discount: "-20%",
           img: "https://cdn0.fahasa.com/media/catalog/product/m/a/matbiec.jpg",
+          stockCount: 567,
         },
         {
           title: "Người Đua Diều",
-          price: "120,000đ",
+          price: "120.000 đ",
+          originalPrice: "150.000 đ",
           discount: "-30%",
           img: "https://cdn0.fahasa.com/media/catalog/product/n/g/nguoi-dua-dieu.jpg",
+          stockCount: 892,
         },
         {
           title: "Hai Số Phận",
-          price: "200,000đ",
+          price: "200.000 đ",
+          originalPrice: "250.000 đ",
           discount: "-25%",
           img: "https://cdn0.fahasa.com/media/catalog/product/h/a/haisophan.jpg",
+          stockCount: 156,
         },
         {
           title: "Đắc Nhân Tâm",
-          price: "95,000đ",
+          price: "95.000 đ",
+          originalPrice: "105.000 đ",
           discount: "-10%",
           img: "https://cdn0.fahasa.com/media/catalog/product/d/a/dacnhantam.jpg",
+          stockStatus: "low",
         },
       ],
     },
@@ -109,33 +135,45 @@ export default function MainPage() {
       items: [
         {
           title: "Sức Mạnh Của Thói Quen",
-          price: "110,000đ",
+          price: "110.000 đ",
+          originalPrice: "140.000 đ",
           discount: "-30%",
           img: "https://cdn0.fahasa.com/media/catalog/product/s/u/suc-manh-cua-thoi-quen.jpg",
+          badge: "Hot",
+          stockCount: 445,
         },
         {
           title: "Tư Duy Nhanh Và Chậm",
-          price: "130,000đ",
+          price: "130.000 đ",
+          originalPrice: "165.000 đ",
           discount: "-25%",
           img: "https://cdn0.fahasa.com/media/catalog/product/t/u/tu-duy-nhanh-va-cham.jpg",
+          stockCount: 321,
         },
         {
           title: "7 Thói Quen Hiệu Quả",
-          price: "145,000đ",
+          price: "145.000 đ",
+          originalPrice: "180.000 đ",
           discount: "-20%",
           img: "https://cdn0.fahasa.com/media/catalog/product/7/_/7-thoi-quen-hieu-qua.jpg",
+          stockCount: 678,
         },
         {
           title: "Bạn Đắt Giá Bao Nhiêu",
-          price: "99,000đ",
+          price: "99.000 đ",
+          originalPrice: "110.000 đ",
           discount: "-10%",
           img: "https://cdn0.fahasa.com/media/catalog/product/b/a/ban-dat-gia-bao-nhieu.jpg",
+          isComingSoon: true,
+          stockStatus: "low",
         },
         {
           title: "Khéo Ăn Nói Sẽ Có Được Thiên Hạ",
-          price: "115,000đ",
+          price: "115.000 đ",
+          originalPrice: "140.000 đ",
           discount: "-20%",
           img: "https://cdn0.fahasa.com/media/catalog/product/k/h/kheo-an-noi-se-co-duoc-thien-ha.jpg",
+          stockCount: 289,
         },
       ],
     },
@@ -164,7 +202,7 @@ export default function MainPage() {
               <ChevronLeft />
             </button>
             <img
-              src={banners[current]}
+              src={banners[current] || "/placeholder.svg"}
               alt="Banner"
               className={styles.bannerImage}
             />
@@ -180,16 +218,40 @@ export default function MainPage() {
               <div className={styles.productGrid}>
                 {section.items.map((book, i) => (
                   <div key={i} className={styles.productCard}>
+                    {book.isComingSoon && (
+                      <div className={styles.comingSoonBadge}>Sắp Có Hàng</div>
+                    )}
+
+                    {book.badge && (
+                      <div className={styles.topBadge}>{book.badge}</div>
+                    )}
+
                     <div className={styles.discountTag}>{book.discount}</div>
                     <img
-                      src={book.img}
+                      src={book.img || "/placeholder.svg"}
                       alt={book.title}
                       className={styles.productImage}
                     />
                     <div className={styles.productInfo}>
                       <p className={styles.productTitle}>{book.title}</p>
-                      <p className={styles.productPrice}>{book.price}</p>
+                      <div className={styles.priceContainer}>
+                        <p className={styles.productPrice}>{book.price}</p>
+                        <p className={styles.originalPrice}>
+                          {book.originalPrice}
+                        </p>
+                      </div>
                     </div>
+                    <button
+                      className={
+                        book.stockStatus === "low"
+                          ? styles.stockButtonLow
+                          : styles.stockButton
+                      }
+                    >
+                      {book.stockStatus === "low"
+                        ? "Sắp hết"
+                        : `Đã bán ${book.stockCount}`}
+                    </button>
                   </div>
                 ))}
               </div>

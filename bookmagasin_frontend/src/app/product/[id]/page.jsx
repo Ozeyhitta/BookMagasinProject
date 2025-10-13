@@ -3,9 +3,7 @@ import React, { useEffect, useState, use } from "react";
 import styles from "./productDetail.module.css";
 
 export default function ProductDetail({ params }) {
-  // ✅ Giải nén params bằng React.use()
   const { id } = use(params);
-
   const [isClient, setIsClient] = useState(false);
   useEffect(() => setIsClient(true), []);
 
@@ -16,11 +14,19 @@ export default function ProductDetail({ params }) {
       price: 89100,
       oldPrice: 99000,
       image:
-        "https://tailieutienganh.edu.vn/public/files/upload/default/images/Phuong-phap-hoc/tron-bo-tu-vung-tieng-anh-theo-chu-de-sach-langgo.jpg",
+        "https://i.pinimg.com/736x/31/63/fb/3163fb0b4db68ca5e14eed65269e21a9.jpg",
       isbn: "8935280920491",
       publisher: "Thái Hà",
+      supplier: "AZ",
       author: "Ngô Hữu Quang",
-      description: `"Bên bếp lửa cuộc đời" kể về bốn người bạn – Hiếu, Hạnh, Hoàn và Hoa – quây quần bên bếp lửa trong một ngôi làng "bỏ phố về rừng", cùng nhau sẻ chia, nương tựa và bước tiếp trên hành trình trưởng thành.`,
+      translator: "Hoa Hoa",
+      language: "Tiếng Việt",
+      weight: "210 gr",
+      size: "20.5 x 13 x 0.9 cm",
+      pages: "192",
+      cover: "Bìa mềm",
+      year: "2025",
+      description: `"Bên bếp lửa cuộc đời" kể về bốn người bạn – Hiếu, Hạnh, Hoàn và Hoa – quây quần bên bếp lửa trong một ngôi làng "bỏ phố về rừng", cùng nhau sẻ chia, nương tựa và bước tiếp trên hành trình trưởng thành.Bên bếp lửa cuộc đời" kể về bốn người bạn – Hiếu, Hạnh, Hoàn và Hoa – quây quần bên bếp lửa trong một ngôi làng "bỏ phố về rừng", cùng nhau sẻ chia, nương tựa và bước tiếp trên hành trình trưởng thành.Bên bếp lửa cuộc đời" kể về bốn người bạn – Hiếu, Hạnh, Hoàn và Hoa – quây quần bên bếp lửa trong một ngôi làng "bỏ phố về rừng", cùng nhau sẻ chia, nương tựa và bước tiếp trên hành trình trưởng thành.Bên bếp lửa cuộc đời" kể về bốn người bạn – Hiếu, Hạnh, Hoàn và Hoa – quây quần bên bếp lửa trong một ngôi làng "bỏ phố về rừng", cùng nhau sẻ chia, nương tựa và bước tiếp trên hành trình trưởng thành.Bên bếp lửa cuộc đời" kể về bốn người bạn – Hiếu, Hạnh, Hoàn và Hoa – quây quần bên bếp lửa trong một ngôi làng "bỏ phố về rừng", cùng nhau sẻ chia, nương tựa và bước tiếp trên hành trình trưởng thành.Bên bếp lửa cuộc đời" kể về bốn người bạn – Hiếu, Hạnh, Hoàn và Hoa – quây quần bên bếp lửa trong một ngôi làng "bỏ phố về rừng", cùng nhau sẻ chia, nương tựa và bước tiếp trên hành trình trưởng thành.Bên bếp lửa cuộc đời" kể về bốn người bạn – Hiếu, Hạnh, Hoàn và Hoa – quây quần bên bếp lửa trong một ngôi làng "bỏ phố về rừng", cùng nhau sẻ chia, nương tựa và bước tiếp trên hành trình trưởng thành."`,
     },
   ];
 
@@ -46,7 +52,8 @@ export default function ProductDetail({ params }) {
               {isClient ? book.price.toLocaleString("vi-VN") : book.price}đ
             </span>
             <span className={styles.oldPrice}>
-              {isClient ? book.oldPrice.toLocaleString("vi-VN") : book.oldPrice}đ
+              {isClient ? book.oldPrice.toLocaleString("vi-VN") : book.oldPrice}
+              đ
             </span>
           </div>
 
@@ -73,20 +80,64 @@ export default function ProductDetail({ params }) {
           </ul>
         </div>
 
-        {/* Giới thiệu sách — nằm dưới hình ảnh */}
-        <div className={styles.bookDescription}>
-          <h2>GIỚI THIỆU SÁCH</h2>
-          <p>{book.description}</p>
-          <p>
-            <strong>Tác giả:</strong> {book.author}
-          </p>
-          <p>
-            <strong>Giá:</strong>{" "}
-            {isClient
-              ? book.oldPrice.toLocaleString("vi-VN")
-              : book.oldPrice}
-            đ
-          </p>
+        {/* ✅ GIỚI THIỆU + THÔNG TIN CHI TIẾT chiếm 2 cột đầu */}
+        <div className={styles.bottomInfo}>
+          <div className={styles.bookDescription}>
+            <h2>GIỚI THIỆU SÁCH</h2>
+            <p>{book.description}</p>
+          </div>
+
+          <div className={styles.detailInfo}>
+            <h2>Thông tin chi tiết</h2>
+            <table className={styles.infoTable}>
+              <tbody>
+                <tr>
+                  <td>Mã hàng</td>
+                  <td>893532509264</td>
+                </tr>
+                <tr>
+                  <td>Tên Nhà Cung Cấp</td>
+                  <td>AZ</td>
+                </tr>
+                <tr>
+                  <td>Tác giả</td>
+                  <td>Tae-Woan Ha</td>
+                </tr>
+                <tr>
+                  <td>Người Dịch</td>
+                  <td>Hoa Hoa</td>
+                </tr>
+                <tr>
+                  <td>NXB</td>
+                  <td>Lao Động</td>
+                </tr>
+                <tr>
+                  <td>Năm XB</td>
+                  <td>2025</td>
+                </tr>
+                <tr>
+                  <td>Ngôn Ngữ</td>
+                  <td>Tiếng Việt</td>
+                </tr>
+                <tr>
+                  <td>Trọng lượng (gr)</td>
+                  <td>210</td>
+                </tr>
+                <tr>
+                  <td>Kích Thước Bao Bì</td>
+                  <td>20.5 x 13 x 0.9 cm</td>
+                </tr>
+                <tr>
+                  <td>Số trang</td>
+                  <td>192</td>
+                </tr>
+                <tr>
+                  <td>Hình thức</td>
+                  <td>Bìa Mềm</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

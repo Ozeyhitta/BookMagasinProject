@@ -147,6 +147,8 @@ body {
   overflow: hidden;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .productCard:hover {
@@ -154,9 +156,37 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.discountTag {
+/* Added Coming Soon badge styling */
+.comingSoonBadge {
   position: absolute;
   top: 8px;
+  right: 8px;
+  background-color: #0ea5e9;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 3px;
+  z-index: 10;
+}
+
+/* Added top badge styling for special labels */
+.topBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: #c62828;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 3px;
+  z-index: 10;
+}
+
+.discountTag {
+  position: absolute;
+  top: 35px;
   left: 8px;
   background-color: #e53935;
   color: #fff;
@@ -164,6 +194,7 @@ body {
   font-size: 12px;
   font-weight: bold;
   border-radius: 3px;
+  z-index: 10;
 }
 
 .productImage {
@@ -175,19 +206,74 @@ body {
 .productInfo {
   padding: 10px;
   text-align: center;
+  flex: 1;
 }
 
 .productTitle {
   font-size: 15px;
   color: #333;
   font-weight: 500;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  min-height: 40px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Added price container for layout */
+.priceContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .productPrice {
-  font-size: 14px;
+  font-size: 16px;
   color: #e53935;
+  font-weight: 700;
+}
+
+/* Added original price with strikethrough */
+.originalPrice {
+  font-size: 13px;
+  color: #999;
+  text-decoration: line-through;
+}
+
+/* Added stock status button */
+.stockButton {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(to right, #dc2626, #ef4444);
+  color: #fff;
+  border: none;
+  font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stockButton:hover {
+  background: linear-gradient(to right, #b91c1c, #dc2626);
+}
+
+/* Added low stock button variant */
+.stockButtonLow {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(to right, #ef4444, #f87171);
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stockButtonLow:hover {
+  background: linear-gradient(to right, #dc2626, #ef4444);
 }
 
 .header-icons {

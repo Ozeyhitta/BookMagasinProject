@@ -5,7 +5,7 @@
   padding: 40px 100px;
 }
 
-/* Bố cục 3 cột: Ảnh - Thông tin - Box phụ */
+/* --- Bố cục 3 cột: Ảnh - Thông tin - Box phụ --- */
 .productDetail {
   display: grid;
   grid-template-columns: 400px 1fr 300px;
@@ -13,14 +13,16 @@
   align-items: flex-start;
 }
 
+/* Ảnh sản phẩm */
 .productImage img {
   width: 100%;
   border: 1px solid #ddd;
   border-radius: 6px;
   background: #fff;
+  object-fit: cover;
 }
 
-/* Tiêu đề và thông tin cơ bản */
+/* Tiêu đề và thông tin */
 .productTitle {
   font-size: 26px;
   font-weight: 700;
@@ -34,7 +36,7 @@
   margin-bottom: 5px;
 }
 
-/* Giá sản phẩm */
+/* --- Giá sản phẩm --- */
 .priceBox {
   margin: 15px 0;
 }
@@ -52,7 +54,7 @@
   font-size: 18px;
 }
 
-/* Điều chỉnh số lượng */
+/* --- Điều chỉnh số lượng --- */
 .quantityContainer {
   display: inline-flex;
   align-items: center;
@@ -73,9 +75,6 @@
   font-weight: 600;
   color: #333;
   cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   transition: all 0.2s ease;
 }
 
@@ -90,8 +89,6 @@
   text-align: center;
   border-left: 1px solid #ccc;
   border-right: 1px solid #ccc;
-  border-top: none;
-  border-bottom: none;
   font-size: 16px;
   font-weight: 600;
   color: #000;
@@ -105,26 +102,51 @@
   margin: 0;
 }
 
-/* Nút hành động */
+/* --- Nút hành động --- */
 .actionButtons {
   display: flex;
+  justify-content: flex-start;
   gap: 15px;
   margin-top: 20px;
+  flex-wrap: wrap;
 }
-
+/* ✅ Nút chung */
 .addToCart,
 .buyNow {
-  flex: 1;
+  width: 200px; /* 👈 Chiều rộng cố định, không bị kéo dãn */
   height: 50px;
+
   font-size: 16px;
   font-weight: 700;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+
   letter-spacing: 0.3px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1;
+
+  /* ✅ Ổn định khi zoom, không phóng to/nhỏ theo viewport */
+  flex: 0 0 auto; /* 👈 Không co giãn theo flex */
+  transform: none !important;
+  zoom: 1 !important;
+  will-change: auto;
+  box-sizing: border-box;
+
+  /* ✅ Ngăn bôi chọn text trên mọi trình duyệt */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* Nút Thêm vào giỏ */
+/* --- Nút Thêm vào giỏ --- */
 .addToCart {
   background-color: #f7941d;
   border: 1px solid #f7941d;
@@ -133,9 +155,9 @@
 
 .addToCart:hover {
   background-color: #e48312;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
-
-/* Nút Mua ngay */
+/* --- Nút Mua ngay --- */
 .buyNow {
   background-color: #222;
   border: 1px solid #222;
@@ -144,20 +166,25 @@
 
 .buyNow:hover {
   background-color: #000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-/* Hiệu ứng click nhỏ */
+/* ✅ Khi click giữ form, không phóng to */
 .addToCart:active,
 .buyNow:active {
-  transform: scale(0.97);
+  transform: scale(1) !important;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.2);
 }
 
-/* Box bên phải */
+/* --- Box bên phải --- */
 .sideBox {
   background: #fafafa;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 6px;
+  position: sticky;
+  top: 40px;
+  height: fit-content;
 }
 
 .sideBox h3 {
@@ -174,20 +201,25 @@
 }
 
 .sideBox li {
+  font-size: 15px;
+  color: #333;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
-  color: #333;
 }
 
-/* Phần giới thiệu sách */
-.bookDescription {
-  grid-column: 1 / 3; /* chỉ chiếm ảnh + phần thông tin */
+/* --- GIỚI THIỆU SÁCH + THÔNG TIN CHI TIẾT (chiếm 2 cột đầu) --- */
+.bottomInfo {
+  grid-column: 1 / 3; /* 👈 Kéo dài qua 2 cột đầu */
   margin-top: 50px;
+  max-width: 100%;
+}
+
+/* --- GIỚI THIỆU SÁCH --- */
+.bookDescription {
   border-top: 1px solid #eee;
   padding-top: 30px;
-  max-width: 850px; /* tránh tràn quá rộng */
+  margin-bottom: 40px;
 }
 
 .bookDescription h2 {
@@ -202,4 +234,73 @@
   line-height: 1.8;
   text-align: justify;
   margin-bottom: 10px;
+}
+
+/* --- THÔNG TIN CHI TIẾT --- */
+.detailInfo {
+  padding-top: 25px;
+  border-top: 1px solid #ddd;
+}
+
+.detailInfo h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 25px;
+}
+
+/* Bảng thông tin */
+.infoTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 14px;
+}
+
+.infoTable td {
+  font-size: 16px;
+  color: #333;
+  padding: 8px 0;
+  vertical-align: middle;
+}
+
+.infoTable td:first-child {
+  width: 240px;
+  font-weight: 600;
+  color: #000;
+  text-align: left;
+  padding-right: 100px;
+  white-space: nowrap;
+}
+
+.infoTable td:last-child {
+  text-align: left;
+  color: #444;
+  border-bottom: 1px solid #eaeaea;
+}
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+  .productPage {
+    padding: 30px 40px;
+  }
+
+  .productDetail {
+    grid-template-columns: 1fr;
+  }
+
+  .sideBox {
+    position: static;
+  }
+
+  .bottomInfo {
+    grid-column: 1;
+  }
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .addToCart,
+  .buyNow {
+    width: 100%; /* 👈 Trên mobile, cho nút full chiều rộng để dễ bấm */
+  }
 }
