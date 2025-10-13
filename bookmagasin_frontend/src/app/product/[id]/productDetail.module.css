@@ -97,7 +97,6 @@
   color: #000;
   outline: none;
   background: #fff;
-  -moz-appearance: textfield;
 }
 
 .quantityContainer input::-webkit-inner-spin-button,

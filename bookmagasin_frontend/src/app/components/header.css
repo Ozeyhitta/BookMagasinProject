@@ -67,7 +67,7 @@
   width: 50%;
   max-width: 700px;
   border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 50px;
   overflow: hidden;
   background: #fff;
 }
@@ -88,8 +88,8 @@
 
 /* Nút tìm kiếm */
 .search-bar button {
-  background: #111;         /* Màu đen như Vinabook */
-  color: #fff;              /* Chữ trắng */
+  background: #111; /* Màu đen như Vinabook */
+  color: #fff; /* Chữ trắng */
   border: none;
   padding: 0 28px;
   cursor: pointer;
