@@ -5,9 +5,10 @@
   padding: 40px 100px;
 }
 
+/* Bố cục 3 cột: Ảnh - Thông tin - Box phụ */
 .productDetail {
   display: grid;
-  grid-template-columns: 350px 1fr 280px;
+  grid-template-columns: 400px 1fr 300px;
   gap: 40px;
   align-items: flex-start;
 }
@@ -19,10 +20,11 @@
   background: #fff;
 }
 
+/* Tiêu đề và thông tin cơ bản */
 .productTitle {
   font-size: 26px;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
 .isbn,
@@ -32,12 +34,13 @@
   margin-bottom: 5px;
 }
 
+/* Giá sản phẩm */
 .priceBox {
   margin: 15px 0;
 }
 
 .price {
-  font-size: 24px;
+  font-size: 26px;
   color: #e60000;
   font-weight: bold;
   margin-right: 10px;
@@ -46,60 +49,113 @@
 .oldPrice {
   text-decoration: line-through;
   color: #888;
-  font-size: 17px;
+  font-size: 18px;
 }
 
+/* Điều chỉnh số lượng */
 .quantityContainer {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  margin: 15px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+  background: #fff;
+  margin-top: 5px;
 }
 
 .qtyBtn {
-  width: 30px;
-  height: 30px;
-  border: 1px solid #ccc;
+  width: 38px;
+  height: 38px;
+  border: none;
   background: #fff;
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
   cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.qtyBtn:hover {
+  background: #f3f3f3;
+  color: #000;
 }
 
 .quantityContainer input {
-  width: 40px;
+  width: 55px;
+  height: 38px;
   text-align: center;
-  border: 1px solid #ccc;
-  height: 30px;
+  border-left: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  border-top: none;
+  border-bottom: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000;
+  outline: none;
+  background: #fff;
+  -moz-appearance: textfield;
 }
 
+.quantityContainer input::-webkit-inner-spin-button,
+.quantityContainer input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Nút hành động */
 .actionButtons {
   display: flex;
-  gap: 10px;
-  margin-top: 15px;
+  gap: 15px;
+  margin-top: 20px;
 }
 
+.addToCart,
+.buyNow {
+  flex: 1;
+  height: 50px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+/* Nút Thêm vào giỏ */
 .addToCart {
   background-color: #f7941d;
-  border: none;
+  border: 1px solid #f7941d;
   color: #fff;
-  font-weight: 600;
-  padding: 12px 20px;
-  border-radius: 4px;
-  cursor: pointer;
 }
 
+.addToCart:hover {
+  background-color: #e48312;
+}
+
+/* Nút Mua ngay */
 .buyNow {
   background-color: #222;
-  border: none;
+  border: 1px solid #222;
   color: #fff;
-  font-weight: 600;
-  padding: 12px 20px;
-  border-radius: 4px;
-  cursor: pointer;
 }
 
+.buyNow:hover {
+  background-color: #000;
+}
+
+/* Hiệu ứng click nhỏ */
+.addToCart:active,
+.buyNow:active {
+  transform: scale(0.97);
+}
+
+/* Box bên phải */
 .sideBox {
-  background: #f9f9f9;
+  background: #fafafa;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -114,27 +170,37 @@
 .sideBox ul {
   list-style: none;
   padding: 0;
+  margin: 0;
   line-height: 1.8;
 }
 
-/* 👇 Căn phần “Giới thiệu sách” nằm dưới MUA NGAY và thẳng lề trái với ảnh */
+.sideBox li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: #333;
+}
+
+/* Phần giới thiệu sách */
 .bookDescription {
-  margin-top: 30px;
-  padding-top: 15px;
+  grid-column: 1 / 3; /* chỉ chiếm ảnh + phần thông tin */
+  margin-top: 50px;
   border-top: 1px solid #eee;
-  grid-column: 1 / 2; /* đưa về cột đầu tiên (cột ảnh) */
-  max-width: 350px; /* bằng chiều rộng ảnh */
+  padding-top: 30px;
+  max-width: 850px; /* tránh tràn quá rộng */
 }
 
 .bookDescription h2 {
-  color: #e60000;
+  color: #444;
   font-size: 20px;
-  margin-bottom: 10px;
+  font-weight: 700;
+  margin-bottom: 15px;
 }
 
 .bookDescription p {
-  line-height: 1.7;
   color: #333;
-  margin-bottom: 8px;
+  line-height: 1.8;
   text-align: justify;
+  margin-bottom: 10px;
 }

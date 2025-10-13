@@ -1,9 +1,11 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import styles from "./productDetail.module.css";
 
 export default function ProductDetail({ params }) {
-  const { id } = React.use(params);
+  // ✅ Giải nén params bằng React.use()
+  const { id } = use(params);
+
   const [isClient, setIsClient] = useState(false);
   useEffect(() => setIsClient(true), []);
 
@@ -28,12 +30,12 @@ export default function ProductDetail({ params }) {
   return (
     <div className={styles.productPage}>
       <div className={styles.productDetail}>
-        {/* Hình ảnh */}
+        {/* Cột 1: Hình ảnh */}
         <div className={styles.productImage}>
           <img src={book.image} alt={book.name} />
         </div>
 
-        {/* Thông tin */}
+        {/* Cột 2: Thông tin */}
         <div className={styles.productInfo}>
           <h1 className={styles.productTitle}>{book.name}</h1>
           <p className={styles.isbn}>ISBN: {book.isbn}</p>
@@ -58,25 +60,9 @@ export default function ProductDetail({ params }) {
             <button className={styles.addToCart}>THÊM VÀO GIỎ</button>
             <button className={styles.buyNow}>MUA NGAY</button>
           </div>
-
-          {/* Giới thiệu sách */}
-          <div className={styles.bookDescription}>
-            <h2>GIỚI THIỆU SÁCH</h2>
-            <p>{book.description}</p>
-            <p>
-              <strong>Tác giả:</strong> {book.author}
-            </p>
-            <p>
-              <strong>Giá:</strong>{" "}
-              {isClient
-                ? book.oldPrice.toLocaleString("vi-VN")
-                : book.oldPrice}
-              đ
-            </p>
-          </div>
         </div>
 
-        {/* Box bên phải */}
+        {/* Cột 3: Box bên phải */}
         <div className={styles.sideBox}>
           <h3>Chỉ có ở Vinabook</h3>
           <ul>
@@ -85,6 +71,22 @@ export default function ProductDetail({ params }) {
             <li>🚚 Miễn phí vận chuyển cho đơn hàng từ 250.000đ</li>
             <li>📞 Hotline: 1900 6401</li>
           </ul>
+        </div>
+
+        {/* Giới thiệu sách — nằm dưới hình ảnh */}
+        <div className={styles.bookDescription}>
+          <h2>GIỚI THIỆU SÁCH</h2>
+          <p>{book.description}</p>
+          <p>
+            <strong>Tác giả:</strong> {book.author}
+          </p>
+          <p>
+            <strong>Giá:</strong>{" "}
+            {isClient
+              ? book.oldPrice.toLocaleString("vi-VN")
+              : book.oldPrice}
+            đ
+          </p>
         </div>
       </div>
     </div>
