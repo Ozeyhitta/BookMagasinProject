@@ -1,0 +1,140 @@
+.productPage {
+  background: #fff;
+  color: #222;
+  font-family: "Arial", sans-serif;
+  padding: 40px 100px;
+}
+
+.productDetail {
+  display: grid;
+  grid-template-columns: 350px 1fr 280px;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.productImage img {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.productTitle {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.isbn,
+.publisher {
+  color: #666;
+  font-size: 15px;
+  margin-bottom: 5px;
+}
+
+.priceBox {
+  margin: 15px 0;
+}
+
+.price {
+  font-size: 24px;
+  color: #e60000;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.oldPrice {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 17px;
+}
+
+.quantityContainer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.qtyBtn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.quantityContainer input {
+  width: 40px;
+  text-align: center;
+  border: 1px solid #ccc;
+  height: 30px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.addToCart {
+  background-color: #f7941d;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.buyNow {
+  background-color: #222;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sideBox {
+  background: #f9f9f9;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.sideBox h3 {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.sideBox ul {
+  list-style: none;
+  padding: 0;
+  line-height: 1.8;
+}
+
+/* 👇 Căn phần “Giới thiệu sách” nằm dưới MUA NGAY và thẳng lề trái với ảnh */
+.bookDescription {
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+  grid-column: 1 / 2; /* đưa về cột đầu tiên (cột ảnh) */
+  max-width: 350px; /* bằng chiều rộng ảnh */
+}
+
+.bookDescription h2 {
+  color: #e60000;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.bookDescription p {
+  line-height: 1.7;
+  color: #333;
+  margin-bottom: 8px;
+  text-align: justify;
+}

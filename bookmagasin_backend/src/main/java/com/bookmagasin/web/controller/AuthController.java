@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 
 
 @RestController
@@ -33,12 +35,14 @@ public class AuthController {
     private final TokenBlacklistService tokenBlacklistService;
 
 
+
     public AuthController(AuthService authService, JwtUtil jwtUtil, PasswordEncoder passwordEncoder, AccountService accountService, TokenBlacklistService tokenBlacklistService) {
         this.authService = authService;
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
         this.accountService = accountService;
         this.tokenBlacklistService = tokenBlacklistService;
+
     }
 
     @PostMapping("/register-customer")
@@ -80,12 +84,8 @@ public class AuthController {
 
         return ResponseEntity.badRequest().body("Không tìm thấy token để đăng xuất");
     }
-    @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
-        // TODO: Gửi email reset mật khẩu thật
-        return ResponseEntity.ok("Email đặt lại mật khẩu đã được gửi tới " + email);
-    }
+
+
 
 
 }
