@@ -1,0 +1,244 @@
+.cartPage {
+  background: #fdf6ec;
+  min-height: 100vh;
+  padding: 60px 120px;
+  color: #333;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* --- Header --- */
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.header p {
+  color: #666;
+  font-size: 15px;
+}
+
+.divider {
+  width: 80px;
+  height: 3px;
+  background: #222;
+  margin: 20px auto 0;
+}
+
+/* --- Nội dung --- */
+.content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 50px;
+  align-items: flex-start;
+}
+
+/* --- Danh sách sản phẩm --- */
+.tableHeader {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.cartItem {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #eee;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+}
+
+.itemInfo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.itemInfo img {
+  width: 70px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.itemName {
+  font-weight: 600;
+}
+
+.itemPrice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.newPrice {
+  color: red;
+  font-weight: 600;
+}
+
+.oldPrice {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 13px;
+}
+
+.discount {
+  color: red;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.quantity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quantity button {
+  background: #fff;
+  border: 1px solid #ccc;
+  width: 25px;
+  height: 25px;
+  cursor: pointer;
+}
+
+.totalPrice {
+  color: red;
+  font-weight: 600;
+}
+
+.remove {
+  cursor: pointer;
+  font-size: 22px;
+  color: #333;
+}
+
+/* --- Ghi chú và tổng tiền --- */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.noteBox h3,
+.orderInfo h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.noteBox textarea {
+  width: 100%;
+  height: 100px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+  resize: none;
+  background-color: #fff;      /* ✅ nền trắng */
+  color: #333;                 /* ✅ chữ đen */
+  font-size: 15px;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.noteBox textarea::placeholder {
+  color: #999;                 /* ✅ placeholder xám nhạt */
+}
+
+
+.orderInfo {
+  background: #fff;
+  border: 1px solid #eee;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.total {
+  color: red;
+  font-weight: 700;
+}
+
+.shipText {
+  font-size: 14px;
+  color: #666;
+  margin: 15px 0;
+  line-height: 1.5;
+}
+
+.payBtn {
+  background: #222;
+  color: #fff;
+  padding: 10px 30px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.payBtn:hover {
+  background: #444;
+}
+
+.continue {
+  display: block;
+  margin-top: 10px;
+  color: #d17a00;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.continue:hover {
+  text-decoration: underline;
+}
+
+/* --- Responsive --- */
+@media (max-width: 900px) {
+  .content {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .cartPage {
+    padding: 40px 30px;
+  }
+}
+
+.quantity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quantity button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #333;           /* ✅ hiện dấu + - rõ */
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.quantity button:hover {
+  background-color: #f3f3f3;
+}
+
+.quantity span {
+  width: 20px;
+  text-align: center;
+  font-size: 16px;
+  color: #111;
+}
+
