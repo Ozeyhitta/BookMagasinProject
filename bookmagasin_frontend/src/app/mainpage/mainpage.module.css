@@ -73,22 +73,32 @@ body {
 .bannerArea {
   position: relative;
   width: 100%;
-  height: 280px;
-  background-color: #fff;
-  border-radius: 6px;
   overflow: hidden;
-  margin-bottom: 25px;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  margin-bottom: 20px;
 }
 
+/* Bọc toàn bộ slider */
+.sliderWrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Dải banner trượt ngang */
+.slider {
+  display: flex;
+  transition: transform 0.8s ease-in-out; /* hiệu ứng mượt */
+}
+
+/* Mỗi ảnh banner */
 .bannerImage {
   width: 100%;
-  height: 100%;
+  flex-shrink: 0;
   object-fit: cover;
-  border-radius: 6px;
-  transition: opacity 0.4s ease;
+  height: 320px;
+  border-radius: 12px;
 }
-
 .navButton {
   position: absolute;
   top: 50%;

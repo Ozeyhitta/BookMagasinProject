@@ -1,7 +1,7 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./mainpage.module.css";
+import ProductCard from "../category/ProductCard"; // ✅ reuse CategoryPage’s ProductCard
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function MainPage() {
@@ -21,66 +21,46 @@ export default function MainPage() {
   ];
 
   const banners = [
-    "https://www.shutterstock.com/shutterstock/photos/1790872166/display_1500/stock-vector-promo-sale-banner-for-library-bookshop-and-bookstore-a-large-number-of-books-stacked-in-piles-1790872166.jpg",
-    "https://static.vecteezy.com/system/resources/thumbnails/023/107/435/small_2x/promo-banner-with-stack-of-books-globe-inkwell-quill-plant-lantern-ebook-world-book-day-bookstore-bookshop-library-book-lover-bibliophile-education-for-poster-cover-advertising-vector.jpg",
-    "https://static.vecteezy.com/system/resources/thumbnails/008/424/172/small/bookshelf-with-business-books-shelf-with-books-about-finance-marketing-management-strategy-goals-time-management-team-work-banner-for-library-book-store-illustration-in-flat-style-vector.jpg",
+    "https://i.pinimg.com/1200x/a9/06/8b/a9068bb873bfdcae53720294580a227a.jpg",
+    "https://i.pinimg.com/736x/60/02/de/6002de1b84892254c9a6136f483d63c6.jpg",
+    "https://i.pinimg.com/1200x/bc/8b/f9/bc8bf98691fe3c6feee07ca05d08ca56.jpg",
   ];
 
   const [current, setCurrent] = useState(0);
-
   const prevBanner = () =>
     setCurrent((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
   const nextBanner = () =>
     setCurrent((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
 
+  // Tự động chuyển banner sau 4 giây
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrent((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
+    }, 4000); // đổi banner mỗi 4 giây
+
+    return () => clearInterval(interval); // dọn dẹp khi component unmount
+  }, [banners.length]);
+
+  // ✅ reuse your product data from CategoryPage or other arrays
   const books = [
     {
-      section: "Sách Mới Nổi Bật",
+      section: "Tâm Lý - Kỹ Năng Sống",
       items: [
         {
-          title: "Quà Tết Độc Lập - Những Lá Thư Hồi Chiến",
-          price: "269.000 đ",
-          originalPrice: "299.000 đ",
+          title: "Cội Nguồn Của Hạnh Phúc - The Science of Happiness",
+          price: "151,200đ",
+          oldPrice: "168,000đ",
           discount: "-10%",
-          img: "https://i.pinimg.com/1200x/06/8e/d8/068ed8e1d2deec70d3cd66175dcd2a79.jpg",
-          badge: "Xứ hướng ~",
-          stockCount: 417,
+          image:
+            "https://www.netabooks.vn/Data/Sites/1/Product/78210/coi-nguon-cua-hanh-phuc.jpg",
         },
         {
-          title: "Tủ Sách Thanh Niên - Mãi Mãi Tuổi Hai Mươi",
-          price: "114.500 đ",
-          originalPrice: "135.000 đ",
-          discount: "-15%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/8/9/8935280920040.jpg",
-          badge: "ĐỌC QUYỀN",
-          stockCount: 619,
-        },
-        {
-          title: "Mura Đỏ - Ấn Bản Bìa Cứng - Kèm Hộp & Chữ Ký Scan",
-          price: "247.500 đ",
-          originalPrice: "275.000 đ",
-          discount: "-10%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/m/u/muado-combo.jpg",
-          badge: "Mới",
-          stockCount: 417,
-        },
-        {
-          title: "English Grammar In Use With Answers",
-          price: "356.000 đ",
-          originalPrice: "375.000 đ",
-          discount: "-5%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/9/7/9781108457651.jpg",
-          stockCount: 148,
-          isComingSoon: true,
-        },
-        {
-          title: "Boxset Nguyên Tội Của Takopi - Tập 1 + Tập 2",
-          price: "95.000 đ",
-          originalPrice: "100.000 đ",
-          discount: "-5%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/b/o/boxset-nguyen-toi-cua-takopi.jpg",
-          isComingSoon: true,
-          stockStatus: "low",
+          title: "Sức Mạnh Của Thói Quen",
+          price: "110.000đ",
+          oldPrice: "140.000đ",
+          discount: "-30%",
+          image:
+            "https://i.pinimg.com/736x/b7/ad/a1/b7ada1914f3c4ef6ca1c99368f376e31.jpg",
         },
       ],
     },
@@ -88,92 +68,20 @@ export default function MainPage() {
       section: "Sách Văn Học",
       items: [
         {
-          title: "Tôi Là Bêtô",
-          price: "65.000 đ",
-          originalPrice: "75.000 đ",
-          discount: "-15%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/t/o/toilabeto.jpg",
-          badge: "Mới",
-          stockCount: 234,
-        },
-        {
-          title: "Mắt Biếc",
-          price: "80.000 đ",
-          originalPrice: "95.000 đ",
-          discount: "-20%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/m/a/matbiec.jpg",
-          stockCount: 567,
-        },
-        {
-          title: "Người Đua Diều",
-          price: "120.000 đ",
-          originalPrice: "150.000 đ",
-          discount: "-30%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/n/g/nguoi-dua-dieu.jpg",
-          stockCount: 892,
-        },
-        {
-          title: "Hai Số Phận",
-          price: "200.000 đ",
-          originalPrice: "250.000 đ",
-          discount: "-25%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/h/a/haisophan.jpg",
-          stockCount: 156,
-        },
-        {
-          title: "Đắc Nhân Tâm",
-          price: "95.000 đ",
-          originalPrice: "105.000 đ",
+          title: "Cội Nguồn Của Hạnh Phúc - The Science of Happiness",
+          price: "151,200đ",
+          oldPrice: "168,000đ",
           discount: "-10%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/d/a/dacnhantam.jpg",
-          stockStatus: "low",
+          image:
+            "https://www.netabooks.vn/Data/Sites/1/Product/78210/coi-nguon-cua-hanh-phuc.jpg",
         },
-      ],
-    },
-    {
-      section: "Sách Tâm Lý – Kỹ Năng Sống",
-      items: [
         {
           title: "Sức Mạnh Của Thói Quen",
-          price: "110.000 đ",
-          originalPrice: "140.000 đ",
+          price: "110.000đ",
+          oldPrice: "140.000đ",
           discount: "-30%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/s/u/suc-manh-cua-thoi-quen.jpg",
-          badge: "Hot",
-          stockCount: 445,
-        },
-        {
-          title: "Tư Duy Nhanh Và Chậm",
-          price: "130.000 đ",
-          originalPrice: "165.000 đ",
-          discount: "-25%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/t/u/tu-duy-nhanh-va-cham.jpg",
-          stockCount: 321,
-        },
-        {
-          title: "7 Thói Quen Hiệu Quả",
-          price: "145.000 đ",
-          originalPrice: "180.000 đ",
-          discount: "-20%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/7/_/7-thoi-quen-hieu-qua.jpg",
-          stockCount: 678,
-        },
-        {
-          title: "Bạn Đắt Giá Bao Nhiêu",
-          price: "99.000 đ",
-          originalPrice: "110.000 đ",
-          discount: "-10%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/b/a/ban-dat-gia-bao-nhieu.jpg",
-          isComingSoon: true,
-          stockStatus: "low",
-        },
-        {
-          title: "Khéo Ăn Nói Sẽ Có Được Thiên Hạ",
-          price: "115.000 đ",
-          originalPrice: "140.000 đ",
-          discount: "-20%",
-          img: "https://cdn0.fahasa.com/media/catalog/product/k/h/kheo-an-noi-se-co-duoc-thien-ha.jpg",
-          stockCount: 289,
+          image:
+            "https://i.pinimg.com/736x/b7/ad/a1/b7ada1914f3c4ef6ca1c99368f376e31.jpg",
         },
       ],
     },
@@ -195,64 +103,41 @@ export default function MainPage() {
           </ul>
         </div>
 
-        {/* --- BANNER + CÁC PHẦN SÁCH --- */}
+        {/* --- BANNER + PHẦN SÁCH --- */}
         <div className={styles.rightContent}>
           <div className={styles.bannerArea}>
             <button className={styles.navButton} onClick={prevBanner}>
               <ChevronLeft />
             </button>
-            <img
-              src={banners[current] || "/placeholder.svg"}
-              alt="Banner"
-              className={styles.bannerImage}
-            />
+
+            <div className={styles.sliderWrapper}>
+              <div
+                className={styles.slider}
+                style={{ transform: `translateX(-${current * 100}%)` }}
+              >
+                {banners.map((banner, index) => (
+                  <img
+                    key={index}
+                    src={banner}
+                    alt={`Banner ${index + 1}`}
+                    className={styles.bannerImage}
+                  />
+                ))}
+              </div>
+            </div>
+
             <button className={styles.navButton} onClick={nextBanner}>
               <ChevronRight />
             </button>
           </div>
 
-          {/* --- CÁC KHU VỰC SẢN PHẨM --- */}
+          {/* --- PHẦN SÁCH DẠNG GRID (copied from CategoryPage) --- */}
           {books.map((section, index) => (
             <div key={index} className={styles.productSection}>
               <h3 className={styles.sectionTitle}>{section.section}</h3>
-              <div className={styles.productGrid}>
+              <div className="product-grid">
                 {section.items.map((book, i) => (
-                  <div key={i} className={styles.productCard}>
-                    {book.isComingSoon && (
-                      <div className={styles.comingSoonBadge}>Sắp Có Hàng</div>
-                    )}
-
-                    {book.badge && (
-                      <div className={styles.topBadge}>{book.badge}</div>
-                    )}
-
-                    <div className={styles.discountTag}>{book.discount}</div>
-                    <img
-                      src={book.img || "/placeholder.svg"}
-                      alt={book.title}
-                      className={styles.productImage}
-                    />
-                    <div className={styles.productInfo}>
-                      <p className={styles.productTitle}>{book.title}</p>
-                      <div className={styles.priceContainer}>
-                        <p className={styles.productPrice}>{book.price}</p>
-                        <p className={styles.originalPrice}>
-                          {book.originalPrice}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      className={
-                        book.stockStatus === "low"
-                          ? styles.stockButtonLow
-                          : styles.stockButton
-                      }
-                    >
-                      {book.stockStatus === "low"
-                        ? "Sắp hết"
-                        : `Đã bán ${book.stockCount}`}
-                    </button>
-                  </div>
+                  <ProductCard key={i} {...book} />
                 ))}
               </div>
             </div>
