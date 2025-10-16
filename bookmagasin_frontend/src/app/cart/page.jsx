@@ -54,7 +54,7 @@ export default function CartPage() {
               </div>
               <div className={styles.itemPrice}>
                 <span className={styles.newPrice}>
-                  {item.price.toLocaleString()}đ
+                  {item.price.toLocaleString("vi-VN")}đ
                 </span>
                 <span className={styles.oldPrice}>
                   {item.oldPrice.toLocaleString()}đ
