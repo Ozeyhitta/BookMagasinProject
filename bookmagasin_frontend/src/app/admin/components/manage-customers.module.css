@@ -1,0 +1,159 @@
+.container {
+  width: 100%;
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table thead {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.table th {
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.table td {
+  padding: 15px;
+  color: #555;
+}
+
+.nameCell {
+  font-weight: 500;
+  color: #333;
+}
+
+.centerCell {
+  text-align: center;
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge.active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.badge.locked {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 8px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btnView {
+  color: #667eea;
+  border-color: #667eea;
+}
+
+.btnView:hover {
+  background-color: #667eea;
+  color: #fff;
+}
+
+.btnEdit {
+  color: #ffc107;
+  border-color: #ffc107;
+}
+
+.btnEdit:hover {
+  background-color: #ffc107;
+  color: #fff;
+}
+
+.btnLock {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btnLock:hover {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.btnUnlock {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.btnUnlock:hover {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.btnDelete {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btnDelete:hover {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .table th,
+  .table td {
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .btn {
+    padding: 6px 8px;
+  }
+
+  .actionButtons {
+    gap: 4px;
+  }
+}
