@@ -15,16 +15,12 @@ public class RegisteredCustomerMapper {
     public static RegisteredCustomer toEntity(RegisteredCustomerDto dto, Account account) {
         RegisteredCustomer rc = new RegisteredCustomer();
         rc.setFullName(dto.getFullName());
-        rc.setDateOfBirth(dto.getDateOfBirth());
-        rc.setGender(dto.getGender());
-        rc.setPhoneNumber(dto.getPhoneNumber());
-        rc.setAddress(dto.getAddress());
-        rc.setAvatarUrl(dto.getAvatarUrl());
         rc.setAccount(account);
-        rc.setLoyalPoint(dto.getLoyalPoint());
         rc.setRegistrationDate(new Date());
+        rc.setLoyalPoint(0);
         return rc;
     }
+
 
     public static RegisteredCustomerResponseDto toResponseDto(RegisteredCustomer rc) {
         RegisteredCustomerResponseDto dto = new RegisteredCustomerResponseDto();

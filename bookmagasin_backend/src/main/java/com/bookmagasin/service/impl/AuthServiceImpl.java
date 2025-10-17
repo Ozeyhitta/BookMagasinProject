@@ -6,7 +6,7 @@ import com.bookmagasin.enums.ERole;
 import com.bookmagasin.repository.AccountRepository;
 import com.bookmagasin.repository.RegisteredCustomerRepository;
 import com.bookmagasin.service.AuthService;
-import com.bookmagasin.web.dto.RegisterCustomerDto;
+import com.bookmagasin.web.dto.RegisteredCustomerDto;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,25 +28,31 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public Account registerCustomer(RegisterCustomerDto dto) {
-        RegisteredCustomer customer = new RegisteredCustomer();
-        customer.setFullName(dto.getFullName());
-        customer.setDateOfBirth(dto.getDateOfBirth());
-        customer.setGender(dto.getGender());
-        customer.setPhoneNumber(dto.getPhoneNumber());
-        customer.setAddress(dto.getAddress());
-        customer.setAvatarUrl(dto.getAvatarUrl());
-        customer.setRegistrationDate(new Date());
-        customer.setLoyalPoint(0);
-        registeredCustomerRepository.save(customer);
+    public Account registerCustomer(RegisteredCustomerDto dto) {
+        // 1️⃣ Kiểm tra email đã tồn tại chưa
+        if (accountRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new RuntimeException("Email đã được sử dụng!");
+        }
 
+        // 2️⃣ Tạo account
         Account account = new Account();
         account.setEmail(dto.getEmail());
         account.setPassword(passwordEncoder.encode(dto.getPassword()));
         account.setRole(ERole.CUSTOMER);
         account.setActivated(true);
-        account.setUser(customer);
+        account = accountRepository.save(account);
 
+        // 3️⃣ Tạo registered customer
+        RegisteredCustomer customer = new RegisteredCustomer();
+        customer.setFullName(dto.getFullName());
+        customer.setAccount(account);
+        customer.setRegistrationDate(new Date());
+        customer.setLoyalPoint(0);
+
+        registeredCustomerRepository.save(customer);
+
+        // 4️⃣ Liên kết 2 chiều
+        account.setUser(customer);
         return accountRepository.save(account);
     }
 }

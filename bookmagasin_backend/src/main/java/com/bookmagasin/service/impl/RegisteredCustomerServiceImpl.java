@@ -25,9 +25,10 @@ public class RegisteredCustomerServiceImpl implements RegisteredCustomerService 
 
     @Override
     public RegisteredCustomerResponseDto create(RegisteredCustomerDto dto) {
-        Account account = accountRepository.findById(dto.getAccountId())
+        Account account = accountRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         RegisteredCustomer rc = RegisteredCustomerMapper.toEntity(dto, account);
+
         return RegisteredCustomerMapper.toResponseDto(registeredCustomerRepository.save(rc));
     }
 
@@ -51,22 +52,20 @@ public class RegisteredCustomerServiceImpl implements RegisteredCustomerService 
         RegisteredCustomer rc = registeredCustomerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Registered customer not found"));
 
-        rc.setFullName(dto.getFullName());
-        rc.setDateOfBirth(dto.getDateOfBirth());
-        rc.setGender(dto.getGender());
-        rc.setPhoneNumber(dto.getPhoneNumber());
-        rc.setAddress(dto.getAddress());
-        rc.setAvatarUrl(dto.getAvatarUrl());
-        rc.setLoyalPoint(dto.getLoyalPoint());
+        // Chỉ cập nhật những trường đang có trong DTO
+        if (dto.getFullName() != null && !dto.getFullName().isEmpty()) {
+            rc.setFullName(dto.getFullName());
+        }
 
-        if (dto.getAccountId() > 0) {
-            Account account = accountRepository.findById(dto.getAccountId())
+        if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
+            Account account = accountRepository.findByEmail(dto.getEmail())
                     .orElseThrow(() -> new RuntimeException("Account not found"));
             rc.setAccount(account);
         }
 
         return RegisteredCustomerMapper.toResponseDto(registeredCustomerRepository.save(rc));
     }
+
 
     @Override
     public void delete(int id) {
