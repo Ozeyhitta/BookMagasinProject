@@ -62,6 +62,30 @@ export default function MainPage() {
           image:
             "https://i.pinimg.com/736x/b7/ad/a1/b7ada1914f3c4ef6ca1c99368f376e31.jpg",
         },
+        {
+          title: "Sức Mạnh Của Thói Quen",
+          price: "110.000đ",
+          oldPrice: "140.000đ",
+          discount: "-30%",
+          image:
+            "https://i.pinimg.com/736x/b7/ad/a1/b7ada1914f3c4ef6ca1c99368f376e31.jpg",
+        },
+        {
+          title: "Sức Mạnh Của Thói Quen",
+          price: "110.000đ",
+          oldPrice: "140.000đ",
+          discount: "-30%",
+          image:
+            "https://i.pinimg.com/736x/b7/ad/a1/b7ada1914f3c4ef6ca1c99368f376e31.jpg",
+        },
+        {
+          title: "Sức Mạnh Của Thói Quen",
+          price: "110.000đ",
+          oldPrice: "140.000đ",
+          discount: "-30%",
+          image:
+            "https://i.pinimg.com/736x/b7/ad/a1/b7ada1914f3c4ef6ca1c99368f376e31.jpg",
+        },
       ],
     },
     {
@@ -74,6 +98,30 @@ export default function MainPage() {
           discount: "-10%",
           image:
             "https://www.netabooks.vn/Data/Sites/1/Product/78210/coi-nguon-cua-hanh-phuc.jpg",
+        },
+        {
+          title: "Sức Mạnh Của Thói Quen",
+          price: "110.000đ",
+          oldPrice: "140.000đ",
+          discount: "-30%",
+          image:
+            "https://i.pinimg.com/736x/b7/ad/a1/b7ada1914f3c4ef6ca1c99368f376e31.jpg",
+        },
+        {
+          title: "Sức Mạnh Của Thói Quen",
+          price: "110.000đ",
+          oldPrice: "140.000đ",
+          discount: "-30%",
+          image:
+            "https://i.pinimg.com/736x/b7/ad/a1/b7ada1914f3c4ef6ca1c99368f376e31.jpg",
+        },
+        {
+          title: "Sức Mạnh Của Thói Quen",
+          price: "110.000đ",
+          oldPrice: "140.000đ",
+          discount: "-30%",
+          image:
+            "https://i.pinimg.com/736x/b7/ad/a1/b7ada1914f3c4ef6ca1c99368f376e31.jpg",
         },
         {
           title: "Sức Mạnh Của Thói Quen",
@@ -135,7 +183,7 @@ export default function MainPage() {
           {books.map((section, index) => (
             <div key={index} className={styles.productSection}>
               <h3 className={styles.sectionTitle}>{section.section}</h3>
-              <div className="product-grid">
+              <div className={styles.productGrid}>
                 {section.items.map((book, i) => (
                   <ProductCard key={i} {...book} />
                 ))}
