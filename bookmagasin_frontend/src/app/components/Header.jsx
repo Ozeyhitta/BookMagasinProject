@@ -62,7 +62,7 @@ export default function Header() {
         <div className="account">
           {isLoggedIn ? (
             <>
-              <a href="#">TÀI KHOẢN</a>
+              <a href="/account">TÀI KHOẢN</a>
               <a href="#" onClick={handleLogout}>
                 ĐĂNG XUẤT
               </a>
