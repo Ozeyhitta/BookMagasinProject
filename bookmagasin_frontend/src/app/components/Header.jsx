@@ -79,7 +79,11 @@ export default function Header() {
       {/* Phần chính */}
       <div className="header-main">
         {/* Logo */}
-        <div className="logo">
+        <div
+          className="logo"
+          onClick={() => (window.location.href = "/mainpage")}
+          style={{ cursor: "pointer" }}
+        >
           <span className="green">vina</span>
           <span className="red">book</span>
           <span className="green">.com</span>

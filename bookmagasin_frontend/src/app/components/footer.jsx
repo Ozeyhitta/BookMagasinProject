@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
 import "./footer.css";
+import PartnerLogo from "./PartnerLogo";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
@@ -48,11 +49,21 @@ export default function Footer() {
             <div className="footer-column">
               <h4 className="footer-title">VỀ CÔNG TY</h4>
               <ul className="footer-links">
-                <li><a href="/about">Giới thiệu công ty</a></li>
-                <li><a href="/recruitment">Tuyển dụng</a></li>
-                <li><a href="/agent">Chương trình đại lý</a></li>
-                <li><a href="/privacy">Chính sách bảo mật</a></li>
-                <li><a href="/refund">Chính sách đổi trả</a></li>
+                <li>
+                  <a href="/about">Giới thiệu công ty</a>
+                </li>
+                <li>
+                  <a href="/recruitment">Tuyển dụng</a>
+                </li>
+                <li>
+                  <a href="/agent">Chương trình đại lý</a>
+                </li>
+                <li>
+                  <a href="/privacy">Chính sách bảo mật</a>
+                </li>
+                <li>
+                  <a href="/refund">Chính sách đổi trả</a>
+                </li>
               </ul>
             </div>
 
@@ -60,11 +71,21 @@ export default function Footer() {
             <div className="footer-column">
               <h4 className="footer-title">TRỢ GIÚP</h4>
               <ul className="footer-links">
-                <li><a href="/guide">Quy định sử dụng</a></li>
-                <li><a href="/shopping-guide">Hướng dẫn mua hàng</a></li>
-                <li><a href="/payment">Phương thức thanh toán</a></li>
-                <li><a href="/shipping">Phương thức vận chuyển</a></li>
-                <li><a href="/ebook">Ứng dụng đọc ebook</a></li>
+                <li>
+                  <a href="/guide">Quy định sử dụng</a>
+                </li>
+                <li>
+                  <a href="/shopping-guide">Hướng dẫn mua hàng</a>
+                </li>
+                <li>
+                  <a href="/payment">Phương thức thanh toán</a>
+                </li>
+                <li>
+                  <a href="/shipping">Phương thức vận chuyển</a>
+                </li>
+                <li>
+                  <a href="/ebook">Ứng dụng đọc ebook</a>
+                </li>
               </ul>
             </div>
 
@@ -72,10 +93,18 @@ export default function Footer() {
             <div className="footer-column">
               <h4 className="footer-title">TIN TỨC SÁCH</h4>
               <ul className="footer-links">
-                <li><a href="/news">Tin tức</a></li>
-                <li><a href="/reviews">Chân dung</a></li>
-                <li><a href="/search">Điểm sách</a></li>
-                <li><a href="/criticism">Phê bình</a></li>
+                <li>
+                  <a href="/news">Tin tức</a>
+                </li>
+                <li>
+                  <a href="/reviews">Chân dung</a>
+                </li>
+                <li>
+                  <a href="/search">Điểm sách</a>
+                </li>
+                <li>
+                  <a href="/criticism">Phê bình</a>
+                </li>
               </ul>
             </div>
 
@@ -104,18 +133,29 @@ export default function Footer() {
 
             {/* Column 5 */}
             <div className="footer-column">
-              <h4 className="footer-title">ĐỐI TÁC VẬN CHUYỂN</h4>
-              <div className="partner-logos">
-                <div className="partner-logo vinabook">vinabook.com</div>
-                <div className="partner-logo vnpost">VN POST</div>
-                <div className="partner-logo ghn">GHN</div>
-                <div className="partner-logo dhl">DHL</div>
-              </div>
-              <h4 className="footer-title mt-20">ĐỐI TÁC BÁN HÀNG</h4>
-              <div className="partner-logos">
-                <div className="partner-logo lazada">Lazada</div>
-                <div className="partner-logo shopee">Shopee</div>
-                <div className="partner-logo tiktok">TikTok</div>
+              <div className="partner-sections">
+                <div className="partner-section">
+                  <h4 className="footer-title">ĐỐI TÁC VẬN CHUYỂN</h4>
+                  <div className="partner-logos">
+                    <div className="partner-logo vinabook">vinabook.com</div>
+                    <div className="partner-logo vnpost">VN POST</div>
+                    <div className="partner-logo ghn">GHN</div>
+                    <div className="partner-logo dhl">DHL</div>
+                  </div>
+                </div>
+                <div className="partner-section">
+                  <h4 className="footer-title">ĐỐI TÁC BÁN HÀNG</h4>
+                  <div className="partner-logos">
+                    <PartnerLogo
+                      href="https://www.lazada.vn/"
+                      imgSrc="https://i.pinimg.com/736x/5a/aa/b7/5aaab7b308944b025c9bff936a4c50d6.jpg"
+                      name="Lazada"
+                      className="lazada"
+                    />
+                    <div className="partner-logo shopee">Shopee</div>
+                    <div className="partner-logo tiktok">TikTok</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -130,10 +170,14 @@ export default function Footer() {
             <a href="/search?q=truyện-đan-brown">truyện đan brown</a>
             <a href="/search?q=sách-warren-buffett">sách warren buffett</a>
             <a href="/search?q=digital-marketing">sách digital marketing</a>
-            <a href="/search?q=truyện-nguyễn-nhật-ánh">truyện mới của nguyễn nhật ánh</a>
+            <a href="/search?q=truyện-nguyễn-nhật-ánh">
+              truyện mới của nguyễn nhật ánh
+            </a>
             <a href="/search?q=sách-cho-con">sách cho con</a>
             <a href="/search?q=sách-hay-về-gia-đình">sách hay về gia đình</a>
-            <a href="/search?q=giáo-trình-tiếng-anh">giáo trình tiếng anh trẻ em</a>
+            <a href="/search?q=giáo-trình-tiếng-anh">
+              giáo trình tiếng anh trẻ em
+            </a>
             <a href="/search?q=sách-hay-kinh-tế">sách hay về kinh tế</a>
             <a href="/search?q=sách-doanh-nhân">sách doanh nhân</a>
             <a href="/search?q=sách-học-tiếng-trung">sách học tiếng trung</a>
@@ -152,7 +196,8 @@ export default function Footer() {
               <h4>CÔNG TY CỔ PHẦN THƯƠNG MẠI DỊCH VỤ MÊ KÔNG COM</h4>
               <p>
                 <MapPin size={16} className="inline-icon" />
-                Địa chỉ: 332 Luy Bán Bích, Phường Tân Phú, TP. Hồ Chí Minh - MST: 0303615027
+                Địa chỉ: 332 Luy Bán Bích, Phường Tân Phú, TP. Hồ Chí Minh -
+                MST: 0303615027
               </p>
               <p>
                 <Phone size={16} className="inline-icon" />
