@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults()) // ✅ Cho phép gọi từ frontend
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // ✅ Cho phép không cần token
+                        .requestMatchers("/**").permitAll()  // ✅ Cho phép không cần token
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

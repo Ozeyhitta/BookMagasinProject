@@ -1,6 +1,5 @@
 package com.bookmagasin.web.dtoResponse;
 
-import com.bookmagasin.web.dto.AuthorDto;
 import com.bookmagasin.web.dto.BookDetailDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,7 +17,7 @@ public class BookResponseDto {
     private double sellingPrice;
     private Date publicationDate;
     private int edition;
-    private AuthorDto author;
+    private String author;
     private BookDetailDto bookDetail;
     private List<CategoryResponseDto> categories;
 }

@@ -41,9 +41,9 @@ public class Book {
     @OneToMany(mappedBy = "book",cascade = CascadeType.ALL)
     private List<OrderItem> orderItems;
 
-    @ManyToOne
-    @JoinColumn(name = "author_id")
-    private Author author;
+
+    @JoinColumn(name = "author_name")
+    private String author;
 
     @OneToMany(mappedBy = "book",cascade = CascadeType.ALL)
     @JsonBackReference

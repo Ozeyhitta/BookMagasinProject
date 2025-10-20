@@ -13,6 +13,6 @@ public interface BookRepository extends JpaRepository<Book,Integer> {
     boolean existsByTitle(String title);
 
     List<Book> findByEdition(int edition);
-    List<Book> findByAuthorId(int authorId);
+    List<Book> findByAuthor(String author);
 
 }

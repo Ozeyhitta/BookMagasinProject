@@ -17,7 +17,7 @@ public class BookDto {
     private double sellingPrice;
     private Date publicationDate;
     private int edition;
-    private int authorId;       // chỉ map id thay vì cả Author entity
+    private String author;       // chỉ map id thay vì cả Author entity
     private int bookDetailId; // tương tự cho BookDetail
     private List<Integer> categoryIds;
 

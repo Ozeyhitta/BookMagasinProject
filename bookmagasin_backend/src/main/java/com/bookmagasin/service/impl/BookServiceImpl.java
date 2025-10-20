@@ -3,17 +3,13 @@ package com.bookmagasin.service.impl;
 
 import com.bookmagasin.entity.Book;
 import com.bookmagasin.entity.BookDetail;
-import com.bookmagasin.repository.AuthorRepository;
 import com.bookmagasin.repository.BookDetailRepository;
 import com.bookmagasin.repository.BookRepository;
 import com.bookmagasin.service.BookService;
-import com.bookmagasin.web.dto.AuthorDto;
 import com.bookmagasin.web.dto.BookDetailDto;
 import com.bookmagasin.web.dto.BookDto;
 import com.bookmagasin.entity.Category;
 
-import com.bookmagasin.web.dto.CategoryDto;
-import com.bookmagasin.web.dtoResponse.AuthorResponseDto;
 import com.bookmagasin.web.dtoResponse.BookResponseDto;
 import com.bookmagasin.web.dtoResponse.CategoryResponseDto;
 import org.springframework.stereotype.Service;
@@ -25,16 +21,13 @@ import java.util.stream.Collectors;
 public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
-    private final AuthorRepository authorRepository;
     private final BookDetailRepository bookDetailRepository;
 
-    public BookServiceImpl(BookRepository bookRepository,
-                           AuthorRepository authorRepository,
-                           BookDetailRepository bookDetailRepository) {
+    public BookServiceImpl(BookRepository bookRepository, BookDetailRepository bookDetailRepository) {
         this.bookRepository = bookRepository;
-        this.authorRepository = authorRepository;
         this.bookDetailRepository = bookDetailRepository;
     }
+
 
     // ------- Dto cơ bản ----------
     @Override
@@ -77,7 +70,7 @@ public class BookServiceImpl implements BookService {
         dto.setSellingPrice(book.getSellingPrice());
         dto.setPublicationDate(book.getPublicationDate());
         dto.setEdition(book.getEdition());
-        dto.setAuthorId(book.getAuthor() != null ? book.getAuthor().getId() : 0);
+        dto.setAuthor(book.getAuthor());
         dto.setBookDetailId(book.getBookDetail() != null ? book.getBookDetail().getId() : 0);
         // map category IDs
         if (book.getCategories() != null && !book.getCategories().isEmpty()) {
@@ -94,10 +87,7 @@ public class BookServiceImpl implements BookService {
         book.setSellingPrice(dto.getSellingPrice());
         book.setPublicationDate(dto.getPublicationDate());
         book.setEdition(dto.getEdition());
-
-        if (dto.getAuthorId() > 0) {
-            authorRepository.findById(dto.getAuthorId()).ifPresent(book::setAuthor);
-        }
+        book.setAuthor(dto.getAuthor());
 
         if (dto.getBookDetailId() > 0) {
             bookDetailRepository.findById(dto.getBookDetailId()).ifPresent(book::setBookDetail);
@@ -141,13 +131,7 @@ public class BookServiceImpl implements BookService {
         dto.setSellingPrice(book.getSellingPrice());
         dto.setPublicationDate(book.getPublicationDate());
         dto.setEdition(book.getEdition());
-        //book author
-        if (book.getAuthor() != null) {
-            AuthorDto authorDto=new AuthorDto();
-            authorDto.setId(book.getAuthor().getId());
-            authorDto.setName(book.getAuthor().getName());
-            dto.setAuthor(authorDto);
-        }
+        dto.setAuthor(book.getAuthor());
         //book details
         if (book.getBookDetail() != null) {
             BookDetail bd = book.getBookDetail();
