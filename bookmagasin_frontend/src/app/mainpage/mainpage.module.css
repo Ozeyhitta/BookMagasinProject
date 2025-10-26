@@ -17,6 +17,7 @@ body {
 }
 
 /* ==== DANH MỤC ==== */
+
 .categoryBox {
   width: 250px;
   background-color: #fff;
@@ -43,26 +44,39 @@ body {
 
 .categoryItem {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 8px 5px;
+  justify-content: space-between;
+  padding: 10px 8px;
   color: #333;
   font-size: 15px;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+  background: linear-gradient(to right, #fff, #fff);
 }
 
 .categoryItem:hover {
-  background-color: #f5f5f5;
+  background: linear-gradient(to right, #e8f5e9, #ffffff);
   color: #007600;
+  transform: translateX(3px);
+  box-shadow: 0 1px 4px rgba(0, 118, 0, 0.1);
+}
+.categoryIcon {
+  margin-right: 8px;
+  font-size: 16px;
 }
 
 .arrow {
   color: #aaa;
   font-weight: bold;
+  font-size: 16px;
+  transition: transform 0.25s ease;
 }
 
+.categoryItem:hover .arrow {
+  transform: translateX(3px);
+  color: #007600;
+}
 /* ==== BANNER ==== */
 .rightContent {
   flex: 1;
