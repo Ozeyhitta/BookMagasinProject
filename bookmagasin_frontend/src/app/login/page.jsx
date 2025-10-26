@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import "./login.css";
+import { Check, X } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -109,7 +110,11 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {error && (
+              <div className="msg error">
+                <X size={18} style={{ marginRight: 6 }} /> {error}
+              </div>
+            )}
 
             <div className="extra-links">
               <p>
@@ -144,13 +149,23 @@ export default function LoginPage() {
             </form>
 
             {resetMessage && (
-              <p
-                style={{
-                  color: resetMessage.startsWith("✅") ? "green" : "red",
-                }}
+              <div
+                className={`msg ${
+                  resetMessage.startsWith("✅") ? "success" : "error"
+                }`}
               >
-                {resetMessage}
-              </p>
+                {resetMessage.startsWith("✅") ? (
+                  <>
+                    <Check size={18} style={{ marginRight: 6 }} /> Email đặt lại
+                    mật khẩu đã được gửi!
+                  </>
+                ) : (
+                  <>
+                    <X size={18} style={{ marginRight: 6 }} />{" "}
+                    {resetMessage.replace("❌ ", "")}
+                  </>
+                )}
+              </div>
             )}
 
             <p>

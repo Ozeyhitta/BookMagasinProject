@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link"; // ✅ import Link để điều hướng
 import styles from "./Register.module.css";
 
 export default function RegisterPage() {
@@ -45,12 +46,12 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-  console.log("API base:", process.env.NEXT_PUBLIC_API_BASE);
 
   return (
     <div className={styles.wrapper}>
       <div className={styles.container}>
         <h1 className={styles.title}>Đăng ký</h1>
+
         <form className={styles.card} onSubmit={onSubmit}>
           <label className={styles.label}>
             Họ tên
@@ -102,6 +103,14 @@ export default function RegisterPage() {
             </p>
           )}
         </form>
+
+        {/* ✅ Thêm dòng đăng nhập */}
+        <p className={styles.loginText}>
+          Đã có tài khoản?{" "}
+          <Link href="/login" className={styles.loginLink}>
+            Đăng nhập
+          </Link>
+        </p>
       </div>
     </div>
   );
