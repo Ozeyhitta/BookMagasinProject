@@ -88,3 +88,147 @@
   align-items: center;
   margin-bottom: 10px;
 }
+
+.resultsSection {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.resultsTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111;
+}
+
+.resultsTitle span {
+  color: #e11d48;
+}
+
+.resultsCount {
+  color: #555;
+  margin-bottom: 25px;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.productCard {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.productCard:hover {
+  transform: translateY(-4px);
+}
+
+.imageWrapper {
+  position: relative;
+}
+
+.image {
+  width: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.discountTag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #e11d48;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.soldOutOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  color: #333;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.productName {
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  text-align: left;
+  height: 40px;
+  overflow: hidden;
+}
+
+.priceRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.price {
+  color: #e11d48;
+  font-weight: 700;
+}
+
+.oldPrice {
+  color: #777;
+  text-decoration: line-through;
+  font-size: 13px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  font-size: 15px;
+}
+
+.pageNumber {
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  color: #555;
+  transition: all 0.2s ease;
+}
+
+.pageNumber:hover {
+  border-color: #c00;
+  color: #c00;
+}
+
+.active {
+  background-color: #c00;
+  color: #fff;
+  border-color: #c00;
+}
+
+.dots {
+  color: #aaa;
+}
+
+.nextArrow {
+  cursor: pointer;
+  font-weight: bold;
+  color: #333;
+}
+
+
