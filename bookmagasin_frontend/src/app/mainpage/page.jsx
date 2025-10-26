@@ -139,17 +139,15 @@ export default function MainPage() {
     <div className={styles.mainWrapper}>
       <div className={styles.layout}>
         {/* --- DANH MỤC --- */}
-        <div className={styles.categoryBox}>
-          <h3 className={styles.categoryTitle}>Danh mục</h3>
-          <ul className={styles.categoryList}>
-            {categories.map((item, index) => (
-              <li key={index} className={styles.categoryItem}>
-                {item}
-                <span className={styles.arrow}>›</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ul className={styles.categoryList}>
+          {categories.map((item, index) => (
+            <li key={index} className={styles.categoryItem}>
+              <span className={styles.categoryIcon}></span>
+              <span className={styles.categoryText}>{item}</span>
+              <span className={styles.arrow}>›</span>
+            </li>
+          ))}
+        </ul>
 
         {/* --- BANNER + PHẦN SÁCH --- */}
         <div className={styles.rightContent}>
