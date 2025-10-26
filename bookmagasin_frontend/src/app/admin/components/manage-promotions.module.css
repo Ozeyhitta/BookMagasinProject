@@ -1,0 +1,143 @@
+.container {
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.tableWrapper {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table thead {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.table th {
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.table td {
+  padding: 15px;
+  color: #555;
+}
+
+.nameCell {
+  font-weight: 500;
+  color: #333;
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge.active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.badge.inactive {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.typeBadge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.typeBadge.discount {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.typeBadge.voucher {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.typeBadge.coupon {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.typeBadge.freeShipping {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.btnView {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.btnView:hover {
+  background-color: #1976d2;
+  color: white;
+}
+
+.btnEdit {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.btnEdit:hover {
+  background-color: #f57c00;
+  color: white;
+}
+
+.btnDelete {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.btnDelete:hover {
+  background-color: #d32f2f;
+  color: white;
+}

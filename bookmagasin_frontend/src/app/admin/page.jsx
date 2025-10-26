@@ -1,8 +1,23 @@
 "use client"
 import { useState } from "react"
 import styles from "./admin.module.css"
-import { LayoutGrid, Users, UserCheck, Tag, BarChart3, Book, Download, Plus } from "lucide-react"
+import {
+  LayoutGrid,
+  Users,
+  UserCheck,
+  Tag,
+  BarChart3,
+  Book,
+  Download,
+  Plus
+} from "lucide-react"
+
+// Import các component quản lý
 import ManageCustomers from "./components/ManageCustomers"
+import ManageStaffs from "./components/ManageStaffs"
+import ManagePromotions from "./components/ManagePromotions"
+import ViewSalesReports from "./components/ViewSalesReports"
+import ManageBooks from "./components/ManageBooks" // ✅ Thêm mới
 
 export default function AdminPage() {
   const [activeMenu, setActiveMenu] = useState("dashboards")
@@ -13,8 +28,8 @@ export default function AdminPage() {
     { id: "customers", label: "Manage Customers", icon: Users },
     { id: "staffs", label: "Manage Staffs", icon: UserCheck },
     { id: "promotions", label: "Manage Promotions", icon: Tag },
-    { id: "reports", label: "View Sale Reports", icon: BarChart3 },
-    { id: "books", label: "Manage Books", icon: Book },
+    { id: "reports", label: "View Sales Reports", icon: BarChart3 },
+    { id: "books", label: "Manage Books", icon: Book }, // ✅ Thêm menu mới
   ]
 
   const outlineItems = [
@@ -32,15 +47,21 @@ export default function AdminPage() {
     switch (activeMenu) {
       case "customers":
         return <ManageCustomers />
+      case "staffs":
+        return <ManageStaffs />
+      case "promotions":
+        return <ManagePromotions />
+      case "reports":
+        return <ViewSalesReports />
+      case "books":
+        return <ManageBooks /> // ✅ Thêm phần quản lý sách
       case "dashboards":
       default:
-        return <p>Dashboard content will be displayed here</p>
+        return <p>Dashboard content will be displayed here.</p>
     }
   }
 
-  const handleMenuClick = (id) => {
-    setActiveMenu(id)
-  }
+  const handleMenuClick = (id) => setActiveMenu(id)
 
   return (
     <div className={styles.dashboardWrapper}>
@@ -117,7 +138,12 @@ export default function AdminPage() {
               <Download size={16} />
               Export
             </button>
-            <input type="text" className={styles.dateRangeInput} value="Jan 20, 2025 - Feb 09, 2025" readOnly />
+            <input
+              type="text"
+              className={styles.dateRangeInput}
+              value="Jan 20, 2025 - Feb 09, 2025"
+              readOnly
+            />
           </div>
         </div>
 
@@ -128,21 +154,11 @@ export default function AdminPage() {
         <div className={styles.footer}>
           <p>2025 © Keenthemes Inc.</p>
           <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>
-              Docs
-            </a>
-            <a href="#" className={styles.footerLink}>
-              Purchase
-            </a>
-            <a href="#" className={styles.footerLink}>
-              FAQ
-            </a>
-            <a href="#" className={styles.footerLink}>
-              Support
-            </a>
-            <a href="#" className={styles.footerLink}>
-              License
-            </a>
+            <a href="#" className={styles.footerLink}>Docs</a>
+            <a href="#" className={styles.footerLink}>Purchase</a>
+            <a href="#" className={styles.footerLink}>FAQ</a>
+            <a href="#" className={styles.footerLink}>Support</a>
+            <a href="#" className={styles.footerLink}>License</a>
           </div>
         </div>
       </div>
