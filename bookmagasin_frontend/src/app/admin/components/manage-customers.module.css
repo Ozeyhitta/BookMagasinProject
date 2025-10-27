@@ -1,16 +1,144 @@
 .container {
   width: 100%;
+  padding: 20px;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #28a745;
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.addButton:hover {
+  background-color: #218838;
+}
+
+/* Form thêm khách hàng */
+.form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+  position: relative;
+  z-index: 0;
+}
+
+.formRow {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.formRow input,
+.formRow select {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  background-color: #fff;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.saveButton {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.saveButton:hover {
+  background-color: #0069d9;
+}
+
+.cancelButton {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cancelButton:hover {
+  background-color: #c82333;
+}
+
+/* Thanh tìm kiếm */
+.searchBar {
+  position: relative;
+  width: 320px;
+  margin-bottom: 20px;
+}
+
+.searchBar input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  color: #000;
+  background-color: #fff;
+  outline: none;
+}
+
+.searchBar input::placeholder {
+  color: #555;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #333;
+}
+
+/* Bảng */
 .tableWrapper {
   width: 100%;
   overflow-x: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  position: relative;
+  z-index: 5;
 }
 
 .table thead {
@@ -68,10 +196,13 @@
   color: #721c24;
 }
 
+/* Nút thao tác */
 .actionButtons {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 10;
 }
 
 .btn {
@@ -85,13 +216,17 @@
   justify-content: center;
   transition: all 0.2s ease;
   font-size: 14px;
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
 }
 
 .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
 
+/* Màu nút */
 .btnView {
   color: #667eea;
   border-color: #667eea;
@@ -142,6 +277,7 @@
   color: #fff;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .table th,
   .table td {
@@ -155,5 +291,9 @@
 
   .actionButtons {
     gap: 4px;
+  }
+
+  .formRow {
+    flex-direction: column;
   }
 }
