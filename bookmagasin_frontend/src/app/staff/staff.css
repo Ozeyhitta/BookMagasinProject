@@ -380,3 +380,22 @@
 
 /* small aesthetic helpers */
 a, button { font-family: inherit; }
+/* --- Sửa lỗi chữ trắng trong ô chọn danh mục --- */
+select, option {
+  color: #000 !important; /* Chữ đen */
+  background-color: #fff !important; /* Nền trắng để dễ đọc */
+}
+
+/* Nếu bạn muốn hộp chọn có viền đẹp hơn */
+select {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 15px;
+  outline: none;
+}
+
+select:focus {
+  border-color: #7b2ff7; /* Màu tím nhẹ khi focus */
+  box-shadow: 0 0 4px rgba(123, 47, 247, 0.4);
+}

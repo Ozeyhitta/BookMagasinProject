@@ -149,7 +149,7 @@ function BookList() {
       { title: "Cha giàu cha nghèo", author: "Robert Kiyosaki", price: 150000 },
     ],
     "Văn học": [],
-    "Tâm lý học": [
+    "Tâm lý học": [ 
       { title: "Đắc nhân tâm", author: "Dale Carnegie", price: 89000 },
       { title: "Tâm lý học đám đông", author: "Gustave Le Bon", price: 110000 },
     ],

@@ -179,6 +179,124 @@ export default function SearchPage() {
         />
         Khôi phục bộ lọc
       </button>
+      {/* Kết quả tìm kiếm */}
+      <div className={styles.resultsSection}>
+        <h2 className={styles.resultsTitle}>
+          Kết quả tìm kiếm cho <span>"văn học"</span>
+        </h2>
+        <p className={styles.resultsCount}>Có 894 sản phẩm cho tìm kiếm</p>
+
+        <div className={styles.productGrid}>
+          {/* Ví dụ 4 sản phẩm mẫu */}
+          {[
+            {
+              id: 1,
+              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
+              price: 41600,
+              oldPrice: 52000,
+              discount: "-20%",
+              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
+              soldOut: false,
+            },
+            {
+              id: 2,
+              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
+              price: 41600,
+              oldPrice: 52000,
+              discount: "-20%",
+              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
+              soldOut: false,
+            },
+            {
+              id: 3,
+              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
+              price: 41600,
+              oldPrice: 52000,
+              discount: "-20%",
+              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
+              soldOut: false,
+            },
+            {
+              id: 4,
+              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
+              price: 41600,
+              oldPrice: 52000,
+              discount: "-20%",
+              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
+              soldOut: false,
+            },
+            {
+              id: 5,
+              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
+              price: 41600,
+              oldPrice: 52000,
+              discount: "-20%",
+              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
+              soldOut: false,
+            },
+            {
+              id: 6,
+              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
+              price: 41600,
+              oldPrice: 52000,
+              discount: "-20%",
+              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
+              soldOut: false,
+            },
+            {
+              id: 7,
+              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
+              price: 41600,
+              oldPrice: 52000,
+              discount: "-20%",
+              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
+              soldOut: false,
+            },
+            {
+              id: 8,
+              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
+              price: 41600,
+              oldPrice: 52000,
+              discount: "-20%",
+              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
+              soldOut: false,
+            },
+          ].map((item) => (
+            <div key={item.id} className={styles.productCard}>
+              <div className={styles.imageWrapper}>
+                {item.soldOut ? (
+                  <div className={styles.soldOutOverlay}>Hết hàng</div>
+                ) : (
+                  item.discount && (
+                    <span className={styles.discountTag}>{item.discount}</span>
+                  )
+                )}
+                <img src={item.image} alt={item.name} className={styles.image} />
+              </div>
+              <p className={styles.productName}>{item.name}</p>
+              <div className={styles.priceRow}>
+                <span className={styles.price}>
+                  {item.price.toLocaleString("vi-VN")}đ
+                </span>
+                {item.oldPrice && (
+                  <span className={styles.oldPrice}>
+                    {item.oldPrice.toLocaleString()}đ
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Phân trang tĩnh */}
+      <div className={styles.pagination}>
+        <span className={`${styles.pageNumber} ${styles.active}`}>1</span>
+        <span className={styles.pageNumber}>2</span>
+        <span className={styles.pageNumber}>3</span>
+        <span className={styles.dots}>...</span>
+        <span className={styles.pageNumber}>38</span>
+        <span className={styles.nextArrow}>→</span>
+      </div>
     </div>
   );
 }
