@@ -2,22 +2,36 @@
 import { useState, useEffect } from "react";
 import styles from "./mainpage.module.css";
 import ProductCard from "../category/ProductCard"; // ✅ reuse CategoryPage’s ProductCard
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookText } from "lucide-react";
 
 export default function MainPage() {
   const categories = [
-    "Sách Kinh Tế",
-    "Sách Văn Học Trong Nước",
-    "Sách Văn Học Nước Ngoài",
-    "Sách Thưởng Thức Đời Sống",
-    "Sách Thiếu Nhi",
-    "Sách Phát Triển Bản Thân",
-    "Sách Tin Học Ngoại Ngữ",
-    "Sách Chuyên Ngành",
-    "Sách Giáo Khoa - Giáo Trình",
-    "Sách Phát Hành 2024",
-    "Sách Mới 2025",
-    "Review Sách",
+    {
+      label: "Sách Kinh Tế",
+      children: [
+        "Ngoại Thương",
+        "Marketing - Bán Hàng",
+        "Nhân Sự & Việc Làm",
+        "Nhân Vật & Bài Học Kinh Doanh",
+        "Phân Tích & Môi Trường Kinh Tế",
+        "Quản Trị - Lãnh Đạo",
+        "Tài Chính & Tiền Tệ",
+        "Tài Chính – Kế Toán",
+        "Văn Bản Luật",
+        "Khởi Nghiệp/Kỹ Năng Làm Việc",
+      ],
+    },
+    { label: "Sách Văn Học Trong Nước" },
+    { label: "Sách Văn Học Nước Ngoài" },
+    { label: "Sách Thưởng Thức Đời Sống" },
+    { label: "Sách Thiếu Nhi" },
+    { label: "Sách Phát Triển Bản Thân" },
+    { label: "Sách Tin Học Ngoại Ngữ" },
+    { label: "Sách Chuyên Ngành" },
+    { label: "Sách Giáo Khoa - Giáo Trình" },
+    { label: "Sách Phát Hành 2024" },
+    { label: "Sách Mới 2025" },
+    { label: "Review Sách" },
   ];
 
   const banners = [
@@ -27,6 +41,8 @@ export default function MainPage() {
   ];
 
   const [current, setCurrent] = useState(0);
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
   const prevBanner = () =>
     setCurrent((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
   const nextBanner = () =>
@@ -139,15 +155,43 @@ export default function MainPage() {
     <div className={styles.mainWrapper}>
       <div className={styles.layout}>
         {/* --- DANH MỤC --- */}
-        <ul className={styles.categoryList}>
-          {categories.map((item, index) => (
-            <li key={index} className={styles.categoryItem}>
-              <span className={styles.categoryIcon}></span>
-              <span className={styles.categoryText}>{item}</span>
-              <span className={styles.arrow}>›</span>
-            </li>
-          ))}
-        </ul>
+
+        <div className={styles.categoryBox}>
+          <h2 className={styles.categoryTitle}>
+            <BookText className={styles.categoryIconTitle} />
+            Danh mục sản phẩm
+          </h2>
+
+          <ul className={styles.categoryList}>
+            {categories.map((cat, index) => (
+              <li
+                key={index}
+                className={styles.categoryItem}
+                onMouseEnter={() => setHoveredIdx(index)}
+                onMouseLeave={() => setHoveredIdx(null)}
+              >
+                <span className={styles.categoryIcon}></span>
+                <span className={styles.categoryText}>{cat.label}</span>
+                <span className={styles.arrow}>›</span>
+
+                {/* ✅ Submenu hiện khi hover */}
+                {hoveredIdx === index && cat.children?.length > 0 && (
+                  <div
+                    className={styles.subMenu}
+                    onMouseEnter={() => setHoveredIdx(index)}
+                    onMouseLeave={() => setHoveredIdx(null)}
+                  >
+                    {cat.children.map((sub, i) => (
+                      <div key={i} className={styles.subMenuItem}>
+                        {sub}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* --- BANNER + PHẦN SÁCH --- */}
         <div className={styles.rightContent}>
