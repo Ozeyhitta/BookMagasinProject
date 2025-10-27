@@ -11,9 +11,9 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 20px;
-  max-width: 1200px;
-  margin: 20px auto;
+  gap: 30px;
+  max-width: 1400px;
+  margin: 30px auto;
 }
 
 /* ==== DANH MỤC ==== */
@@ -25,15 +25,25 @@ body {
   border-radius: 6px;
   padding: 15px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 10;
 }
 
 .categoryTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 12px;
   color: #333;
   border-left: 4px solid #007600;
   padding-left: 6px;
+}
+.categoryIconTitle {
+  color: #007600;
+  width: 20px;
+  height: 20px;
 }
 
 .categoryList {
@@ -46,13 +56,52 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 8px;
+  padding: 8px 10px;
   color: #333;
   font-size: 15px;
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.25s ease;
-  background: linear-gradient(to right, #fff, #fff);
+  background: #fff;
+  position: relative;
+}
+.subMenu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  min-width: 250px;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 8px 12px;
+  z-index: 50;
+}
+.subMenuItem {
+  padding: 8px 10px;
+  border-radius: 4px;
+  color: #333;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.subMenuItem:hover {
+  background: #e8f5e9;
+  color: #007600;
+  transform: translateX(2px);
+}
+.prev {
+  left: 10px;
+}
+.next {
+  right: 10px;
+}
+
+/* 🔹 Giúp tất cả text thẳng hàng */
+.categoryText {
+  flex: 1; /* chiếm toàn bộ khoảng giữa */
+  text-align: left;
+  padding-left: 6px; /* cách một chút so với icon */
 }
 
 .categoryItem:hover {
@@ -62,11 +111,17 @@ body {
   box-shadow: 0 1px 4px rgba(0, 118, 0, 0.1);
 }
 .categoryIcon {
-  margin-right: 8px;
-  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .arrow {
+  width: 15px;
+  text-align: right;
   color: #aaa;
   font-weight: bold;
   font-size: 16px;
@@ -85,11 +140,13 @@ body {
 }
 
 .bannerArea {
+  /* đã có position: relative OK */
   position: relative;
   width: 100%;
   overflow: hidden;
   border-radius: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* Bọc toàn bộ slider */
@@ -110,7 +167,7 @@ body {
   width: 100%;
   flex-shrink: 0;
   object-fit: cover;
-  height: 320px;
+  height: 380px;
   border-radius: 12px;
 }
 .navButton {
@@ -128,6 +185,7 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: background 0.3s;
+  z-index: 5; /* ✅ thêm dòng này để nằm trên ảnh */
 }
 
 .navButton:hover {
