@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Bell, ShoppingCart } from "lucide-react";
+import { Bell, ShoppingCart, FileClock } from "lucide-react";
 import "../components/header.css";
 
 export default function Header() {
@@ -98,6 +98,10 @@ export default function Header() {
         {/* --- Cụm bên phải gồm Thông Báo + Giỏ Hàng + Tư vấn --- */}
         <div className="right-section">
           <div className="header-icons">
+            <div className="icon-item" onClick={handleNotifications}>
+              <FileClock className="icon" />
+              <p>Lịch sử đơn hàng</p>
+            </div>
             <div className="icon-item" onClick={handleNotifications}>
               <Bell className="icon" />
               <p>Thông Báo</p>
