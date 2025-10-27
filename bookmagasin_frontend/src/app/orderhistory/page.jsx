@@ -71,11 +71,6 @@ export default function OrderHistory() {
             </button>
           ))}
         </div>
-
-        <div className={styles.actions}>
-          <button className={styles.btnOutline}>Xem hóa đơn</button>
-          <button className={styles.btnPrimary}>Xem đơn hàng</button>
-        </div>
       </div>
 
       <div className={styles.tableContainer}>

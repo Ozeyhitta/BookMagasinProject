@@ -37,36 +37,6 @@ export default function ThankYouPage() {
           Chúng tôi đã gửi xác nhận đơn hàng của bạn vào email để bạn dễ dàng theo dõi. Bạn có thể tìm thêm thông tin
           trên website và các trang mạng xã hội của chúng tôi.
         </p>
-
-        {/* Two column section */}
-        <div className={styles.sectionsContainer}>
-          {/* Connect With Us */}
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Kết nối với chúng tôi</h2>
-            <div className={styles.socialLinks}>
-              {socialLinks.map((social) => (
-                <a
-                  key={social.name}
-                  href={social.url}
-                  className={styles.socialIcon}
-                  title={social.name}
-                  onMouseEnter={() => setHoveredSocial(social.name)}
-                  onMouseLeave={() => setHoveredSocial(null)}
-                >
-                  {social.icon}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Visit Our Website */}
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Ghé thăm website của chúng tôi</h2>
-            <a href="/" className={styles.visitButton}>
-              Truy cập Website
-            </a>
-          </div>
-        </div>
       </div>
     </div>
   )
