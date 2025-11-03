@@ -90,7 +90,11 @@ export default function Header() {
       {/* --- Main Header --- */}
       <div className="header-main">
         {/* Logo */}
-        <div className="logo" onClick={goToMainPage} style={{ cursor: "pointer" }}>
+        <div
+          className="logo"
+          onClick={goToMainPage}
+          style={{ cursor: "pointer" }}
+        >
           <span className="green">vina</span>
           <span className="red">book</span>
           <span className="green">.com</span>
