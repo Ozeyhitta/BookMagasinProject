@@ -1,23 +1,34 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Bell, ShoppingCart, FileClock } from "lucide-react";
+import { useRouter } from "next/navigation";
 import "../components/header.css";
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
-  // 🔍 Kiểm tra token khi load trang
   useEffect(() => {
     const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token); // true nếu có token
+    setIsLoggedIn(!!token);
   }, []);
 
-  const handleNotifications = () => {
-    alert("Đi đến trang thông báo!");
-    // Ví dụ: window.location.href = "/notifications";
+  const goToOrderHistory = () => {
+    router.push("/orderhistory");
   };
 
-  // 🚪 Hàm đăng xuất
+  const goToNotifications = () => {
+    router.push("/notifications");
+  };
+
+  const goToMainPage = () => {
+    router.push("/mainpage");
+  };
+
+  const goToCart = () => {
+    router.push("/cart");
+  };
+
   const handleLogout = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -38,7 +49,7 @@ export default function Header() {
         localStorage.removeItem("token");
         setIsLoggedIn(false);
         alert("Đăng xuất thành công!");
-        window.location.href = "/mainpage";
+        router.push("/mainpage");
       } else {
         const text = await response.text();
         alert("Lỗi khi đăng xuất: " + text);
@@ -51,7 +62,7 @@ export default function Header() {
 
   return (
     <header className="header">
-      {/* Thanh trên cùng */}
+      {/* --- Top Bar --- */}
       <div className="header-top">
         <div className="contact-info">
           <span>📞 028.73008182</span>
@@ -62,55 +73,49 @@ export default function Header() {
         <div className="account">
           {isLoggedIn ? (
             <>
-              <a href="/account">TÀI KHOẢN</a>
+              <a onClick={() => router.push("/account")}>TÀI KHOẢN</a>
               <a href="#" onClick={handleLogout}>
                 ĐĂNG XUẤT
               </a>
             </>
           ) : (
             <>
-              <a href="/login">ĐĂNG NHẬP</a>
-              <a href="/register">ĐĂNG KÝ</a>
+              <a onClick={() => router.push("/login")}>ĐĂNG NHẬP</a>
+              <a onClick={() => router.push("/register")}>ĐĂNG KÝ</a>
             </>
           )}
         </div>
       </div>
 
-      {/* Phần chính */}
+      {/* --- Main Header --- */}
       <div className="header-main">
         {/* Logo */}
-        <div
-          className="logo"
-          onClick={() => (window.location.href = "/mainpage")}
-          style={{ cursor: "pointer" }}
-        >
+        <div className="logo" onClick={goToMainPage} style={{ cursor: "pointer" }}>
           <span className="green">vina</span>
           <span className="red">book</span>
           <span className="green">.com</span>
         </div>
 
-        {/* Thanh tìm kiếm */}
+        {/* Search Bar */}
         <div className="search-bar">
           <input type="text" placeholder="Tìm kiếm sản phẩm..." />
           <button>Tìm kiếm</button>
         </div>
 
-        {/* --- Cụm bên phải gồm Thông Báo + Giỏ Hàng + Tư vấn --- */}
+        {/* Right Group */}
         <div className="right-section">
           <div className="header-icons">
-            <div className="icon-item" onClick={handleNotifications}>
+            <div className="icon-item" onClick={goToOrderHistory}>
               <FileClock className="icon" />
               <p>Lịch sử đơn hàng</p>
             </div>
-            <div className="icon-item" onClick={handleNotifications}>
+
+            <div className="icon-item" onClick={goToNotifications}>
               <Bell className="icon" />
               <p>Thông Báo</p>
             </div>
 
-            <div
-              className="icon-item"
-              onClick={() => (window.location.href = "/cart")}
-            >
+            <div className="icon-item" onClick={goToCart}>
               <ShoppingCart className="icon" />
               <p>Giỏ Hàng</p>
             </div>
