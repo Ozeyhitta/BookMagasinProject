@@ -33,6 +33,8 @@ public class BookDetail {
     @Column(name = "description")
     private String description;
 
+
+
     @OneToOne(mappedBy = "bookDetail")
     @JsonBackReference
     private Book book;

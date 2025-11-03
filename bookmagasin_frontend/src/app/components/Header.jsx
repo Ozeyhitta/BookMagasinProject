@@ -102,6 +102,7 @@ export default function Header() {
               <FileClock className="icon" />
               <p>Lịch sử đơn hàng</p>
             </div>
+
             <div className="icon-item" onClick={handleNotifications}>
               <Bell className="icon" />
               <p>Thông Báo</p>

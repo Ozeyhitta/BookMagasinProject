@@ -140,6 +140,64 @@ export default function ProductDetail({ params }) {
           </div>
         </div>
       </div>
+      {/* ===================== SẢN PHẨM LIÊN QUAN ===================== */}
+      <div className={styles.relatedSection}>
+        <h2 className={styles.relatedTitle}>Sản phẩm liên quan</h2>
+
+        <div className={styles.relatedGrid}>
+          <div className={styles.relatedCard}>
+            <div className={styles.discountBadge}>-10%</div>
+            <img
+              src="https://cdn0.fahasa.com/media/catalog/product/i/m/image_195509.jpg"
+              alt="Nâng Cao Tư Duy Phản Biện Trong Văn Nghị Luận Xã Hội"
+            />
+            <h3>Nâng Cao Tư Duy Phản Biện Trong Văn Nghị Luận Xã Hội</h3>
+            <div className={styles.priceBox}>
+              <span className={styles.price}>94,500đ</span>
+              <span className={styles.oldPrice}>105,000đ</span>
+            </div>
+          </div>
+
+          <div className={styles.relatedCard}>
+            <div className={styles.discountBadge}>-10%</div>
+            <img
+              src="https://cdn0.fahasa.com/media/catalog/product/i/m/image_195477.jpg"
+              alt="13 Giờ Sáng - Khung Giờ Vô Thực"
+            />
+            <h3>13 Giờ Sáng - Khung Giờ Vô Thực</h3>
+            <div className={styles.priceBox}>
+              <span className={styles.price}>79,200đ</span>
+              <span className={styles.oldPrice}>88,000đ</span>
+            </div>
+          </div>
+
+          <div className={styles.relatedCard}>
+            <div className={styles.discountBadge}>-10%</div>
+            <img
+              src="https://cdn0.fahasa.com/media/catalog/product/n/g/ngonngot.jpg"
+              alt="Ngon Ngọt Thanh Thanh"
+            />
+            <h3>Ngon Ngọt Thanh Thanh</h3>
+            <div className={styles.priceBox}>
+              <span className={styles.price}>193,500đ</span>
+              <span className={styles.oldPrice}>215,000đ</span>
+            </div>
+          </div>
+
+          <div className={styles.relatedCard}>
+            <div className={styles.discountBadge}>-10%</div>
+            <img
+              src="https://cdn0.fahasa.com/media/catalog/product/m/o/momat.jpg"
+              alt="Mở Mắt Ra Đi Em"
+            />
+            <h3>Mở Mắt Ra Đi Em</h3>
+            <div className={styles.priceBox}>
+              <span className={styles.price}>116,100đ</span>
+              <span className={styles.oldPrice}>129,000đ</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
