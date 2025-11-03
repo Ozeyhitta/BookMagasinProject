@@ -17,5 +17,6 @@ public class BookDetailDto {
     private double weight;
     private int pages;
     private String description;
+    private String imageUrl; // ✅ Thêm URL hình ảnh
 
 }
