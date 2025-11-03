@@ -4,11 +4,14 @@
   border-radius: 8px;
 }
 
+/* Vùng bảng */
 .tableWrapper {
   background-color: white;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1;
 }
 
 .table {
@@ -48,6 +51,7 @@
   color: #333;
 }
 
+/* --- TRẠNG THÁI --- */
 .badge {
   display: inline-block;
   padding: 6px 12px;
@@ -66,6 +70,7 @@
   color: #721c24;
 }
 
+/* --- LOẠI KHUYẾN MÃI --- */
 .typeBadge {
   display: inline-block;
   padding: 6px 12px;
@@ -94,6 +99,7 @@
   color: #388e3c;
 }
 
+/* --- NÚT HÀNH ĐỘNG --- */
 .actionButtons {
   display: flex;
   gap: 8px;
@@ -140,4 +146,109 @@
 .btnDelete:hover {
   background-color: #d32f2f;
   color: white;
+}
+
+/* --- FORM THÊM KHUYẾN MÃI --- */
+.form {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 2;
+}
+
+.form h3 {
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.formGroup label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btnAdd {
+  background-color: #388e3c;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btnAdd:hover {
+  background-color: #2e7d32;
+}
+
+.btnCancel {
+  background-color: #ccc;
+  color: #333;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btnCancel:hover {
+  background-color: #bdbdbd;
+}
+
+.hidden {
+  display: none;
+}
+/* ===== CẢI THIỆN FORM ===== */
+.formGroup label {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 14px;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 10px 12px;
+  border: 1.5px solid #c0c7d0;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #f9fafb;
+  color: #111;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #1976d2;
+  background-color: #ffffff;
+}
+
+.formGroup input::placeholder {
+  color: #888;
+}
+
+/* Khi form ở chế độ chỉnh sửa */
+.form.editing {
+  background-color: #f0f7ff;
+  transition: background-color 0.3s ease;
 }

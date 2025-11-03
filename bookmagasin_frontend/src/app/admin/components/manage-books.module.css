@@ -1,29 +1,42 @@
+/* === Tổng thể === */
 .container {
-  background-color: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  font-family: "Inter", sans-serif;
 }
 
 .title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
+  color: #222;
   margin-bottom: 20px;
 }
 
+/* === Thanh tìm kiếm === */
 .searchSection {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  background-color: #f3f4f6;
+  padding: 10px 12px;
+  border-radius: 8px;
+   color: #000;
 }
 
 .searchInput {
   flex: 1;
   padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  font-size: 14px;
+   color: #000;
 }
 
+/* === Form thêm sách === */
 .addSection {
   display: flex;
   flex-wrap: wrap;
@@ -32,98 +45,161 @@
 }
 
 .addSection input {
+  flex: 1;
+  min-width: 160px;
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
+  font-size: 14px;
 }
 
 .addButton {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  background-color: #1976d2;
+  background-color: #2563eb;
   color: white;
   border: none;
   padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
+  transition: 0.2s;
 }
 
 .addButton:hover {
-  background-color: #125ea3;
+  background-color: #1e40af;
 }
 
+/* === Bảng === */
 .table {
   width: 100%;
   border-collapse: collapse;
   background-color: white;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
+  font-size: 14px;
 }
 
-.table th, .table td {
-  padding: 12px;
-  border-bottom: 1px solid #eee;
+.table th {
+  background-color: #f8fafc;
   text-align: left;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f1f1;
+  color: #333;
+}
+
+.table tr:hover {
+  background-color: #f9fafb;
+}
+
+/* === Trạng thái === */
 .status {
   padding: 4px 10px;
   border-radius: 12px;
   font-weight: 600;
   font-size: 13px;
+  display: inline-block;
 }
 
 .active {
+  background-color: #e0f2fe;
+  color: #0284c7;
+}
+
+.paused {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+/* === Nút hành động === */
+.actionBtns {
+  display: flex;
+  gap: 8px;
+}
+
+.editBtn, .pauseBtn, .deleteBtn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+/* Màu riêng từng nút */
+.editBtn {
   background-color: #e3f2fd;
   color: #1976d2;
 }
 
-.paused {
+.pauseBtn {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.deleteBtn {
   background-color: #ffebee;
   color: #d32f2f;
 }
 
-.actionBtns {
-  display: flex;
-  gap: 6px;
+/* Hiệu ứng hover nổi bật hơn */
+.editBtn:hover {
+  background-color: #1976d2;
+  color: white;
+  transform: scale(1.1);
 }
 
-.editBtn, .pauseBtn, .deleteBtn {
-  border: none;
-  cursor: pointer;
-  background: none;
-  padding: 6px;
-  border-radius: 6px;
-  transition: background-color 0.2s;
+.pauseBtn:hover {
+  background-color: #f57c00;
+  color: white;
+  transform: scale(1.1);
 }
 
-.editBtn:hover { background-color: #e3f2fd; }
-.pauseBtn:hover { background-color: #fff3e0; }
-.deleteBtn:hover { background-color: #ffebee; }
+.deleteBtn:hover {
+  background-color: #d32f2f;
+  color: white;
+  transform: scale(1.1);
+}
 
-/* Modal chỉnh sửa */
+/* === Modal chỉnh sửa === */
 .editModal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0,0,0,0.5);
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 999;
 }
 
 .modalContent {
   background-color: white;
-  padding: 20px;
-  border-radius: 8px;
+  padding: 24px;
+  border-radius: 10px;
   width: 400px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.modalContent h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #222;
 }
 
 .modalActions {
@@ -133,18 +209,27 @@
 }
 
 .saveBtn {
-  background-color: #1976d2;
+  background-color: #2563eb;
   color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.saveBtn:hover {
+  background-color: #1e40af;
+}
+
+.cancelBtn {
+  background-color: #f3f4f6;
   border: none;
   padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
 }
 
-.cancelBtn {
-  background-color: #eee;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
+.cancelBtn:hover {
+  background-color: #e5e7eb;
 }

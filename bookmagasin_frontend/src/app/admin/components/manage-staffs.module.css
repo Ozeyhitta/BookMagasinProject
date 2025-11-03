@@ -2,19 +2,99 @@
   padding: 20px;
   background-color: #f5f5f5;
   border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* Add button */
+.addButton {
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.addButton:hover {
+  background-color: #1259a5;
+  transform: translateY(-2px);
+}
+
+/* Form */
+.form {
+  background-color: white;
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* Form actions */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.saveButton {
+  background-color: #388e3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.cancelButton {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+/* Table wrapper */
 .tableWrapper {
   background-color: white;
   border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 1;
 }
 
+/* Table */
 .table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  min-width: 800px;
 }
 
 .table thead {
@@ -23,117 +103,124 @@
 }
 
 .table th {
-  padding: 15px;
+  padding: 12px 16px;
   text-align: left;
   font-weight: 600;
   color: #333;
-}
-
-.table tbody tr {
-  border-bottom: 1px solid #e9ecef;
-  transition: background-color 0.2s;
-}
-
-.table tbody tr:hover {
-  background-color: #f8f9fa;
+  white-space: nowrap;
 }
 
 .table td {
-  padding: 15px;
-  color: #555;
+  padding: 12px 16px;
+  color: #444;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f1f3;
 }
 
-.nameCell {
-  font-weight: 500;
-  color: #333;
-}
+.nameCell { font-weight: 500; color: #222; }
+.centerCell { text-align: center; }
 
-.centerCell {
-  text-align: center;
-}
-
+/* Badge */
 .badge {
   display: inline-block;
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+  text-transform: uppercase;
 }
+.badge.active { background: #d4edda; color: #155724; }
+.badge.locked { background: #f8d7da; color: #721c24; }
 
-.badge.active {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.badge.locked {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
+/* Action buttons */
 .actionButtons {
   display: flex;
   gap: 8px;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 15;
 }
 
+/* Button base */
 .btn {
+  width: 38px;
+  height: 38px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  border-radius: 8px;
   border: none;
-  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
+  font-size: 14px;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background-color 0.14s;
+  background: transparent;
+  position: relative;
+  z-index: 20;
+}
+
+.btn svg {
+  pointer-events: none;
+}
+
+/* Hover effect */
+.btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Colors */
+.btnView { background: #e3f2fd; color: #1976d2; }
+.btnEdit { background: #fff3e0; color: #f57c00; }
+.btnLock { background: #fce4ec; color: #c2185b; }
+.btnUnlock { background: #e8f5e9; color: #388e3c; }
+.btnDelete { background: #ffebee; color: #d32f2f; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .table { font-size: 13px; min-width: 600px; }
+  .btn { width: 34px; height: 34px; }
+  .form { padding: 14px; }
+}
+
+/* Force clickability */
+.table, .table td, .table th, .actionButtons, .btn {
+  position: relative;
+  z-index: 15;
+  pointer-events: auto;
+}
+/* ===== Form chỉnh sửa – cải thiện hiển thị ===== */
+.formGroup label {
+  font-weight: 600;
+  color: #1a1a1a; /* 🌟 Màu đậm, dễ đọc */
   font-size: 14px;
 }
 
-.btnView {
-  background-color: #e3f2fd;
-  color: #1976d2;
+.formGroup input,
+.formGroup select {
+  padding: 10px 12px;
+  border: 1.5px solid #c0c7d0;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #f9fafb; /* 🌟 Nền xám nhạt, nổi bật hơn trên nền trắng */
+  color: #111;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
-.btnView:hover {
-  background-color: #1976d2;
-  color: white;
+/* Khi focus vào ô nhập */
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #1976d2; /* 🌟 Viền xanh rõ khi chọn */
+  background-color: #ffffff; /* Trắng sáng hơn khi nhập */
 }
 
-.btnEdit {
-  background-color: #fff3e0;
-  color: #f57c00;
+/* Placeholder */
+.formGroup input::placeholder {
+  color: #888;
 }
 
-.btnEdit:hover {
-  background-color: #f57c00;
-  color: white;
-}
-
-.btnLock {
-  background-color: #fce4ec;
-  color: #c2185b;
-}
-
-.btnLock:hover {
-  background-color: #c2185b;
-  color: white;
-}
-
-.btnUnlock {
-  background-color: #e8f5e9;
-  color: #388e3c;
-}
-
-.btnUnlock:hover {
-  background-color: #388e3c;
-  color: white;
-}
-
-.btnDelete {
-  background-color: #ffebee;
-  color: #d32f2f;
-}
-
-.btnDelete:hover {
-  background-color: #d32f2f;
-  color: white;
+/* Làm nhẹ nền toàn form khi đang chỉnh sửa (tuỳ chọn) */
+.form.editing {
+  background-color: #f0f7ff; /* 💡 Màu xanh nhạt để dễ nhận biết đang ở chế độ chỉnh sửa */
 }
