@@ -21,6 +21,17 @@
 .contact-info span {
   margin-right: 20px;
 }
+.account a,
+.account .account-link {
+  cursor: pointer; /* ✅ Convert sang bàn tay */
+  display: inline-flex;
+  align-items: center;
+}
+.account a:hover,
+.account .account-link:hover {
+  text-decoration: underline;
+  cursor: pointer; /* đảm bảo luôn hiện bàn tay */
+}
 
 .account a {
   color: #fff;

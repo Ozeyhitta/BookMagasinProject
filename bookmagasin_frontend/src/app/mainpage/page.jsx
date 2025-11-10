@@ -173,61 +173,61 @@ export default function MainPage() {
     return () => clearInterval(interval); // dọn dẹp khi component unmount
   }, [banners.length]);
 
-<<<<<<< HEAD
-  // ✅ reuse your product data from CategoryPage or other arrays
+  // ✅ Dữ liệu sách lấy từ API (DÙNG CHO MỤC "Sách mới cập nhật")
   const [books, setBooks] = useState([]);
 
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const [booksRes, detailsRes] = await Promise.all([
-        fetch("http://localhost:8080/api/books"),
-        fetch("http://localhost:8080/api/books-details"),
-      ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Thay vì Promise.all, bạn có thể gọi API books và details lần lượt
+        const booksRes = await fetch("http://localhost:8080/api/books");
+        const booksData = await booksRes.json();
 
-      const booksData = await booksRes.json();
-      const detailsData = await detailsRes.json();
-
-      const merged = booksData.map((book) => {
-        const matchedDetail = detailsData.find(
-          (d) => d.book?.id === book.id
+        const detailsRes = await fetch(
+          "http://localhost:8080/api/books-details"
         );
+        const detailsData = await detailsRes.json();
 
-        return {
-          id: book.id,
-          title: book.title,
-          price: book.sellingPrice,
-          imageUrl:
-            matchedDetail?.imageUrl ||
-            "https://via.placeholder.com/200x280?text=No+Image",
-        };
-      });
+        // Hợp nhất dữ liệu
+        const merged = booksData.map((book) => {
+          const matchedDetail = detailsData.find((d) => d.book?.id === book.id);
 
-      setBooks(merged);
-    } catch (error) {
-      console.error("Lỗi load sách:", error);
-    }
-  };
+          return {
+            id: book.id,
+            title: book.title,
+            price: book.sellingPrice,
+            imageUrl:
+              matchedDetail?.imageUrl ||
+              "https://via.placeholder.com/200x280?text=No+Image",
+          };
+        });
 
-  fetchData();
-}, []);
+        setBooks(merged);
+      } catch (error) {
+        console.error("Lỗi load sách:", error);
+      }
+    };
 
-const [promotions, setPromotions] = useState([]);
+    fetchData();
+  }, []);
 
-useEffect(() => {
-  const fetchPromotions = async () => {
-    try {
-      const res = await fetch("http://localhost:8080/api/promotions");
-      const data = await res.json();
-      setPromotions(data);
-    } catch (error) {
-      console.error("Lỗi load khuyến mãi:", error);
-    }
-  };
+  // Biến state cho Promotions (chưa sử dụng trong JSX)
+  const [promotions, setPromotions] = useState([]);
 
-  fetchPromotions();
-}, []);
-=======
+  useEffect(() => {
+    const fetchPromotions = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/promotions");
+        const data = await res.json();
+        setPromotions(data);
+      } catch (error) {
+        console.error("Lỗi load khuyến mãi:", error);
+      }
+    };
+
+    fetchPromotions();
+  }, []);
+
   // Dữ liệu gợi ý sách MỚI (để hiển thị dưới danh mục)
   const popularBooks = [
     {
@@ -289,7 +289,7 @@ useEffect(() => {
   ];
 
   // Dữ liệu sách cũ (để hiển thị dạng grid)
-  const books = [
+  const booksDataGrid = [
     {
       section: "Tâm Lý - Kỹ Năng Sống",
       items: [
@@ -332,21 +332,24 @@ useEffect(() => {
           discount: "-50%",
           image:
             "https://cdn1.fahasa.com/media/flashmagazine/images/page_images/tu_duy_mo/2025_06_02_16_57_01_1-390x510.jpg?_gl=1*1p4563n*_gcl_au*MTczOTM1NDc3Ni4xNzYyNzYzNjI2*_ga*NzQxNTkxNzUwLjE3NjI3NjM2Mjc.*_ga_D3YYPWQ9LN*czE3NjI3NjM2MjYkbzEkZzEkdDE3NjI3NjM4MjQkajckbDAkaDA.*_ga_460L9JMC2G*czE3NjI3NjM2MjYkbzEkZzEkdDE3NjI3NjM4MjUkajYkbDAkaDY3MjMzNTQ1NQ..",
-        },{
+        },
+        {
           title: "Khéo Ăn Nói Sẽ Có Được Thiên Hạ (Tái Bản 2022)",
           price: "91.000đ",
           oldPrice: "130.000đ",
           discount: "-50%",
           image:
             "https://cdn1.fahasa.com/media/catalog/product/8/9/8936067605693.jpg",
-        },{
+        },
+        {
           title: "Sức Mạnh Tiềm Thức (Tái Bản 2021)",
           price: "108.000đ",
           oldPrice: "128.000đ",
           discount: "-15%",
           image:
             "https://cdn1.fahasa.com/media/catalog/product/i/m/image_237646.jpg",
-        },{
+        },
+        {
           title: "Tư Duy Ngược",
           price: "69.500đ",
           oldPrice: "139.000đ",
@@ -398,21 +401,24 @@ useEffect(() => {
           discount: "-12%",
           image:
             "https://down-vn.img.susercontent.com/file/sg-11134201-7rcc5-lsjniw0jrh49de.webp",
-        },{
+        },
+        {
           title: "Tuổi Thơ Dữ Dội",
           price: "81.000đ",
           oldPrice: "92.000đ",
           discount: "-12%",
           image:
             "https://nhasachmienphi.com/images/thumbnail/nhasachmienphi-tuoi-tho-du-doi.jpg",
-        },{
+        },
+        {
           title: "Ngày vui",
           price: "81.000đ",
           oldPrice: "162.000đ",
           discount: "-50%",
           image:
             "https://nhasachmienphi.com/images/thumbnail/nhasachmienphi-ngay-vui.jpg",
-        },{
+        },
+        {
           title: "Con hoang",
           price: "81.000đ",
           oldPrice: "92.000đ",
@@ -423,118 +429,120 @@ useEffect(() => {
       ],
     },
     {
-    section: "Sách Kinh Tế",
-    items: [
-      {
-        title: "Giữ Người Bằng Tâm - Dẫn Dắt Bằng Tầm",
-        price: "125.100đ",
-        oldPrice: "139.000đ",
-        discount: "-10%",
-        image:
-          "https://cdn.hstatic.net/products/200000845405/_nh-b_a-1_3_0757e87b90fe44949c322d5ff1dedbae_master.jpg",
-      },
-      {
-        title: "Vương Vệ Và Thuận Phong",
-        price: "144.000đ",
-        oldPrice: "180.000đ",
-        discount: "-20%",
-        image:
-          "https://cdn.hstatic.net/products/200000845405/8938538124016_73ceaed9661b4796887ac370cbfc0b12_9946967cab5f402098004aba18c99b52_medium.jpg",
-      },
-      {
-        title: "Lãnh Đạo Theo Mục Tiêu",
-        price: "206.100đ",
-        oldPrice: "229.000đ",
-        discount: "-10%",
-        image:
-          "https://cdn.hstatic.net/products/200000845405/lanh-dao-theo-muc-tieu-01_f897a05d9ac34c3da05f6b268cc1ace8_medium.jpg",
-      },
-      {
-        title: "Quản Lý Nhân Sự Trong Thời Đại Công Nghệ",
-        price: "161.100đ",
-        oldPrice: "179.000đ",
-        discount: "-10%",
-        image:
-          "https://cdn.hstatic.net/products/200000845405/quan-ly-nhan-su-trong-thoi-dai-cong-nghe-01_f2ca3899964841ee85d86ba72a7c2ea9_master.jpg",
-      },
-    ],
-  },
-  {
-    section: "Sách Thiếu Nhi",
-    items: [
-      {
-        title: "Vẽ Cho Em Một Màu Bình Yên!",
-        price: "151,200đ",
-        oldPrice: "168,000đ",
-        discount: "-10%",
-        image:
-          "https://cdn.hstatic.net/products/200000845405/8931805024347_73a23c6b661049478cab231eeda8fc52_master.jpg",
-      },
-      {
-        title: "Sổ Tô Màu Chibi - Thủy Thủ Mặt Trăng Và Biệt Đội Ngân Hà",
-        price: "110.000đ",
-        oldPrice: "140.000đ",
-        discount: "-30%",
-        image:
-          "https://cdn.hstatic.net/products/200000845405/anh-1_64b73f4298f0423b8d8b32ecd58d1af8_master.jpg",
-      },
-      {
-        title: "Tớ Tự Tin Khắc Phục Khó Khăn - Rèn Tính Tự Giác - Những Bài Tự Rèn Luyện Không Thể Thiếu Cho Học Sinh Tiểu Học",
-        price: "70.000đ",
-        oldPrice: "140.000đ",
-        discount: "-50%",
-        image:
-          "https://cdn.hstatic.net/products/200000845405/to-tu-tin-khac-phuc-kho-khan_ren-tinh-tu-giac_bia_eb2e04c179b24202a0e6ffee638e8046_master.jpg",
-      },
-      {
-        title: "Những Cách Thông Minh Để Trở Nên Thông Minh Hơn - Bí Quyết Học Tốt Các Môn Học Ở Trường",
-        price: "100.000đ",
-        oldPrice: "50.000đ",
-        discount: "-50%",
-        image:
-          "https://cdn.hstatic.net/products/200000845405/nh-de-tro-nen-thong-minh-hon_bi-quyet-hoc-tot-cac-mon-o-truong_tb-2025_2a40ef7e185d4fea99fb973352c0e045_master.jpg",
-      },
-    ],
-  },
-  {
-    section: "Sách Tin Học - Ngoại Ngữ",
-    items: [
-      {
-        title: "NgườI Giàu Có Nhất Thành Babylon (Tái Bản)",
-        price: "91,200đ",
-        oldPrice: "114,000đ",
-        discount: "-20%",
-        image:
-          "https://product.hstatic.net/200000845405/product/p97362m8935246937525_1_1da106c981c24a4d9571e8fc9eb88e3a_master.jpg",
-      },
-      {
-        title: "Chiêm Tinh Học - Ứng Dụng Trong Sự Nghiệp Và Tình Yêu",
-        price: "104.000đ",
-        oldPrice: "130.000đ",
-        discount: "-20%",
-        image:
-          "https://product.hstatic.net/200000845405/product/p97251m8935246933459_55ec2629361647d2825ad72ad6c0b028_master.jpg",
-      },
-      {
-        title: "Mạnh Dạn Buông Bỏ Khi Tình Không Tỏ",
-        price: "78.000đ",
-        oldPrice: "98.000đ",
-        discount: "-20%",
-        image:
-          "https://product.hstatic.net/200000845405/product/p96715m2022_09_16_16_00_22_1_390x510_0d3a71878d74483eb4c8393c79eb4e1b_master.jpg",
-      },
-      {
-        title: "Smart - Ngủ Đủ, Bé Thông Minh - Làm Sao Để Tạo Thói Quen Đi Ngủ Đúng Cho Trẻ",
-        price: "78.000đ",
-        oldPrice: "98.000đ",
-        discount: "-20%",
-        image:
-          "https://product.hstatic.net/200000845405/product/p96714mscreenshot_2022_09_23_091141_cfe4b69088724e279d9617dfb10cc8fe_master.jpg"
-      },
-    ],
-  },
+      section: "Sách Kinh Tế",
+      items: [
+        {
+          title: "Giữ Người Bằng Tâm - Dẫn Dắt Bằng Tầm",
+          price: "125.100đ",
+          oldPrice: "139.000đ",
+          discount: "-10%",
+          image:
+            "https://cdn.hstatic.net/products/200000845405/_nh-b_a-1_3_0757e87b90fe44949c322d5ff1dedbae_master.jpg",
+        },
+        {
+          title: "Vương Vệ Và Thuận Phong",
+          price: "144.000đ",
+          oldPrice: "180.000đ",
+          discount: "-20%",
+          image:
+            "https://cdn.hstatic.net/products/200000845405/8938538124016_73ceaed9661b4796887ac370cbfc0b12_9946967cab5f402098004aba18c99b52_medium.jpg",
+        },
+        {
+          title: "Lãnh Đạo Theo Mục Tiêu",
+          price: "206.100đ",
+          oldPrice: "229.000đ",
+          discount: "-10%",
+          image:
+            "https://cdn.hstatic.net/products/200000845405/lanh-dao-theo-muc-tieu-01_f897a05d9ac34c3da05f6b268cc1ace8_medium.jpg",
+        },
+        {
+          title: "Quản Lý Nhân Sự Trong Thời Đại Công Nghệ",
+          price: "161.100đ",
+          oldPrice: "179.000đ",
+          discount: "-10%",
+          image:
+            "https://cdn.hstatic.net/products/200000845405/quan-ly-nhan-su-trong-thoi-dai-cong-nghe-01_f2ca3899964841ee85d86ba72a7c2ea9_master.jpg",
+        },
+      ],
+    },
+    {
+      section: "Sách Thiếu Nhi",
+      items: [
+        {
+          title: "Vẽ Cho Em Một Màu Bình Yên!",
+          price: "151,200đ",
+          oldPrice: "168,000đ",
+          discount: "-10%",
+          image:
+            "https://cdn.hstatic.net/products/200000845405/8931805024347_73a23c6b661049478cab231eeda8fc52_master.jpg",
+        },
+        {
+          title: "Sổ Tô Màu Chibi - Thủy Thủ Mặt Trăng Và Biệt Đội Ngân Hà",
+          price: "110.000đ",
+          oldPrice: "140.000đ",
+          discount: "-30%",
+          image:
+            "https://cdn.hstatic.net/products/200000845405/anh-1_64b73f4298f0423b8d8b32ecd58d1af8_master.jpg",
+        },
+        {
+          title:
+            "Tớ Tự Tin Khắc Phục Khó Khăn - Rèn Tính Tự Giác - Những Bài Tự Rèn Luyện Không Thể Thiếu Cho Học Sinh Tiểu Học",
+          price: "70.000đ",
+          oldPrice: "140.000đ",
+          discount: "-50%",
+          image:
+            "https://cdn.hstatic.net/products/200000845405/to-tu-tin-khac-phuc-kho-khan_ren-tinh-tu-giac_bia_eb2e04c179b24202a0e6ffee638e8046_master.jpg",
+        },
+        {
+          title:
+            "Những Cách Thông Minh Để Trở Nên Thông Minh Hơn - Bí Quyết Học Tốt Các Môn Học Ở Trường",
+          price: "100.000đ",
+          oldPrice: "50.000đ",
+          discount: "-50%",
+          image:
+            "https://cdn.hstatic.net/products/200000845405/nh-de-tro-nen-thong-minh-hon_bi-quyet-hoc-tot-cac-mon-o-truong_tb-2025_2a40ef7e185d4fea99fb973352c0e045_master.jpg",
+        },
+      ],
+    },
+    {
+      section: "Sách Tin Học - Ngoại Ngữ",
+      items: [
+        {
+          title: "NgườI Giàu Có Nhất Thành Babylon (Tái Bản)",
+          price: "91,200đ",
+          oldPrice: "114,000đ",
+          discount: "-20%",
+          image:
+            "https://product.hstatic.net/200000845405/product/p97362m8935246937525_1_1da106c981c24a4d9571e8fc9eb88e3a_master.jpg",
+        },
+        {
+          title: "Chiêm Tinh Học - Ứng Dụng Trong Sự Nghiệp Và Tình Yêu",
+          price: "104.000đ",
+          oldPrice: "130.000đ",
+          discount: "-20%",
+          image:
+            "https://product.hstatic.net/200000845405/product/p97251m8935246933459_55ec2629361647d2825ad72ad6c0b028_master.jpg",
+        },
+        {
+          title: "Mạnh Dạn Buông Bỏ Khi Tình Không Tỏ",
+          price: "78.000đ",
+          oldPrice: "98.000đ",
+          discount: "-20%",
+          image:
+            "https://product.hstatic.net/200000845405/product/p96715m2022_09_16_16_00_22_1_390x510_0d3a71878d74483eb4c8393c79eb4e1b_master.jpg",
+        },
+        {
+          title:
+            "Smart - Ngủ Đủ, Bé Thông Minh - Làm Sao Để Tạo Thói Quen Đi Ngủ Đúng Cho Trẻ",
+          price: "78.000đ",
+          oldPrice: "98.000đ",
+          discount: "-20%",
+          image:
+            "https://product.hstatic.net/200000845405/product/p96714mscreenshot_2022_09_23_091141_cfe4b69088724e279d9617dfb10cc8fe_master.jpg",
+        },
+      ],
+    },
   ];
->>>>>>> 41b56be (mainpage)
 
   return (
     <div className={styles.mainWrapper}>
@@ -577,11 +585,14 @@ useEffect(() => {
             ))}
           </ul>
           {/* Banner Tủ sách Trinh Thám - Kinh Dị */}
-          <div className={styles.suggestionSection} style={{ padding: '0', border: 'none', marginTop: '20px' }}>
-            <img 
-              src="https://i.pinimg.com/originals/a0/0c/84/a00c841a1c97a5b3a86c6c721b5e54d8.jpg" 
-              alt="Tủ sách Trinh Thám - Kinh Dị" 
-              style={{ width: '100%', borderRadius: '6px' }} 
+          <div
+            className={styles.suggestionSection}
+            style={{ padding: "0", border: "none", marginTop: "20px" }}
+          >
+            <img
+              src="https://i.pinimg.com/originals/a0/0c/84/a00c841a1c97a5b3a86c6c721b5e54d8.jpg"
+              alt="Tủ sách Trinh Thám - Kinh Dị"
+              style={{ width: "100%", borderRadius: "6px" }}
             />
           </div>
 
@@ -649,23 +660,34 @@ useEffect(() => {
             </button>
           </div>
 
-         <div className={styles.productSection}>
-  <h3 className={styles.sectionTitle}>Sách mới cập nhật</h3>
+          {/* --- MỤC: SÁCH MỚI CẬP NHẬT (Lấy từ API) --- */}
+          <div className={styles.productSection}>
+            <h3 className={styles.sectionTitle}>Sách mới cập nhật (từ API)</h3>
+            <div className={styles.productGrid}>
+              {books.map((book) => (
+                <ProductCard
+                  key={book.id}
+                  title={book.title}
+                  price={book.price?.toLocaleString("vi-VN") + "đ"}
+                  oldPrice={null}
+                  discount={null}
+                  image={book.imageUrl}
+                />
+              ))}
+            </div>
+          </div>
 
-  <div className={styles.productGrid}>
-    {books.map((book) => (
-      <ProductCard
-        key={book.id}
-        title={book.title}
-        price={book.price?.toLocaleString("vi-VN") + "đ"}
-        oldPrice={null}
-        discount={null}
-        image={book.imageUrl}
-      />
-    ))}
-  </div>
-</div>
-
+          {/* --- PHẦN SÁCH DẠNG GRID (Dữ liệu tĩnh booksDataGrid) --- */}
+          {booksDataGrid.map((section, index) => (
+            <div key={index} className={styles.productSection}>
+              <h3 className={styles.sectionTitle}>{section.section}</h3>
+              <div className={styles.productGrid}>
+                {section.items.map((book, i) => (
+                  <ProductCard key={i} {...book} image={book.image} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
