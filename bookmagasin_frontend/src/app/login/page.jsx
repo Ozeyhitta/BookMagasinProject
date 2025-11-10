@@ -11,6 +11,8 @@ export default function LoginPage() {
   const [showForgot, setShowForgot] = useState(false); // ✅ hiển thị form quên mật khẩu
   const [resetEmail, setResetEmail] = useState(""); // email nhập trong quên mật khẩu
   const [resetMessage, setResetMessage] = useState(null);
+  const [showOtpForm, setShowOtpForm] = useState(false);
+  const [otp, setOtp] = useState("");
 
   // 🔑 Xử lý đăng nhập
   const handleSubmit = async (e) => {
@@ -34,6 +36,7 @@ export default function LoginPage() {
 
       // ✅ Lưu token
       localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.userId);
 
       // ✅ Chuyển hướng sang trang chính
       window.location.href = "/mainpage";
@@ -55,7 +58,6 @@ export default function LoginPage() {
     }
 
     try {
-      // ⚙️ Gọi API reset password (giả lập hoặc backend thực)
       const res = await fetch(
         "http://localhost:8080/api/auth/forgot-password",
         {
@@ -65,14 +67,44 @@ export default function LoginPage() {
         }
       );
 
+      const text = await res.text();
+
       if (res.ok) {
-        setResetMessage("✅ Email đặt lại mật khẩu đã được gửi!");
+        setResetMessage("✅ Mã OTP 6 số đã được gửi đến email của bạn!");
+        setShowOtpForm(true); // ✅ Bật form OTP
       } else {
-        const text = await res.text();
-        setResetMessage("❌ Lỗi: " + text);
+        setResetMessage("❌ " + text);
       }
     } catch (error) {
-      setResetMessage("❌ Không thể kết nối đến server!");
+      setResetMessage("❌ Lỗi kết nối đến server!");
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setResetMessage(null);
+
+    try {
+      const res = await fetch("http://localhost:8080/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail, otp }),
+      });
+
+      const text = await res.text();
+
+      if (res.ok) {
+        setResetMessage("✅ OTP hợp lệ! Vui lòng nhập mật khẩu mới.");
+
+        // ✅ Lưu email vào localStorage để trang reset-password dùng
+        localStorage.setItem("resetEmail", resetEmail);
+
+        window.location.href = `/reset-password`;
+      } else {
+        setResetMessage("❌ " + text);
+      }
+    } catch (error) {
+      setResetMessage("❌ Lỗi kết nối server!");
     }
   };
 
@@ -135,36 +167,79 @@ export default function LoginPage() {
           </>
         ) : (
           <>
-            {/* FORM QUÊN MẬT KHẨU */}
-            <h3>Khôi phục mật khẩu</h3>
-            <form onSubmit={handleForgotPassword}>
-              <label>Nhập email của bạn</label>
-              <input
-                type="email"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                required
-              />
-              <button type="submit">Gửi yêu cầu</button>
-            </form>
+            {/* ==== BƯỚC 1: NHẬP EMAIL ==== */}
+            {!showOtpForm && (
+              <>
+                <h3>Khôi phục mật khẩu</h3>
+                <form onSubmit={handleForgotPassword}>
+                  <label>Nhập email của bạn</label>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+                  <button type="submit">Gửi mã OTP</button>
+                </form>
+              </>
+            )}
 
+            {/* ==== BƯỚC 2: NHẬP OTP ==== */}
+
+            {showOtpForm && (
+              <>
+                <h3>Nhập mã OTP</h3>
+
+                <div className="otp-container">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      maxLength="1"
+                      className="otp-input"
+                      value={otp[i] || ""}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/, "");
+                        if (!value) return;
+
+                        // cập nhật ký tự vào đúng vị trí
+                        const newOtp = otp.split("");
+                        newOtp[i] = value;
+                        setOtp(newOtp.join(""));
+
+                        // tự chuyển sang ô kế tiếp
+                        const next = document.getElementById(`otp-${i + 1}`);
+                        if (next) next.focus();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Backspace" && !otp[i]) {
+                          const prev = document.getElementById(`otp-${i - 1}`);
+                          if (prev) prev.focus();
+                        }
+                      }}
+                      id={`otp-${i}`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  className="otp-submit-btn"
+                  onClick={handleVerifyOtp}
+                  style={{ marginTop: 15 }}
+                >
+                  Xác nhận OTP
+                </button>
+              </>
+            )}
+
+            {/* Thông báo */}
             {resetMessage && (
               <div
                 className={`msg ${
                   resetMessage.startsWith("✅") ? "success" : "error"
                 }`}
               >
-                {resetMessage.startsWith("✅") ? (
-                  <>
-                    <Check size={18} style={{ marginRight: 6 }} /> Email đặt lại
-                    mật khẩu đã được gửi!
-                  </>
-                ) : (
-                  <>
-                    <X size={18} style={{ marginRight: 6 }} />{" "}
-                    {resetMessage.replace("❌ ", "")}
-                  </>
-                )}
+                {resetMessage}
               </div>
             )}
 
@@ -174,6 +249,8 @@ export default function LoginPage() {
                 onClick={(e) => {
                   e.preventDefault();
                   setShowForgot(false);
+                  setShowOtpForm(false);
+                  setResetMessage(null);
                 }}
               >
                 ← Quay lại đăng nhập

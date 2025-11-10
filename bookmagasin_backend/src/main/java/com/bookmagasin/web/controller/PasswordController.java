@@ -1,12 +1,11 @@
 package com.bookmagasin.web.controller;
 
 import com.bookmagasin.service.PasswordResetService;
+import com.bookmagasin.web.dto.OtpRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -15,7 +14,7 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class PasswordController {
 
-    private final PasswordResetService passwordResetService; // <-- Interface
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
@@ -23,10 +22,28 @@ public class PasswordController {
         return ResponseEntity.ok("✅ Email đặt lại mật khẩu đã được gửi!");
     }
 
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody OtpRequest request) {
+
+        boolean isValid = passwordResetService.verifyOtp(request.getEmail(), request.getOtp());
+
+        if (isValid) {
+            return ResponseEntity.ok("OTP hợp lệ");
+        } else {
+            return ResponseEntity.status(400).body("OTP không hợp lệ hoặc đã hết hạn");
+        }
+    }
+
+
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
-        passwordResetService.resetPassword(request.get("token"), request.get("newPassword"));
-        return ResponseEntity.ok("✅ Mật khẩu đã được thay đổi thành công!");
-    }
-}
 
+        passwordResetService.resetPassword(
+                request.get("email"),
+                request.get("newPassword")
+        );
+
+        return ResponseEntity.ok("✅ Mật khẩu đã được đặt lại thành công!");
+    }
+
+}

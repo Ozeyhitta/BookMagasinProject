@@ -35,9 +35,9 @@ export default function MainPage() {
   ];
 
   const banners = [
-    "https://i.pinimg.com/1200x/a9/06/8b/a9068bb873bfdcae53720294580a227a.jpg",
-    "https://i.pinimg.com/736x/60/02/de/6002de1b84892254c9a6136f483d63c6.jpg",
-    "https://i.pinimg.com/1200x/bc/8b/f9/bc8bf98691fe3c6feee07ca05d08ca56.jpg",
+    "https://newshop.vn/public/uploads/landing-page/sach-hay-newshop/banner-mobile.png",
+    "https://tudongchat.com/wp-content/uploads/2025/01/stt-ban-sach-5.jpg",
+    "https://newshop.vn/public/uploads/news/nhung-cuon-sach-van-hoc-hay.jpg",
   ];
 
   const [current, setCurrent] = useState(0);

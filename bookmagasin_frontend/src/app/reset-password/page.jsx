@@ -1,19 +1,27 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import styles from "./ResetPassword.module.css";
 
 function ResetPasswordContent() {
-  const params = useSearchParams();
   const router = useRouter();
-  const token = params.get("token");
 
+  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("resetEmail");
+    if (!savedEmail) {
+      setMsg("❌ Không tìm thấy email để đặt lại mật khẩu!");
+    } else {
+      setEmail(savedEmail);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,12 +37,12 @@ function ResetPasswordContent() {
       const res = await fetch("http://localhost:8080/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword }),
+        body: JSON.stringify({ email, newPassword }),
       });
 
       if (res.ok) {
         setMsg("success");
-        window.history.replaceState(null, "", "/reset-password");
+        localStorage.removeItem("resetEmail");
         setTimeout(() => router.replace("/login"), 2000);
       } else {
         setMsg("error");
@@ -50,6 +58,7 @@ function ResetPasswordContent() {
     <div className={styles.wrapper}>
       <div className={styles.card}>
         <h2 className={styles.title}>Đặt lại mật khẩu</h2>
+
         <form onSubmit={handleSubmit}>
           <input
             type="password"

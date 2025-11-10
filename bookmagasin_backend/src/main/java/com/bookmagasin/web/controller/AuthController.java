@@ -64,11 +64,12 @@ public class AuthController {
         String token = jwtUtil.generateToken(account.getEmail());
 
         return ResponseEntity.ok(new LoginResponseDto(
-                account.getId(),
+                account.getUser().getId(),     // ✅ TRẢ RA USER ID
                 account.getEmail(),
                 account.getRole().name(),
                 token
         ));
+
     }
 
     // 🔹 Đăng xuất

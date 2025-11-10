@@ -1,2 +1,9 @@
-package com.bookmagasin.web.dto;public class OtpRequest {
+package com.bookmagasin.web.dto;
+
+import lombok.Data;
+
+@Data
+public class OtpRequest {
+    private String email;
+    private String otp;
 }

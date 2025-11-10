@@ -13,10 +13,12 @@ import java.util.Optional;
 @Repository
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Integer> {
 
-    Optional<PasswordResetToken> findByToken(String token);
+    Optional<PasswordResetToken> findByOtp(String token);
 
     @Modifying
     @Transactional
     @Query("DELETE FROM PasswordResetToken t WHERE t.account.id = :accountId")
     void deleteByAccount_Id(@Param("accountId") Integer accountId);
+
+    Optional<PasswordResetToken> findByAccountEmail(String email);
 }

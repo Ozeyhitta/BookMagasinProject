@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class PasswordResetServiceImpl implements PasswordResetService {
@@ -25,72 +25,65 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * Gửi email reset mật khẩu và lưu token reset
-     */
     @Override
     @Transactional
     public void createResetToken(String email) {
+
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email: " + email));
 
-        // Xóa token cũ (nếu có)
         tokenRepository.deleteByAccount_Id(account.getId());
-        tokenRepository.flush(); // ✅ Bắt buộc xóa ngay, tránh duplicate
+        tokenRepository.flush();
 
-        // Tạo token mới
-        String token = UUID.randomUUID().toString();
+        String otp = String.format("%06d", new Random().nextInt(999999));
+
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(token)
+                .otp(otp)
                 .account(account)
-                .expiryDate(LocalDateTime.now().plusMinutes(15))
+                .expiryDate(LocalDateTime.now().plusMinutes(5))
                 .build();
 
         tokenRepository.save(resetToken);
 
-        sendResetEmail(email, token);
+        sendResetEmail(email, otp);
+    }
+
+    @Override
+    public boolean verifyOtp(String email, String otp) {
+
+        PasswordResetToken token = tokenRepository.findByAccountEmail(email)
+                .orElse(null);
+
+        if (token == null) return false;
+        if (!token.getOtp().equals(otp)) return false;
+        if (token.isExpired()) return false;
+
+        // ✅ Xóa token ngay khi OTP đúng
+        tokenRepository.delete(token);
+
+        return true;
     }
 
 
-    /**
-     * Gửi email khôi phục mật khẩu
-     */
-    private void sendResetEmail(String email, String token) {
-        String resetLink = "http://localhost:3000/reset-password?token=" + token;
+    private void sendResetEmail(String email, String otp) {
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(email);
+        msg.setSubject("Mã OTP khôi phục mật khẩu");
+        msg.setText("Mã OTP của bạn là: " + otp
+                + "\nMã hết hạn sau 5 phút.");
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Khôi phục mật khẩu");
-        message.setText(
-                "Xin chào,\n\n" +
-                        "Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình.\n" +
-                        "Vui lòng nhấn vào liên kết sau để đặt lại mật khẩu (liên kết hết hạn sau 15 phút):\n\n" +
-                        resetLink + "\n\n" +
-                        "Nếu bạn không yêu cầu, vui lòng bỏ qua email này.\n\n" +
-                        "Trân trọng,\nBookMagasin Team"
-        );
-
-        mailSender.send(message);
+        mailSender.send(msg);
     }
 
-    /**
-     * Đặt lại mật khẩu bằng token hợp lệ
-     */
     @Override
     @Transactional
-    public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token không hợp lệ!"));
+    public void resetPassword(String email, String newPassword) {
 
-        if (resetToken.isExpired()) {
-            throw new RuntimeException("Token đã hết hạn!");
-        }
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
 
-        Account account = resetToken.getAccount();
         account.setPassword(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
-
-        // Xóa token sau khi dùng
-        tokenRepository.delete(resetToken);
     }
+
 }

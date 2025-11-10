@@ -17,13 +17,12 @@ public class PasswordResetToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(nullable = false, unique = true)
-    private String token;
+    @Column(name = "otp", nullable = false, length = 6)
+    private String otp;
 
     @OneToOne
     @JoinColumn(name = "account_id", referencedColumnName = "id", unique = true)
     private Account account;
-
 
     @Column(nullable = false)
     private LocalDateTime expiryDate;
