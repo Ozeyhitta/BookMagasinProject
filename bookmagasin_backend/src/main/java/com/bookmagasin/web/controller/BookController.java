@@ -78,4 +78,14 @@ public class BookController {
             return ResponseEntity.ok(dto);
         }).orElse(ResponseEntity.notFound().build());
     }
+    @PutMapping("/{bookId}/categories")
+    public ResponseEntity<?> updateBookCategories(
+            @PathVariable int bookId,
+            @RequestBody List<Integer> categoryIds) {
+
+        return bookService.updateBookCategories(bookId, categoryIds)
+                ? ResponseEntity.ok("Updated categories successfully!")
+                : ResponseEntity.badRequest().body("Update failed!");
+    }
+
 }

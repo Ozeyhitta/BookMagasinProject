@@ -5,6 +5,7 @@ import com.bookmagasin.entity.Book;
 import com.bookmagasin.entity.BookDetail;
 import com.bookmagasin.repository.BookDetailRepository;
 import com.bookmagasin.repository.BookRepository;
+import com.bookmagasin.repository.CategoryRepository;
 import com.bookmagasin.service.BookService;
 import com.bookmagasin.web.dto.BookDetailDto;
 import com.bookmagasin.web.dto.BookDto;
@@ -22,10 +23,12 @@ public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
     private final BookDetailRepository bookDetailRepository;
+    private final CategoryRepository categoryRepository;
 
-    public BookServiceImpl(BookRepository bookRepository, BookDetailRepository bookDetailRepository) {
+    public BookServiceImpl(BookRepository bookRepository, BookDetailRepository bookDetailRepository, CategoryRepository categoryRepository) {
         this.bookRepository = bookRepository;
         this.bookDetailRepository = bookDetailRepository;
+        this.categoryRepository = categoryRepository;
     }
 
 
@@ -89,10 +92,25 @@ public class BookServiceImpl implements BookService {
         book.setEdition(dto.getEdition());
         book.setAuthor(dto.getAuthor());
 
+        // BookDetail
         if (dto.getBookDetailId() > 0) {
-            bookDetailRepository.findById(dto.getBookDetailId()).ifPresent(book::setBookDetail);
+            bookDetailRepository.findById(dto.getBookDetailId())
+                    .ifPresent(book::setBookDetail);
+        }
+
+        // ✅ Map Category IDs
+        if (dto.getCategoryIds() != null && !dto.getCategoryIds().isEmpty()) {
+            List<Category> categories = categoryRepository.findAllById(dto.getCategoryIds());
+            book.setCategories(categories);
+            // ✅ Đồng bộ cả chiều ManyToMany nếu muốn
+            categories.forEach(c -> {
+                if (!c.getBooks().contains(book)) {
+                    c.getBooks().add(book);
+                }
+            });
         }
     }
+
 
     // -------- Dto mở rộng -----------
     @Override
@@ -123,6 +141,33 @@ public class BookServiceImpl implements BookService {
             }
             return bookRepository.save(book);
         });    }
+
+    @Override
+    public boolean updateBookCategories(int bookId, List<Integer> categoryIds) {
+        Optional<Book> optionalBook = bookRepository.findById(bookId);
+        if (optionalBook.isEmpty()) {
+            return false;
+        }
+
+        Book book = optionalBook.get();
+
+        // Lấy categories từ DB theo list ID
+        List<Category> categories = categoryRepository.findAllById(categoryIds);
+
+        // Set vào Book
+        book.setCategories(categories);
+
+        // Đồng bộ hai chiều để tránh lỗi JPA
+        categories.forEach(c -> {
+            if (!c.getBooks().contains(book)) {
+                c.getBooks().add(book);
+            }
+        });
+
+        bookRepository.save(book);
+        return true;
+    }
+
 
     private BookResponseDto mapToResponseDto(Book book) {
         BookResponseDto dto = new BookResponseDto();

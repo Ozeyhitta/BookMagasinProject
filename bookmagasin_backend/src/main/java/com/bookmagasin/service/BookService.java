@@ -18,5 +18,7 @@ public interface BookService {
     Optional<BookResponseDto> findByIdWithDetails(int id);
 
     Optional<Book> patchBookDetail(Integer id, BookDetail detailUpdates);
+
+    boolean updateBookCategories(int bookId, List<Integer> categoryIds);
 }
 
