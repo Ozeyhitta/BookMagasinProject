@@ -40,7 +40,6 @@ export default function MainPage() {
       "Cổ Tích & Thần Thoại",
       "Phê Bình Văn Học",
       "Phóng Sự, Ký Sự",
-      "Sách Về Nhân Vật Văn Học / Nhân Vật Lịch Sử",
       "Thơ Ca",
       "Tiểu Thuyết",
       "Truyện Kiếm Hiệp - Phiêu Lưu",
