@@ -40,6 +40,7 @@ body {
   border-left: 4px solid #007600;
   padding-left: 6px;
 }
+
 .categoryIconTitle {
   color: #007600;
   width: 20px;
@@ -65,6 +66,7 @@ body {
   background: #fff;
   position: relative;
 }
+
 .subMenu {
   position: absolute;
   top: 0;
@@ -77,6 +79,7 @@ body {
   padding: 8px 12px;
   z-index: 50;
 }
+
 .subMenuItem {
   padding: 8px 10px;
   border-radius: 4px;
@@ -85,23 +88,26 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .subMenuItem:hover {
   background: #e8f5e9;
   color: #007600;
   transform: translateX(2px);
 }
+
 .prev {
   left: 10px;
 }
+
 .next {
   right: 10px;
 }
 
 /* 🔹 Giúp tất cả text thẳng hàng */
 .categoryText {
-  flex: 1; /* chiếm toàn bộ khoảng giữa */
+  flex: 1;
   text-align: left;
-  padding-left: 6px; /* cách một chút so với icon */
+  padding-left: 6px;
 }
 
 .categoryItem:hover {
@@ -110,6 +116,7 @@ body {
   transform: translateX(3px);
   box-shadow: 0 1px 4px rgba(0, 118, 0, 0.1);
 }
+
 .categoryIcon {
   width: 20px;
   height: 20px;
@@ -132,6 +139,7 @@ body {
   transform: translateX(3px);
   color: #007600;
 }
+
 /* ==== BANNER ==== */
 .rightContent {
   flex: 1;
@@ -140,7 +148,6 @@ body {
 }
 
 .bannerArea {
-  /* đã có position: relative OK */
   position: relative;
   width: 100%;
   overflow: hidden;
@@ -159,7 +166,7 @@ body {
 /* Dải banner trượt ngang */
 .slider {
   display: flex;
-  transition: transform 0.8s ease-in-out; /* hiệu ứng mượt */
+  transition: transform 0.8s ease-in-out;
 }
 
 /* Mỗi ảnh banner */
@@ -170,6 +177,7 @@ body {
   height: 380px;
   border-radius: 12px;
 }
+
 .navButton {
   position: absolute;
   top: 50%;
@@ -185,7 +193,7 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: background 0.3s;
-  z-index: 5; /* ✅ thêm dòng này để nằm trên ảnh */
+  z-index: 5;
 }
 
 .navButton:hover {
@@ -200,7 +208,7 @@ body {
   right: 10px;
 }
 
-/* ==== SẢN PHẨM ==== */
+/* ==== SẢN PHẨM (ProductCard) ==== */
 .productSection {
   background-color: #fff;
   margin-top: 20px;
@@ -363,4 +371,109 @@ body {
   align-items: center;
   gap: 25px;
   margin-left: 20px;
+}
+
+/* ==== GỢI Ý SÁCH (Sách Mới Bán Chạy - Cột trái) - FINAL FIX ==== */
+.suggestionSection {
+  width: 100%;
+  margin-top: 25px;
+  overflow: visible; 
+}
+
+.suggestionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e53935;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #e53935;
+  display: block;
+}
+
+.suggestedBookItem {
+  display: flex;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #eee;
+  align-items: flex-start;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.suggestedBookItem:hover {
+  background-color: #fff9f9;
+  transform: translateX(2px);
+}
+
+.suggestedBookItem:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* FIX: Thêm !important để đảm bảo kích thước được áp dụng */
+.suggestedImageContainer {
+  position: relative;
+  flex-shrink: 0;
+  width: 60px !important; 
+  height: 90px !important; 
+  margin-right: 10px;
+}
+
+.suggestedImage {
+  width: 100% !important; 
+  height: 100% !important; 
+  object-fit: cover !important; 
+  display: block;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.suggestedDetails {
+  flex-grow: 1;
+}
+
+.suggestedTitle {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  line-height: 1.3;
+  margin-bottom: 5px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.suggestedTitle:hover {
+  color: #e53935;
+}
+
+.suggestedPriceCurrent {
+  color: #e53935;
+  font-weight: 700;
+  margin: 0;
+  font-size: 15px;
+}
+
+.suggestedPriceOld {
+  color: #999;
+  text-decoration: line-through;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+.suggestionSaleTag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: #e53935;
+  color: white;
+  font-size: 0.7em;
+  padding: 2px 5px;
+  font-weight: bold;
+  border-radius: 0 0 5px 0;
+  z-index: 2;
 }
