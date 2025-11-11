@@ -3,7 +3,7 @@ import "./globals.css";
 import Header from "./components/Header";
 import { usePathname } from "next/navigation";
 import Footer from "./components/footer";
-
+import ChatbotButton from "./components/chatbot/ChatbotButton";
 export default function RootLayout({ children }) {
   const pathname = usePathname();
 
@@ -17,6 +17,7 @@ export default function RootLayout({ children }) {
       <body>
         {showHeader && <Header />}
         <main>{children}</main>
+        <ChatbotButton />
         {showFooter && <Footer />}
       </body>
     </html>

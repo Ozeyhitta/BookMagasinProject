@@ -1,38 +1,60 @@
 "use client";
+import { useEffect, useState } from "react";
 import styles from "./cart.module.css";
+import { useRouter } from "next/navigation";
 
 export default function CartPage() {
-  const cartItems = [
-    {
-      id: 1,
-      name: "Bên Bếp Lửa Cuộc Đời",
-      price: 89100,
-      oldPrice: 99000,
-      quantity: 1,
-      image: "https://www.netabooks.vn/Data/Sites/1/Product/78357/ben-bep-lua-cuoc-doi.jpg",
-    },
-    {
-      id: 2,
-      name: "Chu Du Hà Nội",
-      price: 242100,
-      oldPrice: 269000,
-      quantity: 2,
-      image: "https://toplist.vn/images/800px/ha-noi-dau-xua-pho-cu-681854.jpg",
-    },
-  ];
+  const [cartItems, setCartItems] = useState([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    async function fetchCart() {
+      try {
+        const res = await fetch("http://localhost:8080/api/carts/users/2");
+        const data = await res.json();
+        setCartItems(data);
+      } catch (err) {
+        console.error("Error fetching cart:", err);
+      }
+    }
+    fetchCart();
+  }, []);
 
   const total = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + item.book.sellingPrice * item.quantity,
     0
   );
+
+  function updateQuantity(id, delta) {
+    setCartItems((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          const qty = Math.max(1, item.quantity + delta);
+          syncQuantity(item, qty);
+          return { ...item, quantity: qty };
+        }
+        return item;
+      })
+    );
+  }
+
+  async function syncQuantity(item, newQty) {
+    await fetch(`http://localhost:8080/api/carts/${item.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: item.user.id,
+        bookId: item.book.id,
+        quantity: newQty,
+      }),
+    });
+  }
 
   return (
     <div className={styles.cartPage}>
       <div className={styles.header}>
         <h1>Giỏ hàng của bạn</h1>
-        <p>
-          Có {cartItems.length} sản phẩm trong giỏ hàng
-        </p>
+        <p>Có {cartItems.length} sản phẩm trong giỏ hàng</p>
         <div className={styles.divider}></div>
       </div>
 
@@ -49,26 +71,31 @@ export default function CartPage() {
           {cartItems.map((item) => (
             <div key={item.id} className={styles.cartItem}>
               <div className={styles.itemInfo}>
-                <img src={item.image} alt={item.name} />
-                <span className={styles.itemName}>{item.name}</span>
+                <img src={item.book.imageUrl} alt={item.book.title} />
+                <span className={styles.itemName}>{item.book.title}</span>
               </div>
+
               <div className={styles.itemPrice}>
                 <span className={styles.newPrice}>
-                  {item.price.toLocaleString("vi-VN")}đ
+                  {item.book.sellingPrice.toLocaleString("vi-VN")}đ
                 </span>
-                <span className={styles.oldPrice}>
-                  {item.oldPrice.toLocaleString()}đ
-                </span>
+
                 <span className={styles.discount}>0%</span>
               </div>
+
               <div className={styles.quantity}>
-                <button>-</button>
+                <button onClick={() => updateQuantity(item.id, -1)}>-</button>
                 <span>{item.quantity}</span>
-                <button>+</button>
+                <button onClick={() => updateQuantity(item.id, 1)}>+</button>
               </div>
+
               <div className={styles.totalPrice}>
-                {(item.price * item.quantity).toLocaleString()}đ
+                {(item.book.sellingPrice * item.quantity).toLocaleString(
+                  "vi-VN"
+                )}
+                đ
               </div>
+
               <span className={styles.remove}>×</span>
             </div>
           ))}
@@ -84,13 +111,21 @@ export default function CartPage() {
           <div className={styles.orderInfo}>
             <h3>Thông tin đơn hàng</h3>
             <p>
-              Tổng tiền: <span className={styles.total}>{total.toLocaleString()}đ</span>
+              Tổng tiền:{" "}
+              <span className={styles.total}>
+                {total.toLocaleString("vi-VN")}đ
+              </span>
             </p>
             <p className={styles.shipText}>
               Phí vận chuyển sẽ được tính ở trang thanh toán. <br />
               Bạn cũng có thể nhập mã giảm giá ở trang thanh toán.
             </p>
-            <button className={styles.payBtn}>THANH TOÁN</button>
+            <button
+              className={styles.payBtn}
+              onClick={() => router.push("/checkout")}
+            >
+              THANH TOÁN
+            </button>
             <a href="#" className={styles.continue}>
               ↩ Tiếp tục mua hàng
             </a>

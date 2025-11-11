@@ -11,31 +11,61 @@ import com.bookmagasin.web.dtoResponse.CartResponseDto;
 import java.util.Date;
 
 public class CartMapper {
-    public static CartResponseDto toResponseDto(Cart cart){
-        CartResponseDto dto=new CartResponseDto();
+
+    // Convert Entity -> DTO (for frontend)
+    public static CartResponseDto toResponseDto(Cart cart) {
+        if (cart == null) return null;
+
+        CartResponseDto dto = new CartResponseDto();
         dto.setId(cart.getId());
         dto.setCreateAt(cart.getCreatedAt());
         dto.setUpdateAt(cart.getUpdateAt());
-        if(cart.getUser() != null){
-            UserDto userDto=new UserDto();
-            userDto.setId(cart.getUser().getId());
-            userDto.setFullName(cart.getUser().getFullName());
-            dto.setUser(userDto);
+        dto.setQuantity(cart.getQuantity());  // nếu có field này trong Cart
+
+        // Map user
+        User user = cart.getUser();
+        if (user != null) {
+            UserDto ud = new UserDto();
+            ud.setId(user.getId());
+            ud.setFullName(user.getFullName());
+            dto.setUser(ud);
         }
-        if(cart.getBook() != null){
-            BookDto bookDto=new BookDto();
-            bookDto.setId(cart.getBook().getId());
-            bookDto.setTitle(cart.getBook().getTitle());
-            dto.setBook(bookDto);
+
+        // Map book
+        Book book = cart.getBook();
+        if (book != null) {
+            BookDto bd = new BookDto();
+            bd.setId(book.getId());
+            bd.setTitle(book.getTitle());
+            bd.setSellingPrice(book.getSellingPrice());
+            bd.setAuthor(book.getAuthor());
+
+            if (book.getBookDetail() != null) {
+                bd.setImageUrl(book.getBookDetail().getImageUrl());
+            }
+
+            dto.setBook(bd);
         }
+
         return dto;
     }
-    public static Cart toEntity(CartDto dto, User user, Book book){
-        Cart cart=new Cart();
+
+    // Convert DTO -> Entity (for create/update)
+    public static Cart toEntity(CartDto dto, User user, Book book) {
+        Cart cart = new Cart();
         cart.setUser(user);
         cart.setBook(book);
+        cart.setQuantity(dto.getQuantity());   // quantity
         cart.setCreatedAt(new Date());
         cart.setUpdateAt(new Date());
+
         return cart;
+    }
+
+    // Copy fields for update (optional)
+    public static void updateEntity(Cart cart, CartDto dto, Book book) {
+        cart.setBook(book);
+        cart.setQuantity(dto.getQuantity());
+        cart.setUpdateAt(new Date());
     }
 }

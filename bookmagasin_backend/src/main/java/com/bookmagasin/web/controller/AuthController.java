@@ -46,10 +46,15 @@ public class AuthController {
 
     // 🔹 Đăng ký tài khoản khách hàng
     @PostMapping("/register-customer")
-    public ResponseEntity<Account> registerCustomer(@RequestBody RegisteredCustomerDto dto) {
-        Account account = authService.registerCustomer(dto);
-        return new ResponseEntity<>(account, HttpStatus.CREATED);
+    public ResponseEntity<?> registerCustomer(@RequestBody RegisteredCustomerDto dto) {
+        try {
+            Account account = authService.registerCustomer(dto);
+            return new ResponseEntity<>(account, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
+
 
     // 🔹 Đăng nhập
     @PostMapping("/login")

@@ -35,5 +35,8 @@ public class Cart {
     @Temporal(TemporalType.DATE)
     @Column(name = "update_at")
     private Date updateAt;
+    @Column(name = "quantity")
+    private int quantity;
+
 
 }

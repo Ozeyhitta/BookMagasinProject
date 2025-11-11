@@ -29,12 +29,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Account registerCustomer(RegisteredCustomerDto dto) {
-        // 1️⃣ Kiểm tra email đã tồn tại chưa
+
         if (accountRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new RuntimeException("Email đã được sử dụng!");
+            throw new IllegalArgumentException("Email đã được sử dụng!");
         }
 
-        // 2️⃣ Tạo account
         Account account = new Account();
         account.setEmail(dto.getEmail());
         account.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -42,7 +41,6 @@ public class AuthServiceImpl implements AuthService {
         account.setActivated(true);
         account = accountRepository.save(account);
 
-        // 3️⃣ Tạo registered customer
         RegisteredCustomer customer = new RegisteredCustomer();
         customer.setFullName(dto.getFullName());
         customer.setAccount(account);
@@ -51,8 +49,8 @@ public class AuthServiceImpl implements AuthService {
 
         registeredCustomerRepository.save(customer);
 
-        // 4️⃣ Liên kết 2 chiều
         account.setUser(customer);
         return accountRepository.save(account);
     }
+
 }

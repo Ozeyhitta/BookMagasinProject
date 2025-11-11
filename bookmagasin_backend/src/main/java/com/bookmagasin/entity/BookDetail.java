@@ -34,7 +34,7 @@ public class BookDetail {
     private String description;
 
     @Column(name = "image_url")
-    private String imageUrl; // ✅ URL hình ảnh
+    private String imageUrl;
 
     @OneToOne(mappedBy = "bookDetail")
     @JsonBackReference

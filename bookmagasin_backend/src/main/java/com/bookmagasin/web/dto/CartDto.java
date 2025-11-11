@@ -10,4 +10,6 @@ import lombok.NoArgsConstructor;
 public class CartDto {
     private int userId;
     private int bookId;
+    private int quantity;    // rất cần
 }
+

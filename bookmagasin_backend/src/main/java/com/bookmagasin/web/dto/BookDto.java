@@ -20,7 +20,7 @@ public class BookDto {
     private String author;       // chỉ map id thay vì cả Author entity
     private int bookDetailId; // tương tự cho BookDetail
     private List<Integer> categoryIds;
-
+    private String imageUrl;
 
 }
 

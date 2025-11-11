@@ -15,7 +15,8 @@ public class CartResponseDto {
     private int id;
     private UserDto user;
     private BookDto book;
+    private int quantity;       // nên có, giỏ hàng mà
     private Date createAt;
     private Date updateAt;
-
 }
+

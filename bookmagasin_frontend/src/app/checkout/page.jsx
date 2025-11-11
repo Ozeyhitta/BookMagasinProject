@@ -1,33 +1,39 @@
 "use client";
 import "./checkout.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function CheckoutPage() {
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    province: "",
-    district: "",
-    ward: "",
-  });
+  const [user, setUser] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
 
-  const cartItems = [
-    {
-      title: "Bản Sắc Lưu Giữ Cuộc Đời",
-      author: "Trần Hữu 2025 | NXB Lao Động",
-      price: 89100,
-      image: "https://www.netabooks.vn/Data/Sites/1/Product/28375/hai-so-phan-bia-cung-01.jpg",
-    },
-    {
-      title: "Cho Du Hạ Nhi",
-      author: "Trần Lưu 2025 | NXB Lá Bối",
-      price: 484200,
-      image: "https://www.netabooks.vn/Data/Sites/1/Product/28375/hai-so-phan-bia-cung-01.jpg",
-    },
-  ];
+  // ✅ Tổng tiền thật từ backend
+  const total = cartItems.reduce(
+    (sum, item) => sum + item.book.sellingPrice * item.quantity,
+    0
+  );
 
-  const total = cartItems.reduce((sum, item) => sum + item.price, 0);
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // ✅ Fetch user
+        const userRes = await fetch("http://localhost:8080/api/users/2");
+        const userData = await userRes.json();
+        setUser(userData);
+
+        // ✅ Fetch cart
+        const cartRes = await fetch("http://localhost:8080/api/carts/users/2");
+        const cartData = await cartRes.json();
+        setCartItems(cartData);
+      } catch (err) {
+        console.error("Lỗi khi load dữ liệu checkout:", err);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  if (!user || cartItems.length === 0)
+    return <p style={{ padding: 20 }}>Đang tải dữ liệu...</p>;
 
   return (
     <div className="checkout-page">
@@ -35,32 +41,48 @@ export default function CheckoutPage() {
         {/* LEFT COLUMN */}
         <div className="checkout-left">
           <h2 className="section-title">Thông tin giao hàng</h2>
+
           <div className="user-info">
-            <p><strong>Nguyễn Lợi</strong> (loinguyen2010@gmail.com)</p>
+            <p>
+              <strong>{user.fullName}</strong> ({user.email})
+            </p>
             <a href="#">Đăng xuất</a>
           </div>
 
           <form className="checkout-form">
-            <input type="text" placeholder="Họ và tên" />
-            <input type="text" placeholder="Số điện thoại" />
-            <input type="text" placeholder="Địa chỉ" />
+            <input type="text" value={user.fullName} readOnly />
+            <input type="text" value={user.phoneNumber} readOnly />
+            <input type="text" value={user.address} readOnly />
 
             <div className="form-row">
-              <select><option>Việt Nam</option></select>
-              <select><option>Chọn tỉnh / thành</option></select>
+              <select>
+                <option>Việt Nam</option>
+              </select>
+              <select>
+                <option>Chọn tỉnh / thành</option>
+              </select>
             </div>
 
             <div className="form-row">
-              <select><option>Chọn quận / huyện</option></select>
-              <select><option>Chọn phường / xã</option></select>
+              <select>
+                <option>Chọn quận / huyện</option>
+              </select>
+              <select>
+                <option>Chọn phường / xã</option>
+              </select>
             </div>
           </form>
 
           <h2 className="section-title">Phương thức vận chuyển</h2>
           <div className="shipping-method">
             <div className="shipping-box">
-              <img src="https://cdn-icons-png.flaticon.com/512/481/481489.png" alt="" />
-              <p>Vui lòng chọn địa chỉ để xem danh sách phương thức vận chuyển.</p>
+              <img
+                src="https://cdn-icons-png.flaticon.com/512/481/481489.png"
+                alt=""
+              />
+              <p>
+                Vui lòng chọn địa chỉ để xem danh sách phương thức vận chuyển.
+              </p>
             </div>
           </div>
 
@@ -70,21 +92,10 @@ export default function CheckoutPage() {
               <input type="radio" name="payment" defaultChecked />
               <span>Thanh toán khi giao hàng (COD)</span>
             </label>
+
             <label className="payment-option">
               <input type="radio" name="payment" />
-              <span>Chuyển khoản qua ngân hàng</span>
-            </label>
-            <label className="payment-option">
-              <input type="radio" name="payment" />
-              <span>Thẻ ATM nội địa hoặc qua cổng OnePay</span>
-            </label>
-            <label className="payment-option">
-              <input type="radio" name="payment" />
-              <span>Thẻ Visa/MasterCard/JCB/Amex</span>
-            </label>
-            <label className="payment-option">
-              <input type="radio" name="payment" />
-              <span>Ví MoMo</span>
+              <span>Chuyển khoản ngân hàng</span>
             </label>
           </div>
 
@@ -94,15 +105,21 @@ export default function CheckoutPage() {
         {/* RIGHT COLUMN */}
         <div className="checkout-right">
           <div className="order-summary">
-            {cartItems.map((item, i) => (
-              <div key={i} className="order-item">
-                <img src={item.image} alt={item.title} />
+            {/* ✅ Lấy cart từ backend */}
+            {cartItems.map((item) => (
+              <div key={item.id} className="order-item">
+                <img src={item.book.imageUrl} alt={item.book.title} />
+
                 <div>
-                  <p className="item-title">{item.title}</p>
-                  <p className="item-author">{item.author}</p>
+                  <p className="item-title">{item.book.title}</p>
+                  <p className="item-author">{item.book.author}</p>
                 </div>
+
                 <span className="item-price">
-                  {item.price.toLocaleString("vi-VN")}đ
+                  {(item.book.sellingPrice * item.quantity).toLocaleString(
+                    "vi-VN"
+                  )}
+                  đ
                 </span>
               </div>
             ))}
@@ -111,10 +128,12 @@ export default function CheckoutPage() {
               <span>Tạm tính</span>
               <span>{total.toLocaleString("vi-VN")}đ</span>
             </div>
+
             <div className="summary-line">
               <span>Phí vận chuyển</span>
               <span>—</span>
             </div>
+
             <div className="summary-total">
               <span>Tổng cộng</span>
               <span>{total.toLocaleString("vi-VN")}đ</span>
