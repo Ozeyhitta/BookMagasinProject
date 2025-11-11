@@ -103,6 +103,18 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.delete(account);
     }
 
+    @Override
+    public AccountResponseDto toggleActivated(int id) {
+        Account acc = accountRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        acc.setActivated(!acc.isActivated());
+        accountRepository.save(acc);
+
+        return AccountMapper.toResponseDto(acc);
+
+    }
+
 
 
 }

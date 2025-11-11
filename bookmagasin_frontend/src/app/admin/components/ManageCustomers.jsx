@@ -1,40 +1,11 @@
 "use client";
 
 import { Eye, Edit2, Lock, Unlock, Trash2, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./manage-customers.module.css";
 
 export default function ManageCustomers() {
-  const [customers, setCustomers] = useState([
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      email: "nguyenvana@email.com",
-      phone: "0912345678",
-      joinDate: "2024-01-15",
-      orders: 5,
-      status: "active",
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      email: "tranthib@email.com",
-      phone: "0987654321",
-      joinDate: "2024-02-20",
-      orders: 3,
-      status: "active",
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      email: "levanc@email.com",
-      phone: "0901234567",
-      joinDate: "2024-03-10",
-      orders: 8,
-      status: "locked",
-    },
-  ]);
-
+  const [customers, setCustomers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,6 +17,34 @@ export default function ManageCustomers() {
     orders: "",
     status: "active",
   });
+
+  useEffect(() => {
+    async function fetchCustomers() {
+      try {
+        const res = await fetch("http://localhost:8080/api/accounts");
+        const data = await res.json();
+
+        const formatted = data.map((acc) => ({
+          accountId: acc.id, // ✅ đúng ID của bảng accounts
+          userId: acc.user.id,
+          name: acc.user.fullName,
+          email: acc.email,
+          phone: acc.user.phoneNumber || "Chưa có SĐT",
+          joinDate: acc.user.dateOfBirth
+            ? acc.user.dateOfBirth.substring(0, 10)
+            : "—",
+          orders: 0,
+          status: acc.activated ? "active" : "locked",
+        }));
+
+        setCustomers(formatted);
+      } catch (err) {
+        console.error("Lỗi fetch khách hàng:", err);
+      }
+    }
+
+    fetchCustomers();
+  }, []);
 
   // Mở form thêm mới
   const handleAddCustomer = () => {
@@ -66,12 +65,13 @@ export default function ManageCustomers() {
     e.preventDefault();
     if (editingId) {
       setCustomers((prev) =>
-        prev.map((c) => (c.id === editingId ? { ...c, ...formData } : c))
+        prev.map((c) => (c.accountId === editingId ? { ...c, ...formData } : c))
       );
       alert("Cập nhật thông tin khách hàng thành công!");
     } else {
       const id = customers.length ? customers[customers.length - 1].id + 1 : 1;
-      setCustomers([...customers, { id, ...formData }]);
+      setCustomers([...customers, { accountId: id, ...formData }]);
+
       alert("Thêm khách hàng mới thành công!");
     }
     setShowForm(false);
@@ -79,44 +79,61 @@ export default function ManageCustomers() {
   };
 
   // Xem chi tiết
-  const handleView = (id) => {
-    const c = customers.find((x) => x.id === id);
+  const handleView = (accountId) => {
+    const c = customers.find((x) => x.accountId === accountId);
     alert(
-      `📋 Thông tin khách hàng:\n\nTên: ${c.name}\nEmail: ${c.email}\nSĐT: ${c.phone}\nNgày tham gia: ${c.joinDate}\nSố đơn hàng: ${c.orders}\nTrạng thái: ${
+      `📋 Thông tin khách hàng:\n\nTên: ${c.name}\nEmail: ${c.email}\nSĐT: ${
+        c.phone
+      }\nNgày tham gia: ${c.joinDate}\nSố đơn hàng: ${c.orders}\nTrạng thái: ${
         c.status === "active" ? "Hoạt động" : "Bị khóa"
       }`
     );
   };
 
   // Sửa
-  const handleEdit = (id) => {
-    const c = customers.find((x) => x.id === id);
-    setEditingId(id);
+  const handleEdit = (accountId) => {
+    const c = customers.find((x) => x.accountId === accountId);
+    setEditingId(accountId);
     setFormData({ ...c });
     setShowForm(true);
   };
 
   // Khóa / mở khóa
-  const handleToggleLock = (id, currentStatus) => {
-    setCustomers((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, status: currentStatus === "active" ? "locked" : "active" }
-          : c
-      )
-    );
-    alert(
-      currentStatus === "active"
-        ? "🔒 Tài khoản đã bị khóa."
-        : "🔓 Tài khoản đã được mở khóa."
-    );
+  const handleToggleLock = async (accountId) => {
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/accounts/${accountId}/toggle`,
+        {
+          method: "PUT",
+        }
+      );
+
+      const updated = await res.json();
+
+      setCustomers((prev) =>
+        prev.map((c) =>
+          c.accountId === accountId
+            ? {
+                ...c,
+                status: updated.activated ? "active" : "locked",
+              }
+            : c
+        )
+      );
+    } catch (err) {
+      console.error("Toggle error:", err);
+    }
   };
 
   // Xóa
-  const handleDelete = (id) => {
-    if (confirm("Bạn có chắc chắn muốn xóa khách hàng này không?")) {
-      setCustomers(customers.filter((c) => c.id !== id));
-    }
+  const handleDelete = async (accountId) => {
+    if (!confirm("Bạn chắc muốn xóa?")) return;
+
+    await fetch(`http://localhost:8080/api/accounts/${accountId}`, {
+      method: "DELETE",
+    });
+
+    setCustomers((prev) => prev.filter((c) => c.accountId !== accountId));
   };
 
   const filteredCustomers = customers.filter(
@@ -238,68 +255,79 @@ export default function ManageCustomers() {
             </tr>
           </thead>
           <tbody>
-            {filteredCustomers.map((customer) => (
-              <tr key={customer.id}>
-                <td className={styles.nameCell}>{customer.name}</td>
-                <td>{customer.email}</td>
-                <td>{customer.phone}</td>
-                <td>{customer.joinDate}</td>
-                <td className={styles.centerCell}>{customer.orders}</td>
-                <td>
-                  <span
-                    className={`${styles.badge} ${styles[customer.status]}`}
-                  >
-                    {customer.status === "active" ? "Hoạt động" : "Khóa"}
-                  </span>
-                </td>
-                <td>
-                  <div className={styles.actionButtons}>
-                    <button
-                      className={`${styles.btn} ${styles.btnView}`}
-                      onClick={() => handleView(customer.id)}
-                      title="Xem"
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      className={`${styles.btn} ${styles.btnEdit}`}
-                      onClick={() => handleEdit(customer.id)}
-                      title="Chỉnh sửa"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      className={`${styles.btn} ${
-                        customer.status === "active"
-                          ? styles.btnLock
-                          : styles.btnUnlock
-                      }`}
-                      onClick={() =>
-                        handleToggleLock(customer.id, customer.status)
-                      }
-                      title={
-                        customer.status === "active"
-                          ? "Khóa tài khoản"
-                          : "Mở khóa tài khoản"
-                      }
-                    >
-                      {customer.status === "active" ? (
-                        <Lock size={16} />
-                      ) : (
-                        <Unlock size={16} />
-                      )}
-                    </button>
-                    <button
-                      className={`${styles.btn} ${styles.btnDelete}`}
-                      onClick={() => handleDelete(customer.id)}
-                      title="Xóa"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+            {filteredCustomers.length === 0 ? (
+              <tr>
+                <td
+                  colSpan="7"
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  Không có dữ liệu khách hàng
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredCustomers.map((customer) => (
+                <tr key={customer.accountId}>
+                  <td className={styles.nameCell}>{customer.name}</td>
+                  <td>{customer.email}</td>
+                  <td>{customer.phone}</td>
+                  <td>{customer.joinDate}</td>
+                  <td className={styles.centerCell}>{customer.orders}</td>
+                  <td>
+                    <span
+                      className={`${styles.badge} ${styles[customer.status]}`}
+                    >
+                      {customer.status === "active" ? "Hoạt động" : "Khóa"}
+                    </span>
+                  </td>
+                  <td>
+                    <div className={styles.actionButtons}>
+                      <button
+                        className={`${styles.btn} ${styles.btnView}`}
+                        onClick={() => handleView(customer.accountId)}
+                        title="Xem"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        className={`${styles.btn} ${styles.btnEdit}`}
+                        onClick={() => handleEdit(customer.accountId)}
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        className={`${styles.btn} ${
+                          customer.status === "active"
+                            ? styles.btnLock
+                            : styles.btnUnlock
+                        }`}
+                        onClick={() =>
+                          handleToggleLock(customer.accountId, customer.status)
+                        }
+                        title={
+                          customer.status === "active"
+                            ? "Khóa tài khoản"
+                            : "Mở khóa tài khoản"
+                        }
+                      >
+                        {customer.status === "active" ? (
+                          <Lock size={16} />
+                        ) : (
+                          <Unlock size={16} />
+                        )}
+                      </button>
+                      <button
+                        className={`${styles.btn} ${styles.btnDelete}`}
+                        onClick={() => handleDelete(customer.accountId)}
+                        title="Xóa"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

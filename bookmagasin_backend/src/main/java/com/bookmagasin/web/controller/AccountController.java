@@ -59,6 +59,13 @@ public class AccountController {
         return ResponseEntity.ok(updated);
 
     }
+    @PutMapping("/{id}/toggle")
+    public ResponseEntity<AccountResponseDto> toggleAccount(@PathVariable int id) {
+        AccountResponseDto dto = accountService.toggleActivated(id);
+        return ResponseEntity.ok(dto);
+    }
+
+
 
     // ⚫ Delete Account
     @DeleteMapping("/{id}")

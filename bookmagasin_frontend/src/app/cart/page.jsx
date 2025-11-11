@@ -8,22 +8,33 @@ export default function CartPage() {
   const router = useRouter();
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    console.log("USER FROM LOCAL:", user);
+
+    if (!user) return;
+
     async function fetchCart() {
       try {
-        const res = await fetch("http://localhost:8080/api/carts/users/2");
+        const res = await fetch(
+          `http://localhost:8080/api/carts/users/${user.id}`
+        );
         const data = await res.json();
+        console.log("DATA:", data);
         setCartItems(data);
       } catch (err) {
         console.error("Error fetching cart:", err);
       }
     }
+
     fetchCart();
   }, []);
 
-  const total = cartItems.reduce(
-    (sum, item) => sum + item.book.sellingPrice * item.quantity,
-    0
-  );
+  const total = Array.isArray(cartItems)
+    ? cartItems.reduce(
+        (sum, item) => sum + item.book.sellingPrice * item.quantity,
+        0
+      )
+    : 0;
 
   function updateQuantity(id, delta) {
     setCartItems((prev) =>

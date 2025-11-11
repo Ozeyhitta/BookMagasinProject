@@ -20,5 +20,5 @@ public interface AccountService {
     void deletedById(int id);
 
 
-
+    AccountResponseDto toggleActivated(int id);
 }
