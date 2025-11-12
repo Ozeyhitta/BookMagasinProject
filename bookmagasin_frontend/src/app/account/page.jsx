@@ -130,17 +130,23 @@ export default function AccountPage() {
               </div>
             </div>
           </div>
-          <button
-            className={styles.editButton}
-            onClick={() => setIsEditing(true)}
-          >
-            Chỉnh sửa
-          </button>
-          {isEditing && (
-            <button className={styles.saveButton} onClick={handleSave}>
+          <div className={styles.buttonGroup}>
+            <button
+              className={styles.editButton}
+              onClick={() => setIsEditing(true)}
+              disabled={isEditing}
+            >
+              Chỉnh sửa
+            </button>
+
+            <button
+              className={styles.saveButton}
+              onClick={handleSave}
+              disabled={!isEditing}
+            >
               Lưu thay đổi
             </button>
-          )}
+          </div>
         </div>
       </section>
 

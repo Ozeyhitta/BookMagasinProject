@@ -1,5 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import styles from "./productDetail.module.css";
 
 export default function ProductDetail({ params }) {
@@ -11,6 +13,20 @@ export default function ProductDetail({ params }) {
   const [quantity, setQuantity] = useState(1);
   const increaseQty = () => setQuantity((q) => q + 1);
   const decreaseQty = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
+  const router = useRouter();
+
+  const handleBuyNow = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Vui lòng đăng nhập trước khi mua hàng!");
+      router.push("/account"); // 👉 chuyển sang trang account
+      return;
+    }
+
+    // Nếu đã đăng nhập thì vẫn thêm vào giỏ trước rồi chuyển trang
+    handleAddToCart();
+    router.push("/checkout"); // 👉 hoặc bạn có thể đổi thành /checkout
+  };
 
   // Đánh dấu client để dùng toLocaleString
   useEffect(() => {
@@ -170,7 +186,9 @@ export default function ProductDetail({ params }) {
             <button className={styles.addToCart} onClick={handleAddToCart}>
               THÊM VÀO GIỎ
             </button>
-            <button className={styles.buyNow}>MUA NGAY</button>
+            <button className={styles.buyNow} onClick={handleBuyNow}>
+              MUA NGAY
+            </button>
           </div>
         </div>
 

@@ -200,16 +200,17 @@ export default function LoginPage() {
                       value={otp[i] || ""}
                       onChange={(e) => {
                         const value = e.target.value.replace(/\D/, "");
-                        if (!value) return;
-
-                        // cập nhật ký tự vào đúng vị trí
                         const newOtp = otp.split("");
-                        newOtp[i] = value;
+
+                        // nếu người dùng xoá, cập nhật lại chuỗi
+                        newOtp[i] = value || "";
                         setOtp(newOtp.join(""));
 
-                        // tự chuyển sang ô kế tiếp
-                        const next = document.getElementById(`otp-${i + 1}`);
-                        if (next) next.focus();
+                        // tự chuyển sang ô kế tiếp nếu nhập số
+                        if (value) {
+                          const next = document.getElementById(`otp-${i + 1}`);
+                          if (next) next.focus();
+                        }
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Backspace" && !otp[i]) {
