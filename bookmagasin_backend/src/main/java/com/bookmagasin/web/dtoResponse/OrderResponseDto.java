@@ -8,20 +8,30 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class OrderResponseDto {
     private int id;
+    private String userFullName;
+    private String serviceName;
+
+    private String paymentMethod;
+    private String paymentStatus;
+    private double paymentAmount;
+
     private String note;
     private EStatusBooking status;
     private Date orderDate;
 
-    private String userFullName;
-    private String serviceName;
-    private Double paymentAmount;
-    private EMethod paymentMethod;
-    private EStatusPayment paymentStatus;
+    private String shippingAddress;
+    private String phoneNumber;
+    private Double totalPrice;
+
+    private List<OrderItemResponseDto> items;
 }
+
+
 

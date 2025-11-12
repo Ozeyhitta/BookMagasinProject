@@ -4,6 +4,11 @@ import com.bookmagasin.entity.Order;
 import com.bookmagasin.entity.User;
 import com.bookmagasin.web.dto.OrderDto;
 import com.bookmagasin.web.dtoResponse.OrderResponseDto;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.bookmagasin.web.dtoResponse.OrderItemResponseDto;
+import com.bookmagasin.web.mapper.OrderItemMapper;
 
 public class OrderMapper {
 
@@ -13,6 +18,9 @@ public class OrderMapper {
         dto.setNote(order.getNote());
         dto.setStatus(order.getStatus());
         dto.setOrderDate(order.getOrderDate());
+        dto.setShippingAddress(order.getShippingAddress());
+        dto.setPhoneNumber(order.getPhoneNumber());
+        dto.setTotalPrice(order.getTotalPrice());
 
         if (order.getUser() != null)
             dto.setUserFullName(order.getUser().getFullName());
@@ -22,10 +30,21 @@ public class OrderMapper {
 
         if (order.getPayment() != null) {
             dto.setPaymentAmount(order.getPayment().getAmount());
-            dto.setPaymentMethod(order.getPayment().getMethod());
-            dto.setPaymentStatus(order.getPayment().getPaymentStatus());
+            dto.setPaymentMethod(order.getPayment().getMethod().name()); // ⚙️ đổi ở đây
+            dto.setPaymentStatus(order.getPayment().getPaymentStatus().name()); // ⚙️ đổi ở đây
+
+        }
+
+        // ✅ Thêm ánh xạ danh sách sản phẩm
+        if (order.getBooks() != null && !order.getBooks().isEmpty()) {
+            List<OrderItemResponseDto> items = order.getBooks()
+                    .stream()
+                    .map(OrderItemMapper::toResponseDto)
+                    .collect(Collectors.toList());
+            dto.setItems(items);
         }
 
         return dto;
     }
 }
+

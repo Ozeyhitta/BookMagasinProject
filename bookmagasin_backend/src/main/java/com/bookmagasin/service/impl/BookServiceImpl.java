@@ -177,7 +177,8 @@ public class BookServiceImpl implements BookService {
         dto.setPublicationDate(book.getPublicationDate());
         dto.setEdition(book.getEdition());
         dto.setAuthor(book.getAuthor());
-        //book details
+
+        // ✅ Thêm đầy đủ thuộc tính BookDetail
         if (book.getBookDetail() != null) {
             BookDetail bd = book.getBookDetail();
             BookDetailDto detailDto = new BookDetailDto();
@@ -186,17 +187,30 @@ public class BookServiceImpl implements BookService {
             detailDto.setSupplier(bd.getSupplier());
             detailDto.setPages(bd.getPages());
             detailDto.setDescription(bd.getDescription());
+
+            // 🔹 Thêm các trường còn thiếu
+            detailDto.setLength(bd.getLength());
+            detailDto.setWidth(bd.getWidth());
+            detailDto.setHeight(bd.getHeight());
+            detailDto.setWeight(bd.getWeight());
+            detailDto.setImageUrl(bd.getImageUrl());
+
             dto.setBookDetail(detailDto);
         }
-        if(book.getCategories() != null && !book.getCategories().isEmpty()){
+
+        // ✅ Map categories
+        if (book.getCategories() != null && !book.getCategories().isEmpty()) {
             List<CategoryResponseDto> categoryDtos = book.getCategories()
                     .stream()
                     .map(c -> {
                         CategoryResponseDto categoryDto = new CategoryResponseDto();
                         categoryDto.setId(c.getId());
                         categoryDto.setName(c.getName());
-                        if(c.getBooks() != null){
-                            categoryDto.setBookIds(c.getBooks().stream().map(Book::getId).collect(Collectors.toList()));
+                        if (c.getBooks() != null) {
+                            categoryDto.setBookIds(c.getBooks()
+                                    .stream()
+                                    .map(Book::getId)
+                                    .collect(Collectors.toList()));
                         }
                         return categoryDto;
                     })
@@ -204,7 +218,7 @@ public class BookServiceImpl implements BookService {
             dto.setCategories(categoryDtos);
         }
 
-
         return dto;
     }
+
 }

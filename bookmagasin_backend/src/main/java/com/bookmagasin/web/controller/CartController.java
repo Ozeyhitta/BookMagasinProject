@@ -18,42 +18,50 @@ public class CartController {
     public CartController(CartService service) {
         this.service = service;
     }
+
     @GetMapping
-    public ResponseEntity<List<CartResponseDto>> getAllCarts(){
+    public ResponseEntity<List<CartResponseDto>> getAllCarts() {
         return ResponseEntity.ok(service.findAll());
     }
+
     @GetMapping("/{id}")
-    public ResponseEntity<CartResponseDto> getCartById(@PathVariable int id){
+    public ResponseEntity<CartResponseDto> getCartById(@PathVariable int id) {
         return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/users/{userId}")
-    public ResponseEntity<List<CartResponseDto>> getCartByUserId(@PathVariable int userId){
+    public ResponseEntity<List<CartResponseDto>> getCartByUserId(@PathVariable int userId) {
         return ResponseEntity.ok(service.findByUserId(userId));
     }
 
     @PostMapping
-    public ResponseEntity<CartResponseDto> createCart(@RequestBody CartDto dto){
-        CartResponseDto created=service.createCart(dto);
-        return new ResponseEntity<>(created,HttpStatus.CREATED);
+    public ResponseEntity<CartResponseDto> createCart(@RequestBody CartDto dto) {
+        CartResponseDto created = service.createCart(dto);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CartResponseDto> updateCart(@PathVariable int id,@RequestBody CartDto dto){
-        try{
-            CartResponseDto updated=service.updateCart(id,dto);
+    public ResponseEntity<CartResponseDto> updateCart(@PathVariable int id, @RequestBody CartDto dto) {
+        try {
+            CartResponseDto updated = service.updateCart(id, dto);
             return ResponseEntity.ok(updated);
-
-        }catch (RuntimeException e){
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCart(@PathVariable int id){
+    public ResponseEntity<Void> deleteCart(@PathVariable int id) {
         service.deleteCartById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ✅ NEW: Xóa toàn bộ giỏ hàng của 1 user
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<Void> deleteCartByUserId(@PathVariable int userId) {
+        service.deleteCartByUserId(userId);
         return ResponseEntity.noContent().build();
     }
 }

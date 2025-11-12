@@ -59,6 +59,66 @@ export default function CheckoutPage() {
     fetchData();
   }, []);
 
+  async function handlePlaceOrder(e) {
+    e.preventDefault();
+    if (!user?.fullName || !user?.address || !user?.phoneNumber) {
+      alert("Vui lòng điền đầy đủ thông tin giao hàng!");
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      alert("Giỏ hàng trống!");
+      return;
+    }
+
+    // Giả định mặc định: serviceId = 1, paymentId = 1
+    const orderPayload = {
+      userId: JSON.parse(localStorage.getItem("user"))?.id,
+      serviceId: 1,
+      paymentId: 1,
+      note: "Giao buổi sáng",
+      status: "PENDING",
+      orderDate: new Date().toISOString().split("T")[0],
+      shippingAddress: user.address,
+      phoneNumber: user.phoneNumber,
+      cartItems: cartItems.map((item) => ({
+        bookId: item.book.id,
+        quantity: item.quantity,
+        price: item.book.sellingPrice,
+      })),
+    };
+
+    try {
+      const res = await fetch("http://localhost:8080/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+
+      if (!res.ok) {
+        throw new Error("Không thể tạo đơn hàng");
+      }
+
+      const data = await res.json();
+      console.log("✅ Order created:", data);
+
+      // ✅ Sau khi đặt hàng thành công thì xóa giỏ hàng
+      await fetch(
+        `http://localhost:8080/api/carts/users/${orderPayload.userId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      alert("Đặt hàng thành công!");
+      localStorage.removeItem("cart");
+      window.location.href = "/thankyoufororder";
+    } catch (err) {
+      console.error("❌ Lỗi khi tạo đơn hàng:", err);
+      alert("Đặt hàng thất bại, vui lòng thử lại!");
+    }
+  }
+
   // ✅ Chỉ check user, không check giỏ hàng
   if (!user) {
     return (
@@ -132,7 +192,13 @@ export default function CheckoutPage() {
             </label>
           </div>
 
-          <button className="btn-submit">Hoàn tất đơn hàng</button>
+          <button
+            type="button"
+            className="btn-submit"
+            onClick={handlePlaceOrder}
+          >
+            Hoàn tất đơn hàng
+          </button>
         </div>
 
         {/* RIGHT */}

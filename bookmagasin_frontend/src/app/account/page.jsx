@@ -77,11 +77,44 @@ export default function AccountPage() {
       <section className={styles.profileSection}>
         <div className={styles.profileHeader}>
           <div className={styles.profileInfo}>
-            <img
-              src={formData.avatarUrl}
-              alt="Ảnh đại diện"
-              className={styles.avatar}
-            />
+            <div className={styles.avatarWrapper}>
+              <div className={styles.avatarContainer}>
+                <img
+                  src={formData.avatarUrl || "/default-avatar.png"}
+                  className={styles.avatar}
+                />
+
+                {isEditing && (
+                  <>
+                    <label
+                      htmlFor="avatarUpload"
+                      className={styles.avatarOverlay}
+                    >
+                      <span className={styles.overlayText}>Đổi ảnh</span>
+                    </label>
+                    <input
+                      id="avatarUpload"
+                      type="file"
+                      accept="image/*"
+                      className={styles.avatarInput}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (upload) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              avatarUrl: upload.target.result,
+                            }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
 
             <div className={styles.profileDetails}>
               <h2>{formData.fullName}</h2>

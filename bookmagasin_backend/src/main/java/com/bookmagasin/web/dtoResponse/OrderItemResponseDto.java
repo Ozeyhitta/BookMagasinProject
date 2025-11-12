@@ -5,8 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class OrderItemResponseDto {
     private int id;
     private int quantity;
@@ -15,6 +15,5 @@ public class OrderItemResponseDto {
     private int bookId;
     private String bookTitle;
     private double bookPrice;
-
-    private int orderId;
 }
+

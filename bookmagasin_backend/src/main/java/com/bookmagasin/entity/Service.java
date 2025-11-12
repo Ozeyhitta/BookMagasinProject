@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Data
 @Table(name = "service")
@@ -19,6 +21,6 @@ public class Service {
     @Column(name = "status")
     private Boolean status;
 
-    @OneToOne(mappedBy = "service")
-    private Order order;
+    @OneToMany(mappedBy = "service")
+    private List<Order> orders;
 }

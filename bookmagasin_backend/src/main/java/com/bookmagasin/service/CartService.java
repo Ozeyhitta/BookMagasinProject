@@ -16,4 +16,5 @@ public interface CartService {
     void deleteCartById(int id);
 
 
+    void deleteCartByUserId(int userId);
 }

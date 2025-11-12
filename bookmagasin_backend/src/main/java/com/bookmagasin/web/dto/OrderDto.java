@@ -6,15 +6,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderDto {
-    private int userId;
+    private Integer userId;
+    private Integer serviceId;
+    private Integer paymentId;
     private String note;
-    private EStatusBooking status;
+    private String status;
     private Date orderDate;
-    private int serviceId;
-    private int paymentId;
+    private String shippingAddress;
+    private String phoneNumber;
+    private List<OrderItemDto> cartItems;
 }
