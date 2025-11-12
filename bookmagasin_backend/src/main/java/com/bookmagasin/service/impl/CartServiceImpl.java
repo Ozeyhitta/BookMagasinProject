@@ -56,14 +56,33 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartResponseDto createCart(CartDto dto) {
-        User user=userRepository.findById(dto.getUserId())
+        User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Book book = bookRepository.findById(dto.getBookId())
                 .orElseThrow(() -> new RuntimeException("Book not found"));
-        Cart cart=CartMapper.toEntity(dto,user,book);
-        Cart saved=cartRepository.save(cart);
+
+        // ✅ Kiểm tra xem user đã có book này trong giỏ chưa
+        List<Cart> existingCarts = cartRepository.findByUserId(dto.getUserId());
+        Optional<Cart> existingItem = existingCarts.stream()
+                .filter(c -> c.getBook().getId() == dto.getBookId())
+                .findFirst();
+
+        Cart saved;
+        if (existingItem.isPresent()) {
+            // 🔄 Nếu có rồi, chỉ tăng số lượng
+            Cart cart = existingItem.get();
+            cart.setQuantity(cart.getQuantity() + dto.getQuantity());
+            cart.setUpdateAt(new Date());
+            saved = cartRepository.save(cart);
+        } else {
+            // ➕ Nếu chưa có thì tạo mới
+            Cart cart = CartMapper.toEntity(dto, user, book);
+            saved = cartRepository.save(cart);
+        }
+
         return CartMapper.toResponseDto(saved);
     }
+
 
     @Override
     public CartResponseDto updateCart(int id, CartDto dto) {

@@ -37,16 +37,23 @@ export default function CartPage() {
     : 0;
 
   function updateQuantity(id, delta) {
-    setCartItems((prev) =>
-      prev.map((item) => {
+    setCartItems((prev) => {
+      const updated = prev.map((item) => {
         if (item.id === id) {
-          const qty = Math.max(1, item.quantity + delta);
-          syncQuantity(item, qty);
-          return { ...item, quantity: qty };
+          const newQty = Math.max(1, item.quantity + delta);
+          syncQuantity(item, newQty);
+          return { ...item, quantity: newQty };
         }
         return item;
-      })
-    );
+      });
+
+      // ✅ Cập nhật lại tổng chính xác dựa trên state mới nhất
+      const newTotal = updated.length;
+      localStorage.setItem("cartCount", newTotal);
+      window.dispatchEvent(new Event("cart-updated"));
+
+      return updated;
+    });
   }
 
   async function syncQuantity(item, newQty) {
@@ -59,6 +66,33 @@ export default function CartPage() {
         quantity: newQty,
       }),
     });
+  }
+
+  async function handleRemove(itemId) {
+    if (!confirm("Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:8080/api/carts/${itemId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        // ✅ Cập nhật lại state
+        const updated = cartItems.filter((item) => item.id !== itemId);
+        setCartItems(updated);
+
+        // ✅ Cập nhật lại localStorage đúng theo tổng số lượng mới
+        const newTotal = updated.length;
+        localStorage.setItem("cartCount", newTotal);
+        window.dispatchEvent(new Event("cart-updated"));
+      } else {
+        const text = await res.text();
+        alert("Xóa thất bại: " + text);
+      }
+    } catch (err) {
+      console.error("Lỗi khi xóa sản phẩm:", err);
+      alert("Không thể kết nối đến server!");
+    }
   }
 
   return (
@@ -107,7 +141,13 @@ export default function CartPage() {
                 đ
               </div>
 
-              <span className={styles.remove}>×</span>
+              <span
+                className={styles.remove}
+                onClick={() => handleRemove(item.id)}
+                style={{ cursor: "pointer", color: "red", fontWeight: "bold" }}
+              >
+                ×
+              </span>
             </div>
           ))}
         </div>

@@ -1,14 +1,28 @@
+"use client";
+import { useRouter } from "next/navigation";
 import "./CategoryPage.css";
 
 export default function ProductCard({
+  id, // ✅ thêm id
   image,
   title,
   price,
   oldPrice,
   discount,
 }) {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (id) router.push(`/product/${id}`);
+    else console.error("Không có id cho sản phẩm này");
+  };
+
   return (
-    <div className="product-card hover:scale-105 transition-transform duration-200">
+    <div
+      onClick={handleClick}
+      className="product-card transition-transform duration-200 hover:scale-105 hover:shadow-lg cursor-pointer"
+      style={{ cursor: "pointer" }}
+    >
       <div className="discount-badge">{discount}</div>
       <img
         src={image}

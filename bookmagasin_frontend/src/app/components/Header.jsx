@@ -7,10 +7,68 @@ import "../components/header.css";
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const handleCartUpdate = (e) => {
+      const newCount = parseInt(localStorage.getItem("cartCount") || "0");
+      setCartCount(newCount);
+    };
+
+    // Lắng nghe sự kiện tùy chỉnh
+    window.addEventListener("cart-updated", handleCartUpdate);
+
+    return () => window.removeEventListener("cart-updated", handleCartUpdate);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    setIsLoggedIn(!!token);
+
+    if (userId) {
+      fetchCartCount(userId);
+    }
+  }, []);
+
+  const fetchCartCount = async (userId) => {
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/carts/users/${userId}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        // ✅ Tính tổng số sản phẩm khác nhau
+        const total = data.length;
+        setCartCount(total);
+        localStorage.setItem("cartCount", total);
+      }
+    } catch (err) {
+      console.error("Lỗi khi lấy số lượng giỏ hàng:", err);
+    }
+  };
+
+  useEffect(() => {
+    // Lấy ban đầu
+    const savedCount = localStorage.getItem("cartCount");
+    if (savedCount) setCartCount(parseInt(savedCount));
+
+    // 🔔 Lắng nghe thay đổi localStorage từ các component khác
+    const handleStorageChange = (event) => {
+      if (event.key === "cartCount") {
+        setCartCount(parseInt(event.newValue || "0"));
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   const goToOrderHistory = () => {
@@ -119,8 +177,28 @@ export default function Header() {
               <p>Thông Báo</p>
             </div>
 
-            <div className="icon-item" onClick={goToCart}>
+            <div
+              className="icon-item"
+              onClick={goToCart}
+              style={{ position: "relative" }}
+            >
               <ShoppingCart className="icon" />
+              {cartCount > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "-5px",
+                    right: "-5px",
+                    background: "red",
+                    color: "white",
+                    borderRadius: "50%",
+                    padding: "2px 6px",
+                    fontSize: "12px",
+                  }}
+                >
+                  {cartCount}
+                </span>
+              )}
               <p>Giỏ Hàng</p>
             </div>
           </div>

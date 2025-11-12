@@ -64,4 +64,13 @@ public class CartController {
         service.deleteCartByUserId(userId);
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/users/{userId}/count")
+    public ResponseEntity<Integer> getCartCount(@PathVariable int userId) {
+        int count = service.findByUserId(userId)
+                .stream()
+                .mapToInt(CartResponseDto::getQuantity)
+                .sum();
+        return ResponseEntity.ok(count);
+    }
+
 }
