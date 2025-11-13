@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link"; // ✅ import Link để điều hướng
+import Link from "next/link";
 import styles from "./Register.module.css";
 
 export default function RegisterPage() {
@@ -25,7 +25,7 @@ export default function RegisterPage() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE}/api/auth/register-customer`,
+        "http://localhost:8080/api/auth/register-customer", // 🔴 GỌI THẲNG BACKEND
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -34,6 +34,7 @@ export default function RegisterPage() {
       );
 
       if (!res.ok) throw new Error((await res.text()) || "Đăng ký thất bại");
+
       const data = await res.json();
       setMsg({
         type: "success",
@@ -104,7 +105,6 @@ export default function RegisterPage() {
           )}
         </form>
 
-        {/* ✅ Thêm dòng đăng nhập */}
         <p className={styles.loginText}>
           Đã có tài khoản?{" "}
           <Link href="/login" className={styles.loginLink}>

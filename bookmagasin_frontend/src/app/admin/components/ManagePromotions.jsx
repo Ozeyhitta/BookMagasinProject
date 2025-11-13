@@ -1,176 +1,162 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { Eye, Edit2, Trash2, Plus } from "lucide-react"
-import styles from "./manage-promotions.module.css"
+import { useState, useEffect } from "react";
+import { Eye, Edit2, Trash2, Plus, Search } from "lucide-react";
+import styles from "./manage-promotions.module.css";
 
 export default function ManagePromotions() {
-  const [promotions, setPromotions] = useState([
-    {
-      id: 1,
-      name: "Giảm giá sách lập trình",
-      type: "discount",
-      value: "20%",
-      startDate: "2025-01-01",
-      endDate: "2025-03-31",
-      status: "active",
-    },
-    {
-      id: 2,
-      name: "Voucher mua 5 sách",
-      type: "voucher",
-      value: "100.000đ",
-      startDate: "2025-01-15",
-      endDate: "2025-02-28",
-      status: "active",
-    },
-    {
-      id: 3,
-      name: "Coupon tháng 2",
-      type: "coupon",
-      value: "15%",
-      startDate: "2025-02-01",
-      endDate: "2025-02-28",
-      status: "active",
-    },
-    {
-      id: 4,
-      name: "Miễn phí vận chuyển",
-      type: "freeShipping",
-      value: "Miễn phí",
-      startDate: "2025-01-20",
-      endDate: "2025-02-20",
-      status: "inactive",
-    },
-  ])
+  const [promotions, setPromotions] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [selectedPromo, setSelectedPromo] = useState(null)
-  const [mode, setMode] = useState("") // "add" | "edit" | "view"
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
-  const getPromotionTypeLabel = (type) => {
-    const types = {
-      discount: "Giảm giá",
-      voucher: "Voucher",
-      coupon: "Coupon",
-      freeShipping: "Miễn phí vận chuyển",
-    }
-    return types[type] || type
-  }
+  const emptyPromo = {
+    name: "",
+    discountPercent: "",
+    startDate: "",
+    endDate: "",
+  };
 
-  const handleAdd = () => {
-    setSelectedPromo({
-      id: null,
-      name: "",
-      type: "discount",
-      value: "",
-      startDate: "",
-      endDate: "",
-      status: "active",
-    })
-    setMode("add")
-  }
+  const [promoForm, setPromoForm] = useState(emptyPromo);
 
-  const handleView = (promo) => {
-    setSelectedPromo(promo)
-    setMode("view")
-  }
+  // LOAD PROMOTIONS
+  useEffect(() => {
+    loadPromotions();
+  }, []);
 
-  const handleEdit = (promo) => {
-    setSelectedPromo(promo)
-    setMode("edit")
-  }
+  const loadPromotions = () => {
+    fetch("http://localhost:8080/api/promotions")
+      .then((res) => res.json())
+      .then((data) => {
+        const mapped = data.map((p) => ({
+          id: p.id,
+          name: p.name,
+          discountPercent: p.discountPercent,
+          startDate: p.startDate?.split("T")[0] || "",
+          endDate: p.endDate?.split("T")[0] || "",
+        }));
+        setPromotions(mapped);
+      });
+  };
 
-  const handleDelete = (id) => {
-    if (confirm("Bạn có chắc muốn xóa khuyến mãi này không?")) {
-      setPromotions(promotions.filter((p) => p.id !== id))
-    }
-  }
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setPromoForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const openAdd = () => {
+    setEditingId(null);
+    setPromoForm(emptyPromo);
+    setShowForm(true);
+  };
+
+  const cancelForm = () => {
+    setEditingId(null);
+    setShowForm(false);
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (mode === "add") {
-      const newPromo = { ...selectedPromo, id: Date.now() }
-      setPromotions([...promotions, newPromo])
-    } else if (mode === "edit") {
-      setPromotions(promotions.map((p) => (p.id === selectedPromo.id ? selectedPromo : p)))
-    }
+    const dto = {
+      name: promoForm.name,
+      discountPercent: parseFloat(promoForm.discountPercent),
+      startDate: promoForm.startDate,
+      endDate: promoForm.endDate,
+    };
 
-    setMode("")
-    setSelectedPromo(null)
-  }
+    const method = editingId ? "PUT" : "POST";
+    const url = editingId
+      ? `http://localhost:8080/api/promotions/${editingId}`
+      : "http://localhost:8080/api/promotions";
 
-  const handleCancel = () => {
-    setMode("")
-    setSelectedPromo(null)
-  }
+    fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dto),
+    }).then(() => {
+      loadPromotions();
+      setShowForm(false);
+    });
+  };
 
-  const isViewMode = mode === "view"
+  const handleEdit = (id) => {
+    const p = promotions.find((x) => x.id === id);
+    if (!p) return;
+
+    setPromoForm({
+      name: p.name,
+      discountPercent: p.discountPercent,
+      startDate: p.startDate,
+      endDate: p.endDate,
+    });
+
+    setEditingId(id);
+    setShowForm(true);
+  };
+
+  const handleDelete = (id) => {
+    if (!confirm("Bạn có chắc muốn xóa khuyến mãi?")) return;
+
+    fetch(`http://localhost:8080/api/promotions/${id}`, { method: "DELETE" })
+      .then(() => loadPromotions());
+  };
+
+  /** TÍNH TRẠNG THÁI */
+  const getStatus = (start, end) => {
+    const today = new Date().toISOString().split("T")[0];
+
+    if (today < start) return "inactive";
+    if (today > end) return "expired";
+    return "active";
+  };
+
+  const filtered = promotions.filter((p) =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className={styles.container}>
-      {/* Nút thêm */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px" }}>
-        <button className={styles.btnAdd} onClick={handleAdd}>
-          <Plus size={16} style={{ marginRight: 6 }} /> Thêm khuyến mãi
+      {/* HEADER */}
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+        <button onClick={openAdd} className={styles.btnAdd}>
+          <Plus size={16} /> Thêm khuyến mãi
         </button>
+
+        <div className={styles.searchBox}>
+          <Search size={16} />
+          <input
+            placeholder="Tìm kiếm khuyến mãi…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* Form thêm / chỉnh sửa / xem */}
-      {mode && (
-        <form
-          className={`${styles.form} ${mode === "edit" ? styles.editing : ""}`}
-          onSubmit={handleSubmit}
-        >
-          <h3>
-            {mode === "add"
-              ? "Thêm khuyến mãi mới"
-              : mode === "edit"
-              ? "Chỉnh sửa khuyến mãi"
-              : "Xem thông tin khuyến mãi"}
-          </h3>
+      {/* FORM */}
+      {showForm && (
+        <form className={`${styles.form} ${editingId ? styles.editing : ""}`} onSubmit={handleSubmit}>
+          <h3>{editingId ? "Chỉnh sửa khuyến mãi" : "Thêm khuyến mãi mới"}</h3>
 
           <div className={styles.formGroup}>
             <label>Tên khuyến mãi</label>
             <input
-              type="text"
-              value={selectedPromo.name}
-              onChange={(e) =>
-                setSelectedPromo({ ...selectedPromo, name: e.target.value })
-              }
-              placeholder="Nhập tên khuyến mãi"
+              name="name"
+              value={promoForm.name}
+              onChange={handleChange}
               required
-              readOnly={isViewMode}
             />
           </div>
 
           <div className={styles.formGroup}>
-            <label>Loại khuyến mãi</label>
-            <select
-              value={selectedPromo.type}
-              onChange={(e) =>
-                setSelectedPromo({ ...selectedPromo, type: e.target.value })
-              }
-              disabled={isViewMode}
-            >
-              <option value="discount">Giảm giá</option>
-              <option value="voucher">Voucher</option>
-              <option value="coupon">Coupon</option>
-              <option value="freeShipping">Miễn phí vận chuyển</option>
-            </select>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Giá trị giảm</label>
+            <label>Giảm (%)</label>
             <input
-              type="text"
-              value={selectedPromo.value}
-              onChange={(e) =>
-                setSelectedPromo({ ...selectedPromo, value: e.target.value })
-              }
-              placeholder="VD: 20%, 50.000đ..."
+              type="number"
+              name="discountPercent"
+              value={promoForm.discountPercent}
+              onChange={handleChange}
               required
-              readOnly={isViewMode}
             />
           </div>
 
@@ -178,12 +164,10 @@ export default function ManagePromotions() {
             <label>Ngày bắt đầu</label>
             <input
               type="date"
-              value={selectedPromo.startDate}
-              onChange={(e) =>
-                setSelectedPromo({ ...selectedPromo, startDate: e.target.value })
-              }
+              name="startDate"
+              value={promoForm.startDate}
+              onChange={handleChange}
               required
-              readOnly={isViewMode}
             />
           </div>
 
@@ -191,94 +175,63 @@ export default function ManagePromotions() {
             <label>Ngày kết thúc</label>
             <input
               type="date"
-              value={selectedPromo.endDate}
-              onChange={(e) =>
-                setSelectedPromo({ ...selectedPromo, endDate: e.target.value })
-              }
+              name="endDate"
+              value={promoForm.endDate}
+              onChange={handleChange}
               required
-              readOnly={isViewMode}
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label>Trạng thái</label>
-            <select
-              value={selectedPromo.status}
-              onChange={(e) =>
-                setSelectedPromo({ ...selectedPromo, status: e.target.value })
-              }
-              disabled={isViewMode}
-            >
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Không hoạt động</option>
-            </select>
-          </div>
-
           <div className={styles.formActions}>
-            <button type="button" className={styles.btnCancel} onClick={handleCancel}>
-              Đóng
+            <button type="button" className={styles.btnCancel} onClick={cancelForm}>
+              Hủy
             </button>
-            {!isViewMode && (
-              <button type="submit" className={styles.btnAdd}>
-                Lưu
-              </button>
-            )}
+            <button type="submit" className={styles.btnAdd}>
+              {editingId ? "Lưu thay đổi" : "Thêm mới"}
+            </button>
           </div>
         </form>
       )}
 
-      {/* Bảng danh sách khuyến mãi */}
+      {/* BẢNG */}
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>
             <tr>
               <th>Tên khuyến mãi</th>
-              <th>Loại</th>
-              <th>Giá trị</th>
+              <th>Giảm (%)</th>
               <th>Bắt đầu</th>
               <th>Kết thúc</th>
               <th>Trạng thái</th>
               <th>Thao tác</th>
             </tr>
           </thead>
+
           <tbody>
-            {promotions.map((promo) => (
-              <tr key={promo.id}>
-                <td className={styles.nameCell}>{promo.name}</td>
+            {filtered.map((p) => (
+              <tr key={p.id}>
+                <td className={styles.nameCell}>{p.name}</td>
+                <td>{p.discountPercent}%</td>
+                <td>{p.startDate}</td>
+                <td>{p.endDate}</td>
+
                 <td>
-                  <span className={`${styles.typeBadge} ${styles[promo.type]}`}>
-                    {getPromotionTypeLabel(promo.type)}
+                  <span className={`${styles.badge} ${styles[getStatus(p.startDate, p.endDate)]}`}>
+                    {getStatus(p.startDate, p.endDate) === "active"
+                      ? "Hoạt động"
+                      : getStatus(p.startDate, p.endDate) === "inactive"
+                      ? "Chưa hoạt động"
+                      : "Hết hạn"}
                   </span>
                 </td>
-                <td>{promo.value}</td>
-                <td>{promo.startDate}</td>
-                <td>{promo.endDate}</td>
-                <td>
-                  <span className={`${styles.badge} ${styles[promo.status]}`}>
-                    {promo.status === "active" ? "Hoạt động" : "Không hoạt động"}
-                  </span>
-                </td>
+
                 <td>
                   <div className={styles.actionButtons}>
-                    <button
-                      className={`${styles.btn} ${styles.btnView}`}
-                      onClick={() => handleView(promo)}
-                      title="Xem"
-                    >
-                      <Eye size={16} />
-                    </button>
-                    <button
-                      className={`${styles.btn} ${styles.btnEdit}`}
-                      onClick={() => handleEdit(promo)}
-                      title="Chỉnh sửa"
-                    >
+                    <button className={`${styles.btn} ${styles.btnEdit}`} onClick={() => handleEdit(p.id)}>
                       <Edit2 size={16} />
                     </button>
-                    <button
-                      className={`${styles.btn} ${styles.btnDelete}`}
-                      onClick={() => handleDelete(promo.id)}
-                      title="Xóa"
-                    >
+
+                    <button className={`${styles.btn} ${styles.btnDelete}`} onClick={() => handleDelete(p.id)}>
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -289,5 +242,5 @@ export default function ManagePromotions() {
         </table>
       </div>
     </div>
-  )
+  );
 }

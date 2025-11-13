@@ -1,181 +1,283 @@
-"use client"
-import { useState } from "react"
-import styles from "./manage-books.module.css"
-import { Plus, Edit, Trash2, Pause, Search } from "lucide-react"
+"use client";
+
+import { useEffect, useState } from "react";
+import styles from "./manage-books.module.css";
+import { Plus, Search, X, Edit2, Trash2, Eye } from "lucide-react";
 
 export default function ManageBooks() {
-  const [books, setBooks] = useState([
-    { id: 1, title: "Dế Mèn Phiêu Lưu Ký", author: "Tô Hoài", price: 85000, status: "Đang bán" },
-    { id: 2, title: "Tuổi trẻ đáng giá bao nhiêu", author: "Rosie Nguyễn", price: 99000, status: "Đang bán" },
-    { id: 3, title: "Harry Potter và Hòn đá phù thủy", author: "J.K. Rowling", price: 120000, status: "Ngừng bán" },
-  ])
+  const [books, setBooks] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [search, setSearch] = useState("");
 
-  const [searchTerm, setSearchTerm] = useState("")
-  const [newBook, setNewBook] = useState({ title: "", author: "", price: "", status: "Đang bán" })
-  const [editBook, setEditBook] = useState(null)
+  const emptyBook = {
+    title: "",
+    sellingPrice: "",
+    publicationDate: "",
+    edition: "",
+    author: "",
+    bookDetailId: "",
+    categoryIds: [],
+    imageUrl: "",
+  };
 
-  const filteredBooks = books.filter(
+  const [bookForm, setBookForm] = useState(emptyBook);
+
+  // ===================== LOAD BOOKS =====================
+  useEffect(() => {
+    loadBooks();
+  }, []);
+
+  const loadBooks = () => {
+    fetch("http://localhost:8080/api/books")
+      .then((res) => res.json())
+      .then((data) => {
+        const mapped = data.map((b) => ({
+          id: b.id,
+          title: b.title,
+          sellingPrice: b.sellingPrice,
+          publicationDate: b.publicationDate?.split("T")[0],
+          edition: b.edition,
+          author: b.author,
+          categories: b.categories?.map((c) => c.name).join(", "),
+        }));
+        setBooks(mapped);
+      });
+  };
+
+  // ===================== HANDLE INPUT =====================
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setBookForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ===================== OPEN ADD MODAL =====================
+  const openAdd = () => {
+    setEditingId(null);
+    setBookForm(emptyBook);
+    setShowModal(true);
+  };
+
+  // ===================== SUBMIT FORM =====================
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const body = {
+      ...bookForm,
+      sellingPrice: Number(bookForm.sellingPrice),
+      edition: Number(bookForm.edition),
+    };
+
+    const url = editingId
+      ? `http://localhost:8080/api/books/${editingId}`
+      : "http://localhost:8080/api/books";
+
+    const method = editingId ? "PUT" : "POST";
+
+    fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(() => {
+      loadBooks();
+      setShowModal(false);
+    });
+  };
+
+  // ===================== VIEW =====================
+  const viewBook = (id) => {
+    const b = books.find((x) => x.id === id);
+    alert(
+      `📘 Thông tin sách:
+
+Tên: ${b.title}
+Tác giả: ${b.author}
+Giá: ${b.sellingPrice} VND
+Ngày xuất bản: ${b.publicationDate}
+Lần xuất bản: ${b.edition}
+Danh mục: ${b.categories}
+`
+    );
+  };
+
+  // ===================== EDIT =====================
+  const handleEdit = (id) => {
+    const b = books.find((x) => x.id === id);
+    setEditingId(id);
+
+    setBookForm({
+      title: b.title,
+      sellingPrice: b.sellingPrice,
+      publicationDate: b.publicationDate,
+      edition: b.edition,
+      author: b.author,
+      bookDetailId: "",
+      categoryIds: [],
+      imageUrl: "",
+    });
+
+    setShowModal(true);
+  };
+
+  // ===================== DELETE =====================
+  const handleDelete = (id) => {
+    if (!confirm("Bạn có chắc muốn xóa sách này?")) return;
+
+    fetch(`http://localhost:8080/api/books/${id}`, { method: "DELETE" }).then(
+      () => loadBooks()
+    );
+  };
+
+  // ===================== FILTER =====================
+  const filtered = books.filter(
     (b) =>
-      b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.author.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+      b.title.toLowerCase().includes(search.toLowerCase()) ||
+      b.author.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const handleAddBook = () => {
-    if (!newBook.title || !newBook.author || !newBook.price) {
-      alert("Vui lòng nhập đầy đủ thông tin sách!")
-      return
-    }
-
-    setBooks([...books, { ...newBook, id: Date.now(), price: parseInt(newBook.price) }])
-    setNewBook({ title: "", author: "", price: "", status: "Đang bán" })
-    alert("Thêm sách thành công!")
-  }
-
-  const handleEditBook = (book) => {
-    setEditBook(book)
-  }
-
-  const handleSaveEdit = () => {
-    if (!editBook.title || !editBook.author || !editBook.price) {
-      alert("Vui lòng nhập đầy đủ thông tin!")
-      return
-    }
-
-    setBooks(books.map((b) => (b.id === editBook.id ? editBook : b)))
-    setEditBook(null)
-    alert("Cập nhật thành công!")
-  }
-
-  const handlePauseBook = (id) => {
-    setBooks(
-      books.map((b) =>
-        b.id === id ? { ...b, status: b.status === "Đang bán" ? "Ngừng bán" : "Đang bán" } : b
-      )
-    )
-  }
-
-  const handleDeleteBook = (id) => {
-    if (confirm("Bạn có chắc muốn xóa sách này?")) {
-      setBooks(books.filter((b) => b.id !== id))
-    }
-  }
-
+  // ===================== UI =====================
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>Quản lý sách</h2>
-
-      {/* --- TÌM KIẾM --- */}
-      <div className={styles.searchSection}>
-        <Search size={18} />
-        <input
-          type="text"
-          placeholder="Nhập từ khóa tìm kiếm..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className={styles.searchInput}
-        />
-      </div>
-
-      {/* --- THÊM SÁCH MỚI --- */}
-      <div className={styles.addSection}>
-        <input
-          type="text"
-          placeholder="Tên sách"
-          value={newBook.title}
-          onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Tác giả"
-          value={newBook.author}
-          onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
-        />
-        <input
-          type="number"
-          placeholder="Giá bán"
-          value={newBook.price}
-          onChange={(e) => setNewBook({ ...newBook, price: e.target.value })}
-        />
-        <button onClick={handleAddBook} className={styles.addButton}>
+      <div className={styles.headerRow}>
+        <button className={styles.addButton} onClick={openAdd}>
           <Plus size={16} /> Thêm sách
         </button>
+
+        <div className={styles.searchBox}>
+          <Search size={16} className={styles.searchIcon} />
+          <input
+            placeholder="Tìm tên sách, tác giả..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* --- DANH SÁCH SÁCH --- */}
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tên sách</th>
-            <th>Tác giả</th>
-            <th>Giá bán</th>
-            <th>Trạng thái</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredBooks.map((book) => (
-            <tr key={book.id}>
-              <td>{book.id}</td>
-              <td>{book.title}</td>
-              <td>{book.author}</td>
-              <td>{book.price.toLocaleString()} VND</td>
-              <td>
-                <span
-                  className={`${styles.status} ${
-                    book.status === "Đang bán" ? styles.active : styles.paused
-                  }`}
-                >
-                  {book.status}
-                </span>
-              </td>
-              <td className={styles.actionBtns}>
-                <button onClick={() => handleEditBook(book)} className={styles.editBtn}>
-                  <Edit size={16} />
-                </button>
-                <button onClick={() => handlePauseBook(book.id)} className={styles.pauseBtn}>
-                  <Pause size={16} />
-                </button>
-                <button onClick={() => handleDeleteBook(book.id)} className={styles.deleteBtn}>
-                  <Trash2 size={16} />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* --- FORM CHỈNH SỬA --- */}
-      {editBook && (
-        <div className={styles.editModal}>
-          <div className={styles.modalContent}>
-            <h3>Chỉnh sửa thông tin sách</h3>
-            <input
-              type="text"
-              value={editBook.title}
-              onChange={(e) => setEditBook({ ...editBook, title: e.target.value })}
-            />
-            <input
-              type="text"
-              value={editBook.author}
-              onChange={(e) => setEditBook({ ...editBook, author: e.target.value })}
-            />
-            <input
-              type="number"
-              value={editBook.price}
-              onChange={(e) => setEditBook({ ...editBook, price: e.target.value })}
-            />
-            <div className={styles.modalActions}>
-              <button onClick={handleSaveEdit} className={styles.saveBtn}>
-                Lưu thay đổi
-              </button>
-              <button onClick={() => setEditBook(null)} className={styles.cancelBtn}>
-                Hủy
+      {/* MODAL */}
+      {showModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h3>{editingId ? "Chỉnh sửa sách" : "Thêm sách mới"}</h3>
+              <button
+                className={styles.closeBtn}
+                onClick={() => setShowModal(false)}
+              >
+                <X />
               </button>
             </div>
+
+            <form className={styles.modalForm} onSubmit={handleSubmit}>
+              <label>Tên sách:</label>
+              <input
+                name="title"
+                value={bookForm.title}
+                onChange={handleChange}
+                required
+              />
+
+              <label>Giá (VND):</label>
+              <input
+                name="sellingPrice"
+                type="number"
+                value={bookForm.sellingPrice}
+                onChange={handleChange}
+                required
+              />
+
+              <label>Tác giả:</label>
+              <input
+                name="author"
+                value={bookForm.author}
+                onChange={handleChange}
+                required
+              />
+
+              <label>Ngày xuất bản:</label>
+              <input
+                name="publicationDate"
+                type="date"
+                value={bookForm.publicationDate}
+                onChange={handleChange}
+              />
+
+              <label>Lần xuất bản:</label>
+              <input
+                name="edition"
+                type="number"
+                value={bookForm.edition}
+                onChange={handleChange}
+              />
+
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.cancelBtn}
+                  onClick={() => setShowModal(false)}
+                >
+                  Hủy
+                </button>
+                <button type="submit" className={styles.saveBtn}>
+                  {editingId ? "Lưu" : "Thêm mới"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
+
+      {/* TABLE */}
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Tên sách</th>
+              <th>Tác giả</th>
+              <th>Giá bán</th>
+              <th>Ngày XB</th>
+              <th>Lần XB</th>
+              <th>Danh mục</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filtered.map((b) => (
+              <tr key={b.id}>
+                <td>{b.title}</td>
+                <td>{b.author}</td>
+                <td>{b.sellingPrice} VND</td>
+                <td>{b.publicationDate}</td>
+                <td>{b.edition}</td>
+                <td>{b.categories}</td>
+
+                <td className={styles.actions}>
+                  <button
+                    className={styles.btnView}
+                    onClick={() => viewBook(b.id)}
+                  >
+                    <Eye size={16} />
+                  </button>
+
+                  <button
+                    className={styles.btnEdit}
+                    onClick={() => handleEdit(b.id)}
+                  >
+                    <Edit2 size={16} />
+                  </button>
+
+                  <button
+                    className={styles.btnDelete}
+                    onClick={() => handleDelete(b.id)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
-  )
+  );
 }
