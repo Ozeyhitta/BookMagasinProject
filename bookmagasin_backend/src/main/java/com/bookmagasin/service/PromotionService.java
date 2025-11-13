@@ -2,7 +2,6 @@ package com.bookmagasin.service;
 
 import com.bookmagasin.web.dto.PromotionDto;
 import com.bookmagasin.web.dtoResponse.PromotionResponseDto;
-
 import java.util.List;
 import java.util.Optional;
 

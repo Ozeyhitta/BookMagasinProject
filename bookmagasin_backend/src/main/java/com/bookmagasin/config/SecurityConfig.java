@@ -24,34 +24,45 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // SECURITY
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults()) // ✅ Cho phép gọi từ frontend
+                .cors(Customizer.withDefaults())   // bật CORS
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**").permitAll()  // ✅ Cho phép không cần token
+                        .requestMatchers("/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session
+                .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
         return http.build();
     }
 
-    // ✅ Cấu hình CORS cho frontend (localhost:3000)
+    // CORS CONFIG
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L); // cache preflight 1h
+        CorsConfiguration config = new CorsConfiguration();
+
+        // Cho phép FE Next.js
+        config.setAllowedOrigins(List.of("http://localhost:3000"));
+
+        // Cho phép Postman → dùng wildcard patterns
+        config.setAllowedOriginPatterns(List.of("*"));
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+
+        // Không dùng allowCredentials kèm wildcard => bắt buộc = false
+        config.setAllowCredentials(false);
+
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 }
