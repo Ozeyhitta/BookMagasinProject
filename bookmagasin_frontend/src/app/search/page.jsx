@@ -1,9 +1,15 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Sparkles, RotateCcw } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import styles from "./SearchPage.module.css";
+import ProductCard from "../category/ProductCard";
 
 export default function SearchPage() {
+  const searchParams = useSearchParams();
+  const keyword = (searchParams.get("keyword") || "").trim();
+
   const [filters, setFilters] = useState({
     mainCategory: "all",
     category: "all",
@@ -16,13 +22,17 @@ export default function SearchPage() {
     sort: "default",
   });
 
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const handleChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
   const handleFilter = () => {
     console.log("Lọc với:", filters);
-    // TODO: Gọi API lọc sản phẩm
+    // TODO: Có thể kết hợp filters với keyword để lọc nâng cao
   };
 
   const handleReset = () => {
@@ -39,12 +49,67 @@ export default function SearchPage() {
     });
   };
 
+  // 🔍 Fetch & lọc sách theo keyword
+  useEffect(() => {
+    // Nếu không có keyword thì không cần gọi API
+    if (!keyword) {
+      setBooks([]);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        // Lấy toàn bộ sách + chi tiết giống MainPage
+        const booksRes = await fetch("http://localhost:8080/api/books");
+        const booksData = await booksRes.json();
+
+        const detailsRes = await fetch(
+          "http://localhost:8080/api/books-details"
+        );
+        const detailsData = await detailsRes.json();
+
+        const merged = booksData.map((book) => {
+          const matchedDetail = detailsData.find(
+            (d) => d.book?.id === book.id
+          );
+
+          return {
+            id: book.id,
+            title: book.title,
+            price: book.sellingPrice,
+            imageUrl:
+              matchedDetail?.imageUrl ||
+              "https://via.placeholder.com/200x280?text=No+Image",
+          };
+        });
+
+        // Lọc theo tiêu đề chứa keyword (không phân biệt hoa thường)
+        const lower = keyword.toLowerCase();
+        const filtered = merged.filter((b) =>
+          b.title.toLowerCase().includes(lower)
+        );
+
+        setBooks(filtered);
+      } catch (err) {
+        console.error("Lỗi load sách:", err);
+        setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [keyword]);
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Tìm kiếm sản phẩm</h1>
 
+      {/* Bộ lọc (tạm thời chỉ hiển thị, chưa kết hợp với API) */}
       <div className={styles.filterRow}>
-        {/* Danh mục chính */}
         <select
           name="mainCategory"
           value={filters.mainCategory}
@@ -57,7 +122,6 @@ export default function SearchPage() {
           <option value="stationery">Văn phòng phẩm</option>
         </select>
 
-        {/* Danh mục phụ */}
         <select
           name="category"
           value={filters.category}
@@ -70,7 +134,6 @@ export default function SearchPage() {
           <option value="novel">Tiểu thuyết</option>
         </select>
 
-        {/* Thương hiệu */}
         <select
           name="brand"
           value={filters.brand}
@@ -83,7 +146,6 @@ export default function SearchPage() {
           <option value="fahasa">FAHASA</option>
         </select>
 
-        {/* Lứa tuổi */}
         <select
           name="ageGroup"
           value={filters.ageGroup}
@@ -96,7 +158,6 @@ export default function SearchPage() {
           <option value="adult">Người lớn</option>
         </select>
 
-        {/* Nhà phát hành */}
         <select
           name="publisher"
           value={filters.publisher}
@@ -109,7 +170,6 @@ export default function SearchPage() {
           <option value="alphabooks">Alpha Books</option>
         </select>
 
-        {/* Nhà cung cấp */}
         <select
           name="supplier"
           value={filters.supplier}
@@ -122,7 +182,6 @@ export default function SearchPage() {
           <option value="vinabook">Vinabook</option>
         </select>
 
-        {/* Mức giá */}
         <div className={styles.priceGroup}>
           <label className={styles.label}>Mức giá:</label>
           <input
@@ -144,7 +203,6 @@ export default function SearchPage() {
           />
         </div>
 
-        {/* Sắp xếp */}
         <select
           name="sort"
           value={filters.sort}
@@ -157,7 +215,6 @@ export default function SearchPage() {
           <option value="newest">Mới nhất</option>
         </select>
 
-        {/* Nút lọc */}
         <button onClick={handleFilter} className={styles.filterButton}>
           <Sparkles
             size={18}
@@ -169,7 +226,6 @@ export default function SearchPage() {
         </button>
       </div>
 
-      {/* Nút reset */}
       <button onClick={handleReset} className={styles.resetButton}>
         <RotateCcw
           size={18}
@@ -179,124 +235,46 @@ export default function SearchPage() {
         />
         Khôi phục bộ lọc
       </button>
+
       {/* Kết quả tìm kiếm */}
       <div className={styles.resultsSection}>
         <h2 className={styles.resultsTitle}>
-          Kết quả tìm kiếm cho <span>"văn học"</span>
+          Kết quả tìm kiếm cho{" "}
+          <span>"{keyword || "Không có từ khóa"}"</span>
         </h2>
-        <p className={styles.resultsCount}>Có 894 sản phẩm cho tìm kiếm</p>
+
+        {loading && <p className={styles.resultsCount}>Đang tải...</p>}
+        {error && <p className={styles.resultsCount}>{error}</p>}
+
+        {!loading && !error && keyword && (
+          <p className={styles.resultsCount}>
+            Có <strong>{books.length}</strong> sản phẩm cho tìm kiếm
+          </p>
+        )}
+
+        {!loading && !error && keyword && books.length === 0 && (
+          <p className={styles.resultsCount}>
+            Không tìm thấy sản phẩm nào phù hợp với từ khóa.
+          </p>
+        )}
 
         <div className={styles.productGrid}>
-          {/* Ví dụ 4 sản phẩm mẫu */}
-          {[
-            {
-              id: 1,
-              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
-              price: 41600,
-              oldPrice: 52000,
-              discount: "-20%",
-              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
-              soldOut: false,
-            },
-            {
-              id: 2,
-              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
-              price: 41600,
-              oldPrice: 52000,
-              discount: "-20%",
-              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
-              soldOut: false,
-            },
-            {
-              id: 3,
-              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
-              price: 41600,
-              oldPrice: 52000,
-              discount: "-20%",
-              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
-              soldOut: false,
-            },
-            {
-              id: 4,
-              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
-              price: 41600,
-              oldPrice: 52000,
-              discount: "-20%",
-              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
-              soldOut: false,
-            },
-            {
-              id: 5,
-              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
-              price: 41600,
-              oldPrice: 52000,
-              discount: "-20%",
-              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
-              soldOut: false,
-            },
-            {
-              id: 6,
-              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
-              price: 41600,
-              oldPrice: 52000,
-              discount: "-20%",
-              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
-              soldOut: false,
-            },
-            {
-              id: 7,
-              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
-              price: 41600,
-              oldPrice: 52000,
-              discount: "-20%",
-              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
-              soldOut: false,
-            },
-            {
-              id: 8,
-              name: "10 Vạn Câu Hỏi Vì Sao? - Khoa Học - Vũ Trụ - Trái Đất",
-              price: 41600,
-              oldPrice: 52000,
-              discount: "-20%",
-              image: "https://cdn1.fahasa.com/media/catalog/product/8/9/8931805100096.jpg",
-              soldOut: false,
-            },
-          ].map((item) => (
-            <div key={item.id} className={styles.productCard}>
-              <div className={styles.imageWrapper}>
-                {item.soldOut ? (
-                  <div className={styles.soldOutOverlay}>Hết hàng</div>
-                ) : (
-                  item.discount && (
-                    <span className={styles.discountTag}>{item.discount}</span>
-                  )
-                )}
-                <img src={item.image} alt={item.name} className={styles.image} />
-              </div>
-              <p className={styles.productName}>{item.name}</p>
-              <div className={styles.priceRow}>
-                <span className={styles.price}>
-                  {item.price.toLocaleString("vi-VN")}đ
-                </span>
-                {item.oldPrice && (
-                  <span className={styles.oldPrice}>
-                    {item.oldPrice.toLocaleString()}đ
-                  </span>
-                )}
-              </div>
-            </div>
+          {books.map((book) => (
+            <ProductCard
+              key={book.id}
+              id={book.id}
+              title={book.title}
+              price={book.price?.toLocaleString("vi-VN") + "đ"}
+              oldPrice={null}
+              discount={null}
+              image={book.imageUrl}
+            />
           ))}
         </div>
       </div>
-      {/* Phân trang tĩnh */}
-      <div className={styles.pagination}>
-        <span className={`${styles.pageNumber} ${styles.active}`}>1</span>
-        <span className={styles.pageNumber}>2</span>
-        <span className={styles.pageNumber}>3</span>
-        <span className={styles.dots}>...</span>
-        <span className={styles.pageNumber}>38</span>
-        <span className={styles.nextArrow}>→</span>
-      </div>
+
+      {/* Phân trang tạm để nguyên, sau này có thể làm server-side / client-side paging */}
+      {/* <div className={styles.pagination}>...</div> */}
     </div>
   );
 }
