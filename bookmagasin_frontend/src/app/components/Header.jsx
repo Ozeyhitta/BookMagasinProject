@@ -6,18 +6,17 @@ import "../components/header.css";
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const router = useRouter();
   const [cartCount, setCartCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ STATE CHO SEARCH
+  const router = useRouter();
 
   useEffect(() => {
-    const handleCartUpdate = (e) => {
+    const handleCartUpdate = () => {
       const newCount = parseInt(localStorage.getItem("cartCount") || "0");
       setCartCount(newCount);
     };
 
-    // Lắng nghe sự kiện tùy chỉnh
     window.addEventListener("cart-updated", handleCartUpdate);
-
     return () => window.removeEventListener("cart-updated", handleCartUpdate);
   }, []);
 
@@ -43,7 +42,6 @@ export default function Header() {
       );
       if (res.ok) {
         const data = await res.json();
-        // ✅ Tính tổng số sản phẩm khác nhau
         const total = data.length;
         setCartCount(total);
         localStorage.setItem("cartCount", total);
@@ -54,11 +52,9 @@ export default function Header() {
   };
 
   useEffect(() => {
-    // Lấy ban đầu
     const savedCount = localStorage.getItem("cartCount");
     if (savedCount) setCartCount(parseInt(savedCount));
 
-    // 🔔 Lắng nghe thay đổi localStorage từ các component khác
     const handleStorageChange = (event) => {
       if (event.key === "cartCount") {
         setCartCount(parseInt(event.newValue || "0"));
@@ -66,26 +62,13 @@ export default function Header() {
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-    };
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const goToOrderHistory = () => {
-    router.push("/orderhistory");
-  };
-
-  const goToNotifications = () => {
-    router.push("/notifications");
-  };
-
-  const goToMainPage = () => {
-    router.push("/mainpage");
-  };
-
-  const goToCart = () => {
-    router.push("/cart");
-  };
+  const goToOrderHistory = () => router.push("/orderhistory");
+  const goToNotifications = () => router.push("/notifications");
+  const goToMainPage = () => router.push("/mainpage");
+  const goToCart = () => router.push("/cart");
 
   const handleLogout = async () => {
     const token = localStorage.getItem("token");
@@ -115,6 +98,21 @@ export default function Header() {
     } catch (error) {
       console.error("Logout error:", error);
       alert("Không thể kết nối đến server!");
+    }
+  };
+
+  // ✅ HÀM XỬ LÝ SEARCH
+  const handleSearch = () => {
+    const keyword = searchTerm.trim();
+    if (!keyword) return; // không tìm nếu rỗng
+
+    router.push(`/search?keyword=${encodeURIComponent(keyword)}`);
+  };
+
+  // ✅ NHẤN ENTER TRONG Ô INPUT
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
     }
   };
 
@@ -158,10 +156,16 @@ export default function Header() {
           <span className="green">.com</span>
         </div>
 
-        {/* Search Bar */}
+        {/* ✅ Search Bar hoạt động */}
         <div className="search-bar">
-          <input type="text" placeholder="Tìm kiếm sản phẩm..." />
-          <button>Tìm kiếm</button>
+          <input
+            type="text"
+            placeholder="Tìm kiếm sản phẩm..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button onClick={handleSearch}>Tìm kiếm</button>
         </div>
 
         {/* Right Group */}
