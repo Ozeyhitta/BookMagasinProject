@@ -1,20 +1,18 @@
 package com.bookmagasin.web.controller;
 
-import com.bookmagasin.entity.Notification;
 import com.bookmagasin.service.NotificationService;
 import com.bookmagasin.web.dto.NotificationDto;
-import com.bookmagasin.web.dto.SendNotificationRequest;
 import com.bookmagasin.web.dtoResponse.NotificationResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
 
 @RestController
 @RequestMapping("api/notifications")
 public class NotificationController {
+
     private final NotificationService service;
 
     public NotificationController(NotificationService service) {
@@ -44,7 +42,10 @@ public class NotificationController {
 
     // UPDATE
     @PutMapping("/{id}")
-    public ResponseEntity<NotificationResponseDto> updateNotification(@PathVariable Integer id, @RequestBody NotificationDto dto) {
+    public ResponseEntity<NotificationResponseDto> updateNotification(
+            @PathVariable Integer id,
+            @RequestBody NotificationDto dto
+    ) {
         try {
             NotificationResponseDto updated = service.updateNotification(id, dto);
             return ResponseEntity.ok(updated);
@@ -60,16 +61,18 @@ public class NotificationController {
         return ResponseEntity.noContent().build();
     }
 
-    // GET /api/notifications/user/{userId}
+    // GET BY USER
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<NotificationResponseDto>> getNotificationsByUser(@PathVariable Integer userId) {
         return ResponseEntity.ok(service.getNotificationsByUser(userId));
     }
 
-    // POST /api/notifications/mark-read/{notificationId}/user/{userId}
+    // MARK READ
     @PostMapping("/mark-read/{notificationId}/user/{userId}")
-    public ResponseEntity<Void> markNotificationAsRead(@PathVariable Integer notificationId,
-                                                       @PathVariable Integer userId) {
+    public ResponseEntity<Void> markNotificationAsRead(
+            @PathVariable Integer notificationId,
+            @PathVariable Integer userId
+    ) {
         try {
             service.markAsRead(userId, notificationId);
             return ResponseEntity.ok().build();
@@ -78,4 +81,33 @@ public class NotificationController {
         }
     }
 
+    // ⭐⭐ API STAFF VIEW — DÙNG CHO TRANG FE CỦA BẠN ⭐⭐
+    @GetMapping("/staff-view")
+    public ResponseEntity<Object> getStaffViewNotifications() {
+
+        List<NotificationResponseDto> all = service.getAllNotifications();
+
+        List<String> customer = all.stream()
+                .filter(n -> "CUSTOMER".equalsIgnoreCase(n.getType()))
+                .map(NotificationResponseDto::getMessage)
+                .toList();
+
+        List<String> staff = all.stream()
+                .filter(n -> "STAFF".equalsIgnoreCase(n.getType()))
+                .map(NotificationResponseDto::getMessage)
+                .toList();
+
+        List<String> admin = all.stream()
+                .filter(n -> "ADMIN".equalsIgnoreCase(n.getType()))
+                .map(NotificationResponseDto::getMessage)
+                .toList();
+
+        return ResponseEntity.ok(
+                new java.util.HashMap<>() {{
+                    put("customer", customer);
+                    put("staff", staff);
+                    put("admin", admin);
+                }}
+        );
+    }
 }

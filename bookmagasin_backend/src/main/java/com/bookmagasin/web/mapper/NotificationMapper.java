@@ -1,32 +1,33 @@
 package com.bookmagasin.web.mapper;
 
 import com.bookmagasin.entity.Notification;
-import com.bookmagasin.repository.NotificationRepository;
 import com.bookmagasin.web.dto.NotificationDto;
 import com.bookmagasin.web.dtoResponse.NotificationResponseDto;
 
-import java.util.Date;
-
 public class NotificationMapper {
-    public static NotificationDto toDto(Notification notification){
-        NotificationDto dto=new NotificationDto();
-        dto.setTitle(notification.getTitle());
-        dto.setMessage(notification.getMessage());
+
+    public static NotificationResponseDto toResponseDto(Notification n) {
+        NotificationResponseDto dto = new NotificationResponseDto();
+        dto.setId(n.getId());
+        dto.setTitle(n.getTitle());
+        dto.setMessage(n.getMessage());
+        dto.setCreateAt(n.getSendDate());  // ✔ map đúng vào createAt
+        dto.setType(n.getType());
         return dto;
     }
-    public static NotificationResponseDto toResponseDto(Notification notification){
-        NotificationResponseDto dto=new NotificationResponseDto();
-        dto.setId(notification.getId());
-        dto.setTitle(notification.getTitle());
-        dto.setMessage(notification.getMessage());
-        dto.setCreateAt(notification.getSendDate());
-        return dto;
+
+    public static Notification toEntity(NotificationDto dto) {
+        Notification n = new Notification();
+        n.setTitle(dto.getTitle());
+        n.setMessage(dto.getMessage());
+        n.setType(dto.getType());
+        // sendDate sẽ set trong service
+        return n;
     }
-    public  static Notification toEntity(NotificationDto dto){
-        Notification notification=new Notification();
-        notification.setTitle(dto.getTitle());
-        notification.setMessage(dto.getMessage());
-        notification.setSendDate(new Date());
-        return notification;
+
+    public static void updateEntity(Notification n, NotificationDto dto) {
+        n.setTitle(dto.getTitle());
+        n.setMessage(dto.getMessage());
+        n.setType(dto.getType());
     }
 }

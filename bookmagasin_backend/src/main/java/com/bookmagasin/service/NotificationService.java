@@ -1,7 +1,5 @@
 package com.bookmagasin.service;
 
-import com.bookmagasin.entity.Notification;
-import com.bookmagasin.repository.NotificationRepository;
 import com.bookmagasin.web.dto.NotificationDto;
 import com.bookmagasin.web.dtoResponse.NotificationResponseDto;
 
@@ -12,9 +10,8 @@ public interface NotificationService {
     NotificationResponseDto createNotification(NotificationDto dto);
     List<NotificationResponseDto> getAllNotifications();
     Optional<NotificationResponseDto> getNotificationById(Integer id);
-    NotificationResponseDto updateNotification(Integer id,NotificationDto dto);
+    NotificationResponseDto updateNotification(Integer id, NotificationDto dto);
     void deleteNotificationById(Integer id);
     List<NotificationResponseDto> getNotificationsByUser(Integer userId);
     void markAsRead(Integer userId, Integer notificationId);
-
 }

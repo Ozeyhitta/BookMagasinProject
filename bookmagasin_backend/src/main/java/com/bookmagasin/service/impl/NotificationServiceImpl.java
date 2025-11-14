@@ -10,7 +10,6 @@ import com.bookmagasin.repository.UserRepository;
 import com.bookmagasin.service.NotificationService;
 import com.bookmagasin.web.dto.NotificationDto;
 import com.bookmagasin.web.dtoResponse.NotificationResponseDto;
-import com.bookmagasin.web.dtoResponse.UserResponseDto;
 import com.bookmagasin.web.mapper.NotificationMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -22,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
+
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final UserNotificationRepository userNotificationRepository;
@@ -34,28 +34,30 @@ public class NotificationServiceImpl implements NotificationService {
         this.userNotificationRepository = userNotificationRepository;
     }
 
-
     @Override
     public NotificationResponseDto createNotification(NotificationDto dto) {
-        Notification notification=new Notification();
+        Notification notification = new Notification();
         notification.setTitle(dto.getTitle());
         notification.setMessage(dto.getMessage());
+        notification.setType(dto.getType());    // ⭐ Gán loại thông báo
         notification.setSendDate(new Date());
 
-        Notification savedNotifications= notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
 
-        List<User> users=userRepository.findAll();
-        for(User user : users){
-            UserNotification userNotification=new UserNotification();
-            userNotification.setId(new UserNotificationId(user.getId(),savedNotifications.getId()));
+        // Gắn thông báo cho tất cả user
+        List<User> users = userRepository.findAll();
+        for (User user : users) {
+            UserNotification userNotification = new UserNotification();
+            userNotification.setId(new UserNotificationId(user.getId(), saved.getId()));
             userNotification.setUser(user);
-            userNotification.setNotification(savedNotifications);
+            userNotification.setNotification(saved);
             userNotification.setRead(false);
             userNotification.setReadAt(null);
-            userNotificationRepository.save(userNotification);
 
+            userNotificationRepository.save(userNotification);
         }
-        return NotificationMapper.toResponseDto(savedNotifications);
+
+        return NotificationMapper.toResponseDto(saved);
     }
 
     @Override
@@ -74,12 +76,14 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public NotificationResponseDto updateNotification(Integer id, NotificationDto dto) {
-        Notification notification=notificationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Notification not found: "+id));
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Notification not found: " + id));
+
         notification.setTitle(dto.getTitle());
         notification.setMessage(dto.getMessage());
+        notification.setType(dto.getType());    // ⭐ Cập nhật loại
 
-        Notification updated=notificationRepository.save(notification);
+        Notification updated = notificationRepository.save(notification);
         return NotificationMapper.toResponseDto(updated);
     }
 
@@ -101,7 +105,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void markAsRead(Integer userId, Integer notificationId) {
-        UserNotification userNotification = userNotificationRepository.findByUser_IdAndNotification_Id(userId, notificationId)
+        UserNotification userNotification = userNotificationRepository
+                .findByUser_IdAndNotification_Id(userId, notificationId)
                 .orElseThrow(() -> new RuntimeException("UserNotification not found"));
 
         userNotification.setRead(true);

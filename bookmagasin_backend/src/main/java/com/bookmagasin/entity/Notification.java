@@ -1,6 +1,5 @@
 package com.bookmagasin.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -16,6 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Notification {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -26,14 +26,15 @@ public class Notification {
     @Column(name = "message")
     private String message;
 
+    // Loại thông báo: CUSTOMER / STAFF / ADMIN
+    @Column(name = "type")
+    private String type;
+
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "send_date")
     private Date sendDate;
 
-    @OneToMany(mappedBy = "notification",cascade = CascadeType.ALL,orphanRemoval = true)
-    @JsonManagedReference(value = "notification-user-notification") // Quản lý mối quan hệ 1 - nhiều
+    @OneToMany(mappedBy = "notification", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "notification-user-notification")
     private List<UserNotification> userNotifications;
-
-
-
 }
