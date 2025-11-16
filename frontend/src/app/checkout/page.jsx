@@ -5,21 +5,41 @@ import { useEffect, useState } from "react";
 export default function CheckoutPage() {
   const [user, setUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  const [discounts, setDiscounts] = useState({}); // { bookId: discount }
 
-  const total = cartItems.reduce(
+  // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
+  function calculatePriceAfterDiscount(book, discount) {
+    if (!discount) return book.sellingPrice;
+
+    let finalPrice = book.sellingPrice;
+
+    // Ưu tiên discountPercent nếu có cả 2
+    if (discount.discountPercent != null && discount.discountPercent > 0) {
+      finalPrice = book.sellingPrice * (1 - discount.discountPercent / 100);
+    } else if (discount.discountAmount != null && discount.discountAmount > 0) {
+      finalPrice = Math.max(0, book.sellingPrice - discount.discountAmount);
+    }
+
+    return Math.round(finalPrice);
+  }
+
+  // Tính tổng với discount
+  const total = cartItems.reduce((sum, item) => {
+    const discount = discounts[item.book.id];
+    const priceAfterDiscount = calculatePriceAfterDiscount(item.book, discount);
+    return sum + priceAfterDiscount * item.quantity;
+  }, 0);
+
+  // Tổng giá gốc (không discount)
+  const originalTotal = cartItems.reduce(
     (sum, item) => sum + item.book.sellingPrice * item.quantity,
     0
   );
 
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (!stored) {
-      setUser({ fullName: "", phoneNumber: "", address: "", email: "" });
-      return;
-    }
-
-    const currentUser = JSON.parse(stored);
-    if (!currentUser?.id) {
+    // Lấy userId từ localStorage (giống như cart page)
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
       setUser({ fullName: "", phoneNumber: "", address: "", email: "" });
       return;
     }
@@ -27,7 +47,7 @@ export default function CheckoutPage() {
     async function fetchData() {
       try {
         const userRes = await fetch(
-          `http://localhost:8080/api/users/${currentUser.id}`
+          `http://localhost:8080/api/users/${userId}`
         );
 
         const userData = userRes.ok
@@ -42,11 +62,50 @@ export default function CheckoutPage() {
         });
 
         const cartRes = await fetch(
-          `http://localhost:8080/api/carts/users/${currentUser.id}`
+          `http://localhost:8080/api/carts/users/${userId}`
         );
 
         const cartData = cartRes.ok ? await cartRes.json() : [];
-        setCartItems(Array.isArray(cartData) ? cartData : []);
+        const items = Array.isArray(cartData) ? cartData : [];
+        setCartItems(items);
+
+        // Fetch discounts cho từng book - giống cart page
+        const discountMap = {};
+        const now = new Date();
+
+        for (const item of items) {
+          try {
+            const discountRes = await fetch(
+              `http://localhost:8080/api/book-discounts/book/${item.book.id}`
+            );
+            if (!discountRes.ok) continue;
+            
+            const discountData = await discountRes.json();
+
+            // Tìm discount active (trong khoảng thời gian) - giống productDetail
+            let activeDiscount = discountData.find((discount) => {
+              const startDate = new Date(discount.startDate);
+              const endDate = new Date(discount.endDate);
+              return now >= startDate && now <= endDate;
+            });
+
+            // Nếu không có active, lấy discount đầu tiên (để test) - giống productDetail
+            if (!activeDiscount && discountData.length > 0) {
+              activeDiscount = discountData[0];
+            }
+
+            if (activeDiscount) {
+              discountMap[item.book.id] = activeDiscount;
+            }
+          } catch (err) {
+            console.error(
+              `Error fetching discount for book ${item.book.id}:`,
+              err
+            );
+          }
+        }
+
+        setDiscounts(discountMap);
       } catch (err) {
         console.error("Không fetch được, backend chưa bật:", err);
 
@@ -71,21 +130,29 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Giả định mặc định: serviceId = 1, paymentId = 1
-    const orderPayload = {
-      userId: JSON.parse(localStorage.getItem("user"))?.id,
+      // Giả định mặc định: serviceId = 1, paymentId = 1
+      const userId = localStorage.getItem("userId");
+      const orderPayload = {
+        userId: userId ? parseInt(userId) : null,
       serviceId: 1,
       paymentId: 1,
       note: "Giao buổi sáng",
       status: "PENDING",
-      orderDate: new Date().toISOString().split("T")[0],
+      orderDate: new Date().toISOString(), // Gửi full ISO string để Jackson parse thành Date
       shippingAddress: user.address,
       phoneNumber: user.phoneNumber,
-      cartItems: cartItems.map((item) => ({
-        bookId: item.book.id,
-        quantity: item.quantity,
-        price: item.book.sellingPrice,
-      })),
+      cartItems: cartItems.map((item) => {
+        const discount = discounts[item.book.id];
+        const priceAfterDiscount = calculatePriceAfterDiscount(
+          item.book,
+          discount
+        );
+        return {
+          bookId: item.book.id,
+          quantity: item.quantity,
+          price: priceAfterDiscount, // Sử dụng giá sau discount
+        };
+      }),
     };
 
     try {
@@ -101,18 +168,32 @@ export default function CheckoutPage() {
 
       const data = await res.json();
       console.log("✅ Order created:", data);
+      console.log("Order ID:", data.id);
+      console.log("User ID:", orderPayload.userId);
 
       // ✅ Sau khi đặt hàng thành công thì xóa giỏ hàng
-      await fetch(
-        `http://localhost:8080/api/carts/users/${orderPayload.userId}`,
-        {
-          method: "DELETE",
-        }
-      );
+      try {
+        await fetch(
+          `http://localhost:8080/api/carts/users/${orderPayload.userId}`,
+          {
+            method: "DELETE",
+          }
+        );
+      } catch (err) {
+        console.error("Error deleting cart:", err);
+        // Vẫn tiếp tục dù xóa cart có lỗi
+      }
 
       alert("Đặt hàng thành công!");
-      localStorage.removeItem("cart");
-      window.location.href = "/thankyoufororder";
+      // Xóa cart count
+      localStorage.setItem("cartCount", "0");
+      window.dispatchEvent(new Event("cart-updated"));
+      
+      // Thêm delay nhỏ để đảm bảo order được lưu vào DB
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Redirect đến order history
+      window.location.href = "/orderhistory";
     } catch (err) {
       console.error("❌ Lỗi khi tạo đơn hàng:", err);
       alert("Đặt hàng thất bại, vui lòng thử lại!");
@@ -218,19 +299,79 @@ export default function CheckoutPage() {
                     <p className="item-title">{item.book.title}</p>
                     <p className="item-author">{item.book.author}</p>
                   </div>
-                  <span className="item-price">
-                    {(item.book.sellingPrice * item.quantity).toLocaleString(
-                      "vi-VN"
-                    )}
-                    đ
-                  </span>
+                  <div className="item-price">
+                    {(() => {
+                      const discount = discounts[item.book.id];
+                      const priceAfterDiscount = calculatePriceAfterDiscount(
+                        item.book,
+                        discount
+                      );
+                      const hasDiscount =
+                        discount &&
+                        ((discount.discountPercent != null &&
+                          discount.discountPercent > 0) ||
+                          (discount.discountAmount != null &&
+                            discount.discountAmount > 0));
+
+                      // Format discount text - giống productDetail
+                      const discountText = hasDiscount
+                        ? discount.discountPercent != null &&
+                          discount.discountPercent > 0
+                          ? `-${discount.discountPercent}%`
+                          : discount.discountAmount != null &&
+                            discount.discountAmount > 0
+                          ? `-${discount.discountAmount.toLocaleString(
+                              "vi-VN"
+                            )}đ`
+                          : null
+                        : null;
+
+                      return (
+                        <>
+                          {/* Price row - giống productDetail */}
+                          <div className="priceRow">
+                            <span className="newPrice">
+                              {(
+                                priceAfterDiscount * item.quantity
+                              ).toLocaleString("vi-VN")}
+                              đ
+                            </span>
+                            {/* Badge discount kế bên giá - giống productDetail */}
+                            {hasDiscount && discountText && (
+                              <span className="discountBadge">
+                                {discountText}
+                              </span>
+                            )}
+                          </div>
+                          {/* Giá cũ - chỉ hiển thị khi có discount */}
+                          {hasDiscount && (
+                            <span className="oldPrice">
+                              {(
+                                item.book.sellingPrice * item.quantity
+                              ).toLocaleString("vi-VN")}
+                              đ
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
               ))}
 
             <div className="summary-line">
               <span>Tạm tính</span>
-              <span>{total.toLocaleString("vi-VN")}đ</span>
+              <span>{originalTotal.toLocaleString("vi-VN")}đ</span>
             </div>
+
+            {originalTotal > total && (
+              <div className="summary-line" style={{ color: "#e53935" }}>
+                <span>Giảm giá</span>
+                <span>
+                  -{(originalTotal - total).toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+            )}
 
             <div className="summary-line">
               <span>Phí vận chuyển</span>

@@ -37,12 +37,27 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: #e53935;
+  background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
   color: white;
   font-weight: bold;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .product-image {

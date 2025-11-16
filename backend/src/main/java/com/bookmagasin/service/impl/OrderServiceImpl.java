@@ -9,6 +9,7 @@ import com.bookmagasin.web.dtoResponse.OrderResponseDto;
 import com.bookmagasin.web.mapper.OrderMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -59,7 +60,13 @@ public class OrderServiceImpl implements OrderService {
         }
 
 
-        order.setOrderDate(dto.getOrderDate());
+        // Parse orderDate từ String hoặc Date
+        if (dto.getOrderDate() != null) {
+            order.setOrderDate(dto.getOrderDate());
+        } else {
+            // Nếu không có orderDate, set ngày hiện tại
+            order.setOrderDate(new Date());
+        }
         order.setShippingAddress(dto.getShippingAddress());
         order.setPhoneNumber(dto.getPhoneNumber());
 
@@ -117,5 +124,13 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void deleteOrderById(Integer id) {
         orderRepository.deleteById(id);
+    }
+
+    @Override
+    public List<OrderResponseDto> findByUserId(Integer userId) {
+        return orderRepository.findByUserIdOrderByOrderDateDesc(userId)
+                .stream()
+                .map(OrderMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 }

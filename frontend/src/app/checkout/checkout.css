@@ -165,7 +165,47 @@
 
 .item-price {
   margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.newPrice {
+  color: #e60000;
   font-weight: 600;
+  font-size: 14px;
+}
+
+.oldPrice {
+  text-decoration: line-through;
+  color: #888;
+  font-size: 12px;
+}
+
+/* Badge discount giống productDetail */
+.discountBadge {
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+  color: white;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
 }
 
 .summary-line,

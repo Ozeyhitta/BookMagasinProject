@@ -62,5 +62,9 @@ public class Book {
     @JsonBackReference
     private List<Review> reviews;
 
+    @OneToMany(mappedBy = "book",cascade = CascadeType.ALL)
+    @JsonBackReference
+    private List<BookDiscount> bookDiscounts;
+
 
 }

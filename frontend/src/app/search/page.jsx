@@ -25,6 +25,7 @@ export default function SearchPage() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [discounts, setDiscounts] = useState({});
 
   const handleChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -93,6 +94,36 @@ export default function SearchPage() {
         );
 
         setBooks(filtered);
+
+        // Fetch discounts cho các books đã lọc
+        const discountMap = {};
+        const now = new Date();
+
+        for (const book of filtered) {
+          try {
+            const discountRes = await fetch(
+              `http://localhost:8080/api/book-discounts/book/${book.id}`
+            );
+            if (discountRes.ok) {
+              const discountData = await discountRes.json();
+              
+              // Tìm discount active
+              const activeDiscount = discountData.find((discount) => {
+                const startDate = new Date(discount.startDate);
+                const endDate = new Date(discount.endDate);
+                return now >= startDate && now <= endDate;
+              });
+
+              if (activeDiscount) {
+                discountMap[book.id] = activeDiscount;
+              }
+            }
+          } catch (err) {
+            console.error(`Error fetching discount for book ${book.id}:`, err);
+          }
+        }
+
+        setDiscounts(discountMap);
       } catch (err) {
         console.error("Lỗi load sách:", err);
         setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.");
@@ -259,17 +290,41 @@ export default function SearchPage() {
         )}
 
         <div className={styles.productGrid}>
-          {books.map((book) => (
-            <ProductCard
-              key={book.id}
-              id={book.id}
-              title={book.title}
-              price={book.price?.toLocaleString("vi-VN") + "đ"}
-              oldPrice={null}
-              discount={null}
-              image={book.imageUrl}
-            />
-          ))}
+          {books.map((book) => {
+            const discount = discounts[book.id];
+            
+            // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
+            const priceAfterDiscount = discount
+              ? Math.round(
+                  discount.discountPercent != null && discount.discountPercent > 0
+                    ? book.price * (1 - discount.discountPercent / 100)
+                    : discount.discountAmount != null && discount.discountAmount > 0
+                    ? Math.max(0, book.price - discount.discountAmount)
+                    : book.price
+                )
+              : book.price;
+            
+            // Hiển thị text discount - ưu tiên discountPercent
+            const discountText = discount
+              ? discount.discountPercent != null && discount.discountPercent > 0
+                ? `-${discount.discountPercent}%`
+                : discount.discountAmount != null && discount.discountAmount > 0
+                ? `-${discount.discountAmount.toLocaleString("vi-VN")}đ`
+                : null
+              : null;
+
+            return (
+              <ProductCard
+                key={book.id}
+                id={book.id}
+                title={book.title}
+                price={priceAfterDiscount.toLocaleString("vi-VN") + "đ"}
+                oldPrice={discount ? book.price.toLocaleString("vi-VN") + "đ" : null}
+                discount={discountText}
+                image={book.imageUrl}
+              />
+            );
+          })}
         </div>
       </div>
 

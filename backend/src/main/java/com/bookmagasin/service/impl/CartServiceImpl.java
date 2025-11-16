@@ -93,6 +93,7 @@ public class CartServiceImpl implements CartService {
                     .orElseThrow(() -> new RuntimeException("Book not found"));
             existing.setUser(user);
             existing.setBook(book);
+            existing.setQuantity(dto.getQuantity()); // ✅ Cập nhật quantity
             existing.setUpdateAt(new Date());
             Cart updated=cartRepository.save(existing);
             return CartMapper.toResponseDto(updated);

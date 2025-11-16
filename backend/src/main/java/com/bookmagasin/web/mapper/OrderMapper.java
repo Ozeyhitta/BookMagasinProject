@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.bookmagasin.web.dtoResponse.OrderItemResponseDto;
+import com.bookmagasin.web.dtoResponse.OrderStatusHistoryResponseDto;
 import com.bookmagasin.web.mapper.OrderItemMapper;
+import com.bookmagasin.web.mapper.OrderStatusHistoryMapper;
 
 public class OrderMapper {
 
@@ -42,6 +44,15 @@ public class OrderMapper {
                     .map(OrderItemMapper::toResponseDto)
                     .collect(Collectors.toList());
             dto.setItems(items);
+        }
+
+        // ✅ Thêm ánh xạ lịch sử trạng thái đơn hàng
+        if (order.getOrderStatusHistories() != null && !order.getOrderStatusHistories().isEmpty()) {
+            List<OrderStatusHistoryResponseDto> histories = order.getOrderStatusHistories()
+                    .stream()
+                    .map(OrderStatusHistoryMapper::toResponseDto)
+                    .collect(Collectors.toList());
+            dto.setOrderStatusHistories(histories);
         }
 
         return dto;
