@@ -59,23 +59,35 @@ public class AuthController {
     // 🔹 Đăng nhập
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDto dto) {
+
+        // 🔍 Tìm tài khoản theo email
         Account account = accountService.findEntityByEmail(dto.getEmail())
                 .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
 
+        // ❌ Kiểm tra mật khẩu
         if (!passwordEncoder.matches(dto.getPassword(), account.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Sai mật khẩu");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Sai mật khẩu");
         }
 
+        // ❌ Tài khoản bị khóa hoặc chưa kích hoạt
+        if (!account.isActivated()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Tài khoản của bạn đã bị khóa! Vui lòng liên hệ quản trị viên.");
+        }
+
+        // 🔑 Sinh token đăng nhập
         String token = jwtUtil.generateToken(account.getEmail());
 
+        // 🔄 Trả về thông tin login
         return ResponseEntity.ok(new LoginResponseDto(
-                account.getUser().getId(),     // ✅ TRẢ RA USER ID
+                account.getUser().getId(),   // USER ID
                 account.getEmail(),
                 account.getRole().name(),
                 token
         ));
-
     }
+
 
     // 🔹 Đăng xuất
     @PostMapping("/logout")

@@ -38,12 +38,6 @@ public class User {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @Column(name = "position")
-    private String position;
-
-    @Column(name = "join_date")
-    private Date joinDate;
-
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonBackReference
     private Account account;

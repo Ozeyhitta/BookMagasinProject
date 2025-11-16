@@ -27,21 +27,22 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
+      const text = await res.text(); // đọc text trước
+
       if (!res.ok) {
-        throw new Error("Sai email hoặc mật khẩu");
+        setError(text); // hiện đúng lỗi từ backend
+        return;
       }
 
-      const data = await res.json();
-      console.log("Login success:", data);
+      const data = JSON.parse(text);
 
-      // ✅ Lưu token
+      // Lưu token
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", data.userId);
 
-      // ✅ Chuyển hướng sang trang chính
       window.location.href = "/mainpage";
     } catch (err) {
-      setError(err.message);
+      setError("Lỗi kết nối đến server");
     } finally {
       setLoading(false);
     }

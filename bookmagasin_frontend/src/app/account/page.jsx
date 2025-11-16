@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRouter } from "react";
 import axiosClient from "../../utils/axiosClient";
 import styles from "./account.module.css";
 
@@ -10,14 +10,22 @@ export default function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    const id =
-      typeof window !== "undefined" ? localStorage.getItem("userId") : null;
-    if (!id) return;
+    const router = useRouter ? useRouter() : null;
+
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+
+    // ⛔ Nếu chưa đăng nhập → quay về /login
+    if (!userId || !token) {
+      if (router) router.push("/login");
+      return;
+    }
 
     axiosClient
-      .get(`/users/${id}`)
+      .get(`/users/${userId}`)
       .then((res) => {
         const data = res.data;
+
         setFormData({
           fullName: data.fullName || "",
           dateOfBirth: data.dateOfBirth?.substring(0, 10) || "",
@@ -40,11 +48,18 @@ export default function AccountPage() {
           ]);
         }
       })
-      .catch((err) => console.log("Lỗi API:", err));
+      .catch(() => {
+        if (router) router.push("/login");
+      });
   }, []);
 
   // tránh lỗi khi formData chưa load xong
-  if (!formData) return <p>Đang tải dữ liệu...</p>;
+  if (!formData) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    return null;
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

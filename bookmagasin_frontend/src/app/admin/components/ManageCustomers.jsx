@@ -17,6 +17,7 @@ export default function ManageCustomers() {
     orders: "",
     status: "active",
   });
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   useEffect(() => {
     async function fetchCustomers() {
@@ -80,14 +81,8 @@ export default function ManageCustomers() {
 
   // Xem chi tiết
   const handleView = (accountId) => {
-    const c = customers.find((x) => x.accountId === accountId);
-    alert(
-      `📋 Thông tin khách hàng:\n\nTên: ${c.name}\nEmail: ${c.email}\nSĐT: ${
-        c.phone
-      }\nNgày tham gia: ${c.joinDate}\nSố đơn hàng: ${c.orders}\nTrạng thái: ${
-        c.status === "active" ? "Hoạt động" : "Bị khóa"
-      }`
-    );
+    const customer = customers.find((c) => c.accountId === accountId);
+    setSelectedCustomer(customer);
   };
 
   // Sửa
@@ -141,6 +136,48 @@ export default function ManageCustomers() {
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const CustomerDetailModal = () => {
+    if (!selectedCustomer) return null;
+
+    return (
+      <div className={styles.modalOverlay}>
+        <div className={styles.modal}>
+          <h3>Thông tin khách hàng</h3>
+
+          <p>
+            <strong>ID:</strong> {selectedCustomer.accountId}
+          </p>
+          <p>
+            <strong>Họ tên:</strong> {selectedCustomer.name}
+          </p>
+          <p>
+            <strong>Email:</strong> {selectedCustomer.email}
+          </p>
+          <p>
+            <strong>SĐT:</strong> {selectedCustomer.phone}
+          </p>
+          <p>
+            <strong>Ngày tham gia:</strong> {selectedCustomer.joinDate}
+          </p>
+          <p>
+            <strong>Số đơn hàng:</strong> {selectedCustomer.orders}
+          </p>
+          <p>
+            <strong>Trạng thái:</strong>{" "}
+            {selectedCustomer.status === "active" ? "Hoạt động" : "Khóa"}
+          </p>
+
+          <button
+            className={styles.closeButton}
+            onClick={() => setSelectedCustomer(null)}
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={styles.container}>
@@ -241,10 +278,13 @@ export default function ManageCustomers() {
       )}
 
       {/* Bảng dữ liệu */}
+      {selectedCustomer && <CustomerDetailModal />}
+
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>
             <tr>
+              <th>ID</th>
               <th>Tên khách hàng</th>
               <th>Email</th>
               <th>Điện thoại</th>
@@ -267,6 +307,7 @@ export default function ManageCustomers() {
             ) : (
               filteredCustomers.map((customer) => (
                 <tr key={customer.accountId}>
+                  <td>{customer.accountId}</td>
                   <td className={styles.nameCell}>{customer.name}</td>
                   <td>{customer.email}</td>
                   <td>{customer.phone}</td>

@@ -20,17 +20,29 @@ public class AccountMapper {
     }
 
     public static AccountResponseDto toResponseDto(Account account){
-        AccountResponseDto dto=new AccountResponseDto();
+        AccountResponseDto dto = new AccountResponseDto();
         dto.setId(account.getId());
         dto.setEmail(account.getEmail());
         dto.setRole(account.getRole());
         dto.setActivated(account.isActivated());
-        if(account.getUser()!=null){
-            UserDto userDto=new UserDto();
-            userDto.setId(account.getUser().getId());
-            userDto.setFullName(account.getUser().getFullName());
+
+        if (account.getUser() != null) {
+            User user = account.getUser();
+            UserDto userDto = new UserDto();
+
+            userDto.setId(user.getId());
+            userDto.setFullName(user.getFullName());
+            userDto.setDateOfBirth(user.getDateOfBirth());
+            userDto.setGender(user.getGender());
+            userDto.setPhoneNumber(user.getPhoneNumber());
+            userDto.setAddress(user.getAddress());
+            userDto.setAvatarUrl(user.getAvatarUrl());
+
+
             dto.setUser(userDto);
         }
+
         return dto;
     }
+
 }

@@ -8,8 +8,6 @@ public class StaffRequestDTO {
     private String email;
     private String phoneNumber;
 
-    private String position;
-    private String joinDate;     // dùng String để tránh lỗi parse
     private String dateOfBirth;  // dùng String
 
     private String address;

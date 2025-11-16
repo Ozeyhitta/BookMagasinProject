@@ -297,3 +297,83 @@
     flex-direction: column;
   }
 }
+
+/* Overlay mờ */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+/* Khung popup */
+.modal {
+  background: white;
+  padding: 28px 30px;
+  border-radius: 14px;
+  width: 420px;
+  max-width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.22s ease-out;
+}
+
+/* Tiêu đề: rõ ràng */
+.modal h3 {
+  margin-bottom: 18px;
+  font-size: 22px;
+  font-weight: bold;
+  text-align: center;
+  color: #333;
+}
+
+/* Dòng thông tin */
+.modal p {
+  margin: 10px 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #444;
+}
+
+/* Nhãn mạnh hơn */
+.modal p strong {
+  display: inline-block;
+  width: 130px;
+  color: #222;
+}
+
+/* Nút đóng */
+.closeButton {
+  margin-top: 20px;
+  width: 100%;
+  padding: 10px 0;
+  background: #2563eb;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: 0.2s ease;
+}
+
+.closeButton:hover {
+  background: #1d4ed8;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

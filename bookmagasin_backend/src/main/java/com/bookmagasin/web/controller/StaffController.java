@@ -54,9 +54,6 @@ public class StaffController {
         User user = new User();
         user.setFullName(dto.getFullName());
         user.setPhoneNumber(dto.getPhoneNumber());
-        user.setPosition(dto.getPosition());
-
-        user.setJoinDate(parseDate(dto.getJoinDate()));
         user.setDateOfBirth(parseDate(dto.getDateOfBirth()));
 
         user.setAddress(dto.getAddress());
@@ -86,9 +83,6 @@ public class StaffController {
 
         user.setFullName(dto.getFullName());
         user.setPhoneNumber(dto.getPhoneNumber());
-        user.setPosition(dto.getPosition());
-
-        user.setJoinDate(parseDate(dto.getJoinDate()));
         user.setDateOfBirth(parseDate(dto.getDateOfBirth()));
 
         user.setAddress(dto.getAddress());
