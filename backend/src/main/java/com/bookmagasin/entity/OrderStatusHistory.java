@@ -27,7 +27,7 @@ public class OrderStatusHistory {
     @ManyToOne
     @JoinColumn(name = "order_id")
     private Order order;
-    
+
 
     public OrderStatusHistory(EOrderHistory eOrderHistory, Date statusChangeDate, Order order) {
         this.eOrderHistory = eOrderHistory;

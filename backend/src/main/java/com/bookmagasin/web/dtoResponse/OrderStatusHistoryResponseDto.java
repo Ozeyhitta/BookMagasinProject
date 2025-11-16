@@ -14,5 +14,6 @@ public class OrderStatusHistoryResponseDto {
     private int id;
     private EOrderHistory eOrderHistory;
     private Date statusChangeDate;
+    private Integer orderId; // Thêm orderId để dễ dàng xác định order
 }
 

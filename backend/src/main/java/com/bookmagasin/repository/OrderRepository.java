@@ -12,7 +12,9 @@ import java.util.List;
 @Repository
 public interface OrderRepository extends JpaRepository<Order,Integer> {
     // Tìm tất cả orders của một user - eager load user để tránh lazy loading
-    @EntityGraph(attributePaths = {"user", "service", "payment", "books", "books.book", "orderStatusHistories"})
+    // Note: Chỉ fetch một collection (books) để tránh MultipleBagFetchException
+    // orderStatusHistories sẽ được lazy load khi cần
+    @EntityGraph(attributePaths = {"user", "service", "payment", "books", "books.book"})
     @Query("SELECT o FROM Order o WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
     List<Order> findByUserIdOrderByOrderDateDesc(@Param("userId") int userId);
 }

@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "book_details")
 @Data
+@EqualsAndHashCode(exclude = {"book"})
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookDetail {

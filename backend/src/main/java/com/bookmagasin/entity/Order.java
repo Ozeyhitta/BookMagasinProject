@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.CustomLog;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.Date;
 import java.util.List;
@@ -51,6 +52,7 @@ public class Order {
     private List<OrderPromotion> orderPromotions;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 20) // Fetch orderStatusHistories trong batch để tránh N+1 queries
     private List<OrderStatusHistory> orderStatusHistories;
 
     // --- THÔNG TIN GIAO HÀNG

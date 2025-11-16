@@ -61,12 +61,68 @@ export default function CheckoutPage() {
           email: userData.email || "",
         });
 
-        const cartRes = await fetch(
-          `http://localhost:8080/api/carts/users/${userId}`
-        );
+        // ✅ Kiểm tra "Mua ngay" item từ sessionStorage
+        const buyNowItemStr = sessionStorage.getItem("buyNowItem");
+        let items = [];
 
-        const cartData = cartRes.ok ? await cartRes.json() : [];
-        const items = Array.isArray(cartData) ? cartData : [];
+        if (buyNowItemStr) {
+          try {
+            const buyNowItem = JSON.parse(buyNowItemStr);
+            // Kiểm tra xem item có còn hợp lệ không (trong vòng 5 phút)
+            const isValid = Date.now() - buyNowItem.timestamp < 5 * 60 * 1000;
+            
+            if (isValid) {
+              // Nếu có buyNowItem, lấy từ cart và cập nhật số lượng
+              const cartRes = await fetch(
+                `http://localhost:8080/api/carts/users/${userId}`
+              );
+              
+              const cartData = cartRes.ok ? await cartRes.json() : [];
+              items = Array.isArray(cartData) ? cartData : [];
+              
+              // Tìm item trong cart và cập nhật số lượng từ buyNowItem
+              const cartItemIndex = items.findIndex(
+                item => item.book?.id === buyNowItem.bookId
+              );
+              
+              if (cartItemIndex !== -1) {
+                // Cập nhật số lượng từ buyNowItem
+                items[cartItemIndex].quantity = buyNowItem.quantity;
+              } else if (buyNowItem.book) {
+                // Nếu chưa có trong cart, thêm item từ buyNowItem
+                items.push({
+                  book: buyNowItem.book,
+                  quantity: buyNowItem.quantity,
+                  price: buyNowItem.book.sellingPrice
+                });
+              }
+            } else {
+              // Item không còn hợp lệ, xóa và lấy từ cart bình thường
+              sessionStorage.removeItem("buyNowItem");
+              const cartRes = await fetch(
+                `http://localhost:8080/api/carts/users/${userId}`
+              );
+              const cartData = cartRes.ok ? await cartRes.json() : [];
+              items = Array.isArray(cartData) ? cartData : [];
+            }
+          } catch (err) {
+            console.error("Error parsing buyNowItem:", err);
+            // Nếu có lỗi, lấy từ cart bình thường
+            const cartRes = await fetch(
+              `http://localhost:8080/api/carts/users/${userId}`
+            );
+            const cartData = cartRes.ok ? await cartRes.json() : [];
+            items = Array.isArray(cartData) ? cartData : [];
+          }
+        } else {
+          // Không có buyNowItem, lấy từ cart bình thường
+          const cartRes = await fetch(
+            `http://localhost:8080/api/carts/users/${userId}`
+          );
+          const cartData = cartRes.ok ? await cartRes.json() : [];
+          items = Array.isArray(cartData) ? cartData : [];
+        }
+
         setCartItems(items);
 
         // Fetch discounts cho từng book - giống cart page
@@ -116,6 +172,26 @@ export default function CheckoutPage() {
     }
 
     fetchData();
+
+    // ✅ Lắng nghe sự kiện khi back lại và thay đổi số lượng
+    const handleStorageChange = (e) => {
+      if (e.key === "buyNowItem" || e.key === null) {
+        fetchData();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    
+    // Lắng nghe custom event từ product detail page
+    const handleBuyNowUpdate = () => {
+      fetchData();
+    };
+    window.addEventListener("buy-now-updated", handleBuyNowUpdate);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("buy-now-updated", handleBuyNowUpdate);
+    };
   }, []);
 
   async function handlePlaceOrder(e) {
@@ -295,9 +371,10 @@ export default function CheckoutPage() {
               cartItems.map((item) => (
                 <div key={item.id} className="order-item">
                   <img src={item.book.imageUrl} />
-                  <div>
+                  <div className="item-info">
                     <p className="item-title">{item.book.title}</p>
                     <p className="item-author">{item.book.author}</p>
+                    <p className="item-quantity">Số lượng: {item.quantity}</p>
                   </div>
                   <div className="item-price">
                     {(() => {

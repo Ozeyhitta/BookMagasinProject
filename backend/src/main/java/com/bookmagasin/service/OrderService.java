@@ -12,5 +12,6 @@ public interface OrderService {
     Optional<OrderResponseDto> getOrderById(Integer id);
     void deleteOrderById(Integer id);
     List<OrderResponseDto> findByUserId(Integer userId);
+    OrderResponseDto updateOrderStatus(Integer orderId, String newStatus);
 }
 

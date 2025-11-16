@@ -50,4 +50,25 @@ public class OrderController {
     public ResponseEntity<List<OrderResponseDto>> getOrdersByUserId(@PathVariable Integer userId) {
         return ResponseEntity.ok(orderService.findByUserId(userId));
     }
+
+    // UPDATE ORDER STATUS (dùng cho thanh toán)
+    @PutMapping("/{id}/status")
+    public ResponseEntity<OrderResponseDto> updateOrderStatus(
+            @PathVariable Integer id,
+            @RequestBody java.util.Map<String, String> request) {
+        try {
+            String newStatus = request.get("status");
+            if (newStatus == null || newStatus.trim().isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            OrderResponseDto updated = orderService.updateOrderStatus(id, newStatus);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            // IllegalArgumentException (ví dụ: enum value không hợp lệ) → Bad Request
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            // RuntimeException khác (ví dụ: Order not found) → Not Found
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

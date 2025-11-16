@@ -171,6 +171,38 @@ export default function OrderHistory() {
     }
   }
 
+  const handlePayOrder = async (orderId) => {
+    if (!confirm("Bạn có chắc chắn muốn thanh toán đơn hàng này?")) return;
+    
+    try {
+      const res = await fetch(`http://localhost:8080/api/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "COMPLETED" }),
+      });
+      
+      if (res.ok) {
+        alert("Thanh toán thành công!");
+        // Refresh orders
+        const userId = localStorage.getItem("userId");
+        const refreshRes = await fetch(
+          `http://localhost:8080/api/orders/users/${userId}`
+        );
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          setOrders(data || []);
+        }
+      } else {
+        const errorText = await res.text();
+        console.error("Error paying order:", errorText);
+        alert("Không thể thanh toán đơn hàng!");
+      }
+    } catch (err) {
+      console.error("Error paying order:", err);
+      alert("Lỗi khi thanh toán đơn hàng!");
+    }
+  }
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -252,15 +284,26 @@ export default function OrderHistory() {
                     </button>
                   </td>
                   <td>
-                    {order.status?.toString().toUpperCase() === "PENDING" && (
-                      <button 
-                        className={styles.btnCancel} 
-                        onClick={() => handleCancelOrder(order.id)} 
-                        title="Hủy đơn hàng"
-                      >
-                        ✕
-                      </button>
-                    )}
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      {order.status?.toString().toUpperCase() === "PENDING" && (
+                        <>
+                          <button 
+                            className={styles.btnPay} 
+                            onClick={() => handlePayOrder(order.id)} 
+                            title="Thanh toán đơn hàng"
+                          >
+                            Thanh toán
+                          </button>
+                          <button 
+                            className={styles.btnCancel} 
+                            onClick={() => handleCancelOrder(order.id)} 
+                            title="Hủy đơn hàng"
+                          >
+                            ✕
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

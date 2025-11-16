@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
@@ -13,6 +14,7 @@ import java.util.List;
 @Table(name = "users")
 @NoArgsConstructor
 @Data
+@EqualsAndHashCode(exclude = {"account", "userNotifications", "carts", "reviews"})
 @Inheritance(strategy = InheritanceType.JOINED)
 public class User {
 

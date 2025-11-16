@@ -1,26 +1,28 @@
 "use client";
 
-import { useState, useEffect, useRouter } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import axiosClient from "../../utils/axiosClient";
 import styles from "./account.module.css";
 
 export default function AccountPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState(null);
   const [emails, setEmails] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const router = useRouter ? useRouter() : null;
-
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
 
     // ⛔ Nếu chưa đăng nhập → quay về /login
     if (!userId || !token) {
-      if (router) router.push("/login");
+      router.push("/login");
       return;
     }
 
+    setLoading(true);
     axiosClient
       .get(`/users/${userId}`)
       .then((res) => {
@@ -48,17 +50,24 @@ export default function AccountPage() {
           ]);
         }
       })
-      .catch(() => {
-        if (router) router.push("/login");
+      .catch((error) => {
+        console.error("Error fetching user data:", error);
+        router.push("/login");
+      })
+      .finally(() => {
+        setLoading(false);
       });
-  }, []);
+  }, [router]);
 
-  // tránh lỗi khi formData chưa load xong
-  if (!formData) {
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
-    return null;
+  // Hiển thị loading khi đang fetch data
+  if (loading || !formData) {
+    return (
+      <div className={styles.accountPage}>
+        <p style={{ padding: 40, textAlign: "center" }}>
+          Đang tải thông tin...
+        </p>
+      </div>
+    );
   }
 
   const handleInputChange = (e) => {

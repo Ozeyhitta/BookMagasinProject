@@ -16,18 +16,52 @@ export default function ProductDetail({ params }) {
   const [animateQty, setAnimateQty] = useState(false); // State cho animation
 
   const increaseQty = () => {
-    setQuantity((q) => q + 1);
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
     // Trigger animation
     setAnimateQty(true);
     setTimeout(() => setAnimateQty(false), 300);
+
+    // ✅ Cập nhật buyNowItem trong sessionStorage nếu có
+    const buyNowItemStr = sessionStorage.getItem("buyNowItem");
+    if (buyNowItemStr) {
+      try {
+        const buyNowItem = JSON.parse(buyNowItemStr);
+        if (buyNowItem.bookId === book.id) {
+          buyNowItem.quantity = newQuantity;
+          sessionStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
+          // Dispatch event để checkout page cập nhật
+          window.dispatchEvent(new Event("buy-now-updated"));
+        }
+      } catch (err) {
+        console.error("Error updating buyNowItem:", err);
+      }
+    }
   };
 
   const decreaseQty = () => {
     if (quantity > 1) {
-      setQuantity((q) => q - 1);
+      const newQuantity = quantity - 1;
+      setQuantity(newQuantity);
       // Trigger animation
       setAnimateQty(true);
       setTimeout(() => setAnimateQty(false), 300);
+
+      // ✅ Cập nhật buyNowItem trong sessionStorage nếu có
+      const buyNowItemStr = sessionStorage.getItem("buyNowItem");
+      if (buyNowItemStr) {
+        try {
+          const buyNowItem = JSON.parse(buyNowItemStr);
+          if (buyNowItem.bookId === book.id) {
+            buyNowItem.quantity = newQuantity;
+            sessionStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
+            // Dispatch event để checkout page cập nhật
+            window.dispatchEvent(new Event("buy-now-updated"));
+          }
+        } catch (err) {
+          console.error("Error updating buyNowItem:", err);
+        }
+      }
     }
   };
   const router = useRouter();
@@ -36,13 +70,23 @@ export default function ProductDetail({ params }) {
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Vui lòng đăng nhập trước khi mua hàng!");
-      router.push("/account"); // 👉 chuyển sang trang account
+      router.push("/login");
       return;
     }
 
-    // Nếu đã đăng nhập thì vẫn thêm vào giỏ trước rồi chuyển trang
-    handleAddToCart();
-    router.push("/checkout"); // 👉 hoặc bạn có thể đổi thành /checkout
+    // ✅ Lưu thông tin "Mua ngay" vào sessionStorage và chuyển trang ngay
+    const priceAfterDiscount = calculatePriceAfterDiscount(book.sellingPrice);
+    const buyNowItem = {
+      bookId: book.id,
+      book: book,
+      quantity: quantity,
+      price: priceAfterDiscount,
+      timestamp: Date.now(),
+    };
+    sessionStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
+
+    // Chuyển trang ngay lập tức
+    router.push("/checkout");
   };
 
   // Helper function để format số an toàn (tránh hydration mismatch)
