@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         {showHeader && <Header />}
         <main>{children}</main>
         <ChatbotButton />

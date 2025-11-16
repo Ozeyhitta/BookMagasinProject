@@ -65,6 +65,7 @@ function ResetPasswordContent() {
             placeholder="Nhập mật khẩu mới"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+            autoComplete="new-password"
             required
             className={styles.input}
           />
@@ -73,6 +74,7 @@ function ResetPasswordContent() {
             placeholder="Nhập lại mật khẩu mới"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
             required
             className={styles.input}
           />

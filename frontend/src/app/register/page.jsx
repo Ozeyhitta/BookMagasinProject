@@ -73,6 +73,7 @@ export default function RegisterPage() {
               name="email"
               value={form.email}
               onChange={onChange}
+              autoComplete="email"
               required
             />
           </label>
@@ -85,6 +86,7 @@ export default function RegisterPage() {
               name="password"
               value={form.password}
               onChange={onChange}
+              autoComplete="new-password"
               minLength={6}
               required
             />

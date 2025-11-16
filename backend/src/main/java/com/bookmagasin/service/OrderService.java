@@ -11,5 +11,6 @@ public interface OrderService {
     List<OrderResponseDto> getAllOrders();
     Optional<OrderResponseDto> getOrderById(Integer id);
     void deleteOrderById(Integer id);
+    List<OrderResponseDto> findByUserId(Integer userId);
 }
 

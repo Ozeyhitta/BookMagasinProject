@@ -1,18 +1,35 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 
 import styles from "./productDetail.module.css";
 
 export default function ProductDetail({ params }) {
-  const id = params?.id; // id lấy từ URL /product/[id]
+  // Await params trong Next.js App Router
+  const resolvedParams = use(params);
+  const id = resolvedParams?.id; // id lấy từ URL /product/[id]
 
   const [book, setBook] = useState(null);
   const [bookDetail, setBookDetail] = useState(null); // 💡 thêm state cho chi tiết
-  const [isClient, setIsClient] = useState(false);
+  const [discount, setDiscount] = useState(null); // 💡 thêm state cho discount
   const [quantity, setQuantity] = useState(1);
-  const increaseQty = () => setQuantity((q) => q + 1);
-  const decreaseQty = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
+  const [animateQty, setAnimateQty] = useState(false); // State cho animation
+
+  const increaseQty = () => {
+    setQuantity((q) => q + 1);
+    // Trigger animation
+    setAnimateQty(true);
+    setTimeout(() => setAnimateQty(false), 300);
+  };
+
+  const decreaseQty = () => {
+    if (quantity > 1) {
+      setQuantity((q) => q - 1);
+      // Trigger animation
+      setAnimateQty(true);
+      setTimeout(() => setAnimateQty(false), 300);
+    }
+  };
   const router = useRouter();
 
   const handleBuyNow = () => {
@@ -28,10 +45,15 @@ export default function ProductDetail({ params }) {
     router.push("/checkout"); // 👉 hoặc bạn có thể đổi thành /checkout
   };
 
-  // Đánh dấu client để dùng toLocaleString
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  // Helper function để format số an toàn (tránh hydration mismatch)
+  const formatPrice = (price) => {
+    if (typeof window === "undefined") {
+      // Server-side: trả về string đơn giản
+      return String(price).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+    // Client-side: dùng toLocaleString
+    return price.toLocaleString("vi-VN");
+  };
 
   // Fetch book + bookDetail
   useEffect(() => {
@@ -58,6 +80,33 @@ export default function ProductDetail({ params }) {
           );
           setBookDetail(matchedDetail || null);
         }
+
+        // 3. Fetch discount cho book này
+        try {
+          const discountRes = await fetch(
+            `http://localhost:8080/api/book-discounts/book/${bookData.id}`
+          );
+          if (discountRes.ok) {
+            const discountData = await discountRes.json();
+            const now = new Date();
+
+            // Tìm discount active hoặc lấy discount đầu tiên (để test)
+            let activeDiscount = discountData.find((disc) => {
+              const startDate = new Date(disc.startDate);
+              const endDate = new Date(disc.endDate);
+              return now >= startDate && now <= endDate;
+            });
+
+            // Nếu không có active, lấy discount đầu tiên (để test)
+            if (!activeDiscount && discountData.length > 0) {
+              activeDiscount = discountData[0];
+            }
+
+            setDiscount(activeDiscount || null);
+          }
+        } catch (err) {
+          console.error("Error fetching discount:", err);
+        }
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu sách:", error);
       }
@@ -70,15 +119,50 @@ export default function ProductDetail({ params }) {
     return <p className={styles.loading}>Đang tải thông tin sách...</p>;
   }
 
-  // Format giá
-  const priceFormatted = isClient
-    ? book.sellingPrice?.toLocaleString("vi-VN")
-    : book.sellingPrice;
+  const originalPrice = book.sellingPrice || 0;
 
-  const oldPriceFormatted =
-    isClient && book.oldPrice
-      ? book.oldPrice.toLocaleString("vi-VN")
-      : book.oldPrice;
+  // Kiểm tra có discount hợp lệ không
+  const hasDiscount =
+    discount &&
+    ((discount.discountPercent != null && discount.discountPercent > 0) ||
+      (discount.discountAmount != null && discount.discountAmount > 0));
+
+  // Tính giá sau discount - chỉ tính nếu có discount
+  const calculatePriceAfterDiscount = (price) => {
+    if (!hasDiscount) return price;
+
+    let finalPrice = price;
+
+    // Ưu tiên discountPercent nếu có cả 2
+    if (discount.discountPercent != null && discount.discountPercent > 0) {
+      finalPrice = price * (1 - discount.discountPercent / 100);
+    } else if (discount.discountAmount != null && discount.discountAmount > 0) {
+      finalPrice = Math.max(0, price - discount.discountAmount);
+    }
+
+    return Math.round(finalPrice);
+  };
+
+  // Nếu không có discount → hiển thị giá gốc
+  // Nếu có discount → hiển thị giá sau discount
+  const displayPrice = hasDiscount
+    ? calculatePriceAfterDiscount(originalPrice)
+    : originalPrice;
+
+  // Format giá - sử dụng helper function để tránh hydration mismatch
+  const priceFormatted = formatPrice(displayPrice);
+
+  // Giá cũ chỉ hiển thị khi có discount
+  const oldPriceFormatted = hasDiscount ? formatPrice(originalPrice) : null;
+
+  // Format discount text - chỉ hiển thị khi có discount
+  const discountText = hasDiscount
+    ? discount.discountPercent != null && discount.discountPercent > 0
+      ? `-${discount.discountPercent}%`
+      : discount.discountAmount != null && discount.discountAmount > 0
+      ? `-${formatPrice(discount.discountAmount)}đ`
+      : null
+    : null;
 
   // Năm xuất bản (từ publicationDate)
   const publicationYear = book.publicationDate
@@ -166,18 +250,35 @@ export default function ProductDetail({ params }) {
           )}
 
           <div className={styles.priceBox}>
-            <span className={styles.price}>{priceFormatted}đ</span>
+            <div className={styles.priceRow}>
+              <span className={styles.price}>{priceFormatted}đ</span>
+              {/* Badge discount kế bên giá */}
+              {hasDiscount && discountText && (
+                <span className={styles.discountBadge}>{discountText}</span>
+              )}
+            </div>
             {oldPriceFormatted && (
               <span className={styles.oldPrice}>{oldPriceFormatted}đ</span>
             )}
           </div>
 
           <div className={styles.quantityContainer}>
-            <button className={styles.qtyBtn} onClick={decreaseQty}>
-              -
+            <button
+              className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`}
+              onClick={decreaseQty}
+            >
+              −
             </button>
-            <input type="text" value={quantity} readOnly />
-            <button className={styles.qtyBtn} onClick={increaseQty}>
+            <input
+              type="text"
+              value={quantity}
+              readOnly
+              className={animateQty ? styles.animate : ""}
+            />
+            <button
+              className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`}
+              onClick={increaseQty}
+            >
               +
             </button>
           </div>

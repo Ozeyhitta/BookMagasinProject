@@ -5,17 +5,30 @@
   padding: 40px 100px;
 }
 
+/* Loading state */
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #666;
+}
+
 /* --- Bố cục 3 cột: Ảnh - Thông tin - Box phụ --- */
 .productDetail {
   display: grid;
-  grid-template-columns: 400px 1fr 300px;
+  grid-template-columns: 320px 1fr 300px; /* Giảm ảnh từ 400px xuống 320px */
   gap: 40px;
   align-items: flex-start;
 }
 
 /* Ảnh sản phẩm */
+.productImage {
+  max-width: 320px; /* Giới hạn kích thước ảnh */
+}
+
 .productImage img {
   width: 100%;
+  max-height: 450px; /* Giới hạn chiều cao */
   border: 1px solid #ddd;
   border-radius: 6px;
   background: #fff;
@@ -32,33 +45,60 @@
 .isbn,
 .publisher {
   color: #666;
-  font-size: 15px;
+  font-size: 20 px;
   margin-bottom: 5px;
 }
 
 /* --- Giá sản phẩm --- */
 .priceBox {
   margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .price {
-  font-size: 26px;
+  font-size: 30px; /* Tăng từ 34px lên 38px */
   color: #e60000;
   font-weight: bold;
-  margin-right: 10px;
+  line-height: 1.2;
 }
 
 .oldPrice {
   text-decoration: line-through;
   color: #888;
-  font-size: 18px;
+  font-size: 25px; /* Tăng từ 20px lên 22px */
+}
+
+/* Badge discount trong priceBox - không dùng position absolute */
+.priceBox .discountBadge {
+  display: inline-block;
+  position: relative; /* Đảm bảo không bị absolute */
+  z-index: 1; /* Thấp hơn các element khác */
+  background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+  color: white;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
 }
 
 /* --- Điều chỉnh số lượng --- */
 .quantityContainer {
   display: inline-flex;
   align-items: center;
-  border: 1px solid #ccc;
+  border: 2px solid #ccc;
   border-radius: 6px;
   overflow: hidden;
   width: fit-content;
@@ -67,33 +107,79 @@
 }
 
 .qtyBtn {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border: none;
   background: #fff;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: #333;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .qtyBtn:hover {
-  background: #f3f3f3;
+  background: #f0f0f0;
   color: #000;
+  transform: scale(1.1); /* Phóng to khi hover */
+}
+
+.qtyBtn:active {
+  transform: scale(0.95); /* Thu nhỏ khi click */
+  background: #e0e0e0;
+}
+
+/* Animation khi click */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.qtyBtn.animate {
+  animation: pulse 0.3s ease;
+}
+
+/* Class animate chung - có thể dùng cho nhiều element */
+.animate {
+  animation: pulse 0.3s ease;
 }
 
 .quantityContainer input {
-  width: 55px;
-  height: 38px;
+  width: 60px;
+  height: 40px;
   text-align: center;
   border-left: 1px solid #ccc;
   border-right: 1px solid #ccc;
-  font-size: 16px;
+  font-size: 18px; /* Tăng font size một chút */
   font-weight: 600;
   color: #000;
   outline: none;
   background: #fff;
+  transition: all 0.2s ease;
+}
+
+.quantityContainer input:focus {
+  background: #fafafa;
+}
+
+/* Animation cho input khi thay đổi */
+.quantityContainer input.animate {
+  animation: pulse 0.3s ease;
+  background: #fff8e1; /* Màu vàng nhạt khi animate */
 }
 
 .quantityContainer input::-webkit-inner-spin-button,
@@ -350,10 +436,12 @@
   text-overflow: ellipsis;
 }
 
-.discountBadge {
+/* Badge discount cho related products - dùng position absolute */
+.relatedCard .discountBadge {
   position: absolute;
   top: 8px;
   right: 8px;
+  z-index: 10; /* Cao hơn để hiển thị trên card */
   background: #e53935;
   color: #fff;
   font-size: 12px;
@@ -362,21 +450,22 @@
   border-radius: 4px;
 }
 
-.priceBox {
+/* CSS cho related products - tránh conflict với product detail */
+.relatedCard .priceBox {
   margin-bottom: 12px;
 }
 
-.price {
+.relatedCard .price {
   color: #e53935;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 30px;
   margin-right: 6px;
 }
 
-.oldPrice {
+.relatedCard .oldPrice {
   color: #888;
   text-decoration: line-through;
-  font-size: 14px;
+  font-size: 23px;
 }
 
 /* --- Responsive --- */

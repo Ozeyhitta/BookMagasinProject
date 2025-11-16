@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 
 
 @RestController
@@ -61,19 +63,31 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginDto dto) {
 
         // 🔍 Tìm tài khoản theo email
-        Account account = accountService.findEntityByEmail(dto.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
+        Optional<Account> accountOpt = accountService.findEntityByEmail(dto.getEmail());
+        
+        if (accountOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Email hoặc mật khẩu không đúng");
+        }
+
+        Account account = accountOpt.get();
 
         // ❌ Kiểm tra mật khẩu
         if (!passwordEncoder.matches(dto.getPassword(), account.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Sai mật khẩu");
+                    .body("Email hoặc mật khẩu không đúng");
         }
 
         // ❌ Tài khoản bị khóa hoặc chưa kích hoạt
         if (!account.isActivated()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Tài khoản của bạn đã bị khóa! Vui lòng liên hệ quản trị viên.");
+        }
+
+        // ❌ Kiểm tra Account có User không
+        if (account.getUser() == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Tài khoản không hợp lệ: thiếu thông tin người dùng. Vui lòng liên hệ quản trị viên.");
         }
 
         // 🔑 Sinh token đăng nhập

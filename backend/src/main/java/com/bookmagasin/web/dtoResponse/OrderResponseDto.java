@@ -31,6 +31,7 @@ public class OrderResponseDto {
     private Double totalPrice;
 
     private List<OrderItemResponseDto> items;
+    private List<OrderStatusHistoryResponseDto> orderStatusHistories;
 }
 
 
