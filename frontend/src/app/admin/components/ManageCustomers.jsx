@@ -1,6 +1,15 @@
 "use client";
 
-import { Eye, Edit2, Lock, Unlock, Trash2, Plus, Search } from "lucide-react";
+import {
+  Eye,
+  Edit2,
+  Lock,
+  Unlock,
+  Trash2,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import styles from "./manage-customers.module.css";
 
@@ -52,6 +61,15 @@ export default function ManageCustomers() {
 
     fetchCustomers();
   }, []);
+
+  useEffect(() => {
+    const shouldLock = showForm || !!selectedCustomer;
+    document.body.style.overflow = shouldLock ? "hidden" : "auto";
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [showForm, selectedCustomer]);
 
   // Mở form thêm mới
   const handleAddCustomer = () => {
@@ -329,81 +347,111 @@ export default function ManageCustomers() {
 
       {/* Form thêm / sửa khách hàng */}
       {showForm && (
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.formRow}>
-            <input
-              type="text"
-              placeholder="Tên khách hàng"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              required
-              disabled={!!editingId} // tạm không cho đổi email khi sửa
-            />
+        <div
+          className={styles.formModalOverlay}
+          onClick={() => {
+            setShowForm(false);
+            setEditingId(null);
+          }}
+        >
+          <div
+            className={styles.formModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.formModalHeader}>
+              <h3>{editingId ? "Chỉnh sửa khách hàng" : "Thêm khách hàng mới"}</h3>
+              <button
+                type="button"
+                className={styles.formCloseBtn}
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingId(null);
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form className={styles.formModalBody} onSubmit={handleSubmit}>
+              <div className={styles.formRow}>
+                <input
+                  type="text"
+                  placeholder="Tên khách hàng"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                  disabled={!!editingId}
+                />
+              </div>
+
+              <div className={styles.formRow}>
+                <input
+                  type="text"
+                  placeholder="Số điện thoại"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  required
+                />
+                <input
+                  type="date"
+                  value={formData.joinDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, joinDate: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className={styles.formRow}>
+                <input
+                  type="number"
+                  placeholder="Số đơn hàng"
+                  value={formData.orders}
+                  onChange={(e) =>
+                    setFormData({ ...formData, orders: e.target.value })
+                  }
+                />
+                <select
+                  value={formData.status}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value })
+                  }
+                >
+                  <option value="active">Hoạt động</option>
+                  <option value="locked">Khóa</option>
+                </select>
+              </div>
+
+              <div className={styles.formModalActions}>
+                <button
+                  type="button"
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingId(null);
+                  }}
+                >
+                  Hủy
+                </button>
+                <button type="submit" className={styles.saveButton}>
+                  {editingId ? "Cập nhật" : "Lưu"}
+                </button>
+              </div>
+            </form>
           </div>
-          <div className={styles.formRow}>
-            <input
-              type="text"
-              placeholder="Số điện thoại"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              required
-            />
-            <input
-              type="date"
-              value={formData.joinDate}
-              onChange={(e) =>
-                setFormData({ ...formData, joinDate: e.target.value })
-              }
-            />
-          </div>
-          <div className={styles.formRow}>
-            <input
-              type="number"
-              placeholder="Số đơn hàng"
-              value={formData.orders}
-              onChange={(e) =>
-                setFormData({ ...formData, orders: e.target.value })
-              }
-            />
-            <select
-              value={formData.status}
-              onChange={(e) =>
-                setFormData({ ...formData, status: e.target.value })
-              }
-            >
-              <option value="active">Hoạt động</option>
-              <option value="locked">Khóa</option>
-            </select>
-          </div>
-          <div className={styles.formActions}>
-            <button type="submit" className={styles.saveButton}>
-              {editingId ? "Cập nhật" : "Lưu"}
-            </button>
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={() => {
-                setShowForm(false);
-                setEditingId(null);
-              }}
-            >
-              Hủy
-            </button>
-          </div>
-        </form>
+        </div>
       )}
 
       {/* Modal chi tiết */}

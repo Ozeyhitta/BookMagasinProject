@@ -1,6 +1,6 @@
-"use client"
-import { useState } from "react"
-import styles from "./admin.module.css"
+"use client";
+import { useEffect, useState } from "react";
+import styles from "./admin.module.css";
 import {
   LayoutGrid,
   Users,
@@ -9,18 +9,27 @@ import {
   BarChart3,
   Book,
   Download,
-  Plus
-} from "lucide-react"
+  Plus,
+  LogOut,
+} from "lucide-react";
 
 // Import các component quản lý
-import ManageCustomers from "./components/ManageCustomers"
-import ManageStaffs from "./components/ManageStaffs"
-import ManagePromotions from "./components/ManagePromotions"
-import ViewSalesReports from "./components/ViewSalesReports"
-import ManageBooks from "./components/ManageBooks" // ✅ Thêm mới
+import ManageCustomers from "./components/ManageCustomers";
+import ManageStaffs from "./components/ManageStaffs";
+import ManagePromotions from "./components/ManagePromotions";
+import ViewSalesReports from "./components/ViewSalesReports";
+import ManageBooks from "./components/ManageBooks"; // ✅ Thêm mới
 
 export default function AdminPage() {
-  const [activeMenu, setActiveMenu] = useState("dashboards")
+  const [activeMenu, setActiveMenu] = useState("dashboards");
+
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    const token = localStorage.getItem("token");
+    if (role !== "ADMIN" || !token) {
+      window.location.replace("/login");
+    }
+  }, []);
 
   const menuItems = [
     { id: "dashboards", label: "Dashboards", icon: LayoutGrid },
@@ -30,38 +39,44 @@ export default function AdminPage() {
     { id: "promotions", label: "Manage Promotions", icon: Tag },
     { id: "reports", label: "View Sales Reports", icon: BarChart3 },
     { id: "books", label: "Manage Books", icon: Book }, // ✅ Thêm menu mới
-  ]
+  ];
 
   const outlineItems = [
     { label: "@keenthemes", icon: "X" },
     { label: "@keenthemes_hub", icon: "🔗" },
     { label: "metronic", icon: "🎨" },
-  ]
+  ];
 
   const getPageTitle = () => {
-    const item = menuItems.find((m) => m.id === activeMenu)
-    return item ? item.label : "Dashboards"
-  }
+    const item = menuItems.find((m) => m.id === activeMenu);
+    return item ? item.label : "Dashboards";
+  };
 
   const renderContent = () => {
     switch (activeMenu) {
       case "customers":
-        return <ManageCustomers />
+        return <ManageCustomers />;
       case "staffs":
-        return <ManageStaffs />
+        return <ManageStaffs />;
       case "promotions":
-        return <ManagePromotions />
+        return <ManagePromotions />;
       case "reports":
-        return <ViewSalesReports />
+        return <ViewSalesReports />;
       case "books":
-        return <ManageBooks /> // ✅ Thêm phần quản lý sách
+        return <ManageBooks />; // ✅ Thêm phần quản lý sách
       case "dashboards":
       default:
-        return <p>Dashboard content will be displayed here.</p>
+        return <p>Dashboard content will be displayed here.</p>;
     }
-  }
+  };
 
-  const handleMenuClick = (id) => setActiveMenu(id)
+  const handleMenuClick = (id) => setActiveMenu(id);
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("userId");
+    window.location.replace("/login");
+  };
 
   return (
     <div className={styles.dashboardWrapper}>
@@ -80,17 +95,23 @@ export default function AdminPage() {
         </button>
 
         {/* Search Box */}
-        <input type="text" placeholder="Search..." className={styles.searchBox} />
+        <input
+          type="text"
+          placeholder="Search..."
+          className={styles.searchBox}
+        />
 
         {/* Pages Section */}
         <div className={styles.sectionLabel}>Pages</div>
         <ul className={styles.menuList}>
           {menuItems.map((item) => {
-            const IconComponent = item.icon
+            const IconComponent = item.icon;
             return (
               <li
                 key={item.id}
-                className={`${styles.menuItem} ${activeMenu === item.id ? styles.active : ""}`}
+                className={`${styles.menuItem} ${
+                  activeMenu === item.id ? styles.active : ""
+                }`}
                 onClick={() => handleMenuClick(item.id)}
               >
                 <span className={styles.menuIcon}>
@@ -98,9 +119,14 @@ export default function AdminPage() {
                 </span>
                 {item.label}
               </li>
-            )
+            );
           })}
         </ul>
+
+        <button className={styles.logoutButton} onClick={handleLogout}>
+          <LogOut size={16} />
+          Đăng xuất
+        </button>
 
         {/* Outline Section */}
         <div className={styles.sectionLabel} style={{ marginTop: "30px" }}>
@@ -119,7 +145,9 @@ export default function AdminPage() {
         <div className={styles.userProfile}>
           <div className={styles.userAvatar}>K</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "13px", fontWeight: "500" }}>Keenthemes</div>
+            <div style={{ fontSize: "13px", fontWeight: "500" }}>
+              Keenthemes
+            </div>
             <div style={{ fontSize: "11px", color: "#888" }}>Admin</div>
           </div>
         </div>
@@ -154,14 +182,24 @@ export default function AdminPage() {
         <div className={styles.footer}>
           <p>2025 © Keenthemes Inc.</p>
           <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>Docs</a>
-            <a href="#" className={styles.footerLink}>Purchase</a>
-            <a href="#" className={styles.footerLink}>FAQ</a>
-            <a href="#" className={styles.footerLink}>Support</a>
-            <a href="#" className={styles.footerLink}>License</a>
+            <a href="#" className={styles.footerLink}>
+              Docs
+            </a>
+            <a href="#" className={styles.footerLink}>
+              Purchase
+            </a>
+            <a href="#" className={styles.footerLink}>
+              FAQ
+            </a>
+            <a href="#" className={styles.footerLink}>
+              Support
+            </a>
+            <a href="#" className={styles.footerLink}>
+              License
+            </a>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

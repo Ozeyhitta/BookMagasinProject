@@ -11,4 +11,6 @@ public interface PromotionService {
     Optional<PromotionResponseDto> getById(int id);
     PromotionResponseDto update(int id, PromotionDto dto);
     void delete(int id);
+
+    PromotionResponseDto applyPromotion(String code, double totalAmount);
 }

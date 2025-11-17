@@ -118,6 +118,27 @@ body {
   border-left-color: #667eea;
 }
 
+.logoutButton {
+  width: calc(100% - 40px);
+  margin: 16px 20px 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.logoutButton:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
 .menuIcon {
   width: 18px;
   height: 18px;

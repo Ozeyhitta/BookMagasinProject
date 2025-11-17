@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
 import "./login.css";
-import { Check, X } from "lucide-react";
+import { Check, X, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false); // ✅ hiển thị form quên mật khẩu
@@ -36,11 +37,14 @@ export default function LoginPage() {
 
       const data = JSON.parse(text);
 
-      // Lưu token
+      // Lưu token + role
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", data.userId);
+      localStorage.setItem("role", data.role);
 
-      window.location.href = "/mainpage";
+      const redirectUrl =
+        data.redirectUrl || (data.role === "ADMIN" ? "/admin" : "/mainpage");
+      window.location.href = redirectUrl;
     } catch (err) {
       setError("Lỗi kết nối đến server");
     } finally {
@@ -129,15 +133,24 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div>
+              <div className="password-field">
                 <label>Mật khẩu</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
+                <div className="password-input-wrapper">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <button type="submit" disabled={loading}>

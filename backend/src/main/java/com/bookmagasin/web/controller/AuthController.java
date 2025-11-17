@@ -93,12 +93,15 @@ public class AuthController {
         // 🔑 Sinh token đăng nhập
         String token = jwtUtil.generateToken(account.getEmail());
 
+        String redirectUrl = account.getRole().name().equals("ADMIN") ? "/admin" : "/";
+
         // 🔄 Trả về thông tin login
         return ResponseEntity.ok(new LoginResponseDto(
                 account.getUser().getId(),   // USER ID
                 account.getEmail(),
                 account.getRole().name(),
-                token
+                token,
+                redirectUrl
         ));
     }
 

@@ -12,6 +12,8 @@ import java.util.Date;
 public class PromotionDto {
     private String name;
     private double discountPercent;
+    private String code;
+    private double maxDiscount;
     private Date startDate;
     private Date endDate;
 }

@@ -8,8 +8,7 @@ import com.bookmagasin.web.dtoResponse.PromotionResponseDto;
 import com.bookmagasin.web.mapper.PromotionMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,6 +49,7 @@ public class PromotionServiceImpl implements PromotionService {
 
         promotion.setName(dto.getName());
         promotion.setDiscountPercent(dto.getDiscountPercent());
+        promotion.setCode(dto.getCode());
         promotion.setStartDate(dto.getStartDate());
         promotion.setEndDate(dto.getEndDate());
 
@@ -61,5 +61,35 @@ public class PromotionServiceImpl implements PromotionService {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Promotion not found"));
         promotionRepository.delete(promotion);
+    }
+
+    @Override
+    public PromotionResponseDto applyPromotion(String code, double totalAmount) {
+        Promotion promo=promotionRepository.findByCode(code)
+                .orElseThrow(()-> new RuntimeException("Mã giảm giá không tồn tại"));
+
+        Date now=new Date();
+        if(promo.getStartDate().after(now)||promo.getEndDate().before(now)){
+            throw new RuntimeException("Mã giảm giá đã hết hạn hoặc chưa bắt đầu");
+
+        }
+        double discount=totalAmount*(promo.getDiscountPercent()/100);
+        if(promo.getMaxDiscount()!=null && discount>promo.getMaxDiscount()){
+            discount=Math.min(discount,promo.getMaxDiscount());
+        }
+        double finalAmount=Math.max(0,totalAmount-discount);
+
+        PromotionResponseDto response=new PromotionResponseDto();
+        response.setId(promo.getId());
+        response.setName(promo.getName());
+        response.setCode(promo.getCode());
+        response.setMaxDiscount(promo.getMaxDiscount());
+        response.setDiscountPercent(promo.getDiscountPercent());
+        response.setStartDate(promo.getStartDate());
+        response.setEndDate(promo.getEndDate());
+        response.setDiscountAmount(discount);
+        response.setFinalAmount(finalAmount);
+
+        return response;
     }
 }

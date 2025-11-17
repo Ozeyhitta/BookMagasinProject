@@ -6,6 +6,10 @@ export default function CheckoutPage() {
   const [user, setUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [discounts, setDiscounts] = useState({}); // { bookId: discount }
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromotion, setAppliedPromotion] = useState(null);
+  const [promoError, setPromoError] = useState("");
+  const [promoApplying, setPromoApplying] = useState(false);
 
   // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
   function calculatePriceAfterDiscount(book, discount) {
@@ -29,6 +33,15 @@ export default function CheckoutPage() {
     const priceAfterDiscount = calculatePriceAfterDiscount(item.book, discount);
     return sum + priceAfterDiscount * item.quantity;
   }, 0);
+
+  const orderLevelDiscount =
+    appliedPromotion?.discountAmount != null
+      ? appliedPromotion.discountAmount
+      : 0;
+  const orderTotalAfterPromo = Math.max(
+    0,
+    appliedPromotion?.finalAmount != null ? appliedPromotion.finalAmount : total
+  );
 
   // Tổng giá gốc (không discount)
   const originalTotal = cartItems.reduce(
@@ -70,21 +83,21 @@ export default function CheckoutPage() {
             const buyNowItem = JSON.parse(buyNowItemStr);
             // Kiểm tra xem item có còn hợp lệ không (trong vòng 5 phút)
             const isValid = Date.now() - buyNowItem.timestamp < 5 * 60 * 1000;
-            
+
             if (isValid) {
               // Nếu có buyNowItem, lấy từ cart và cập nhật số lượng
               const cartRes = await fetch(
                 `http://localhost:8080/api/carts/users/${userId}`
               );
-              
+
               const cartData = cartRes.ok ? await cartRes.json() : [];
               items = Array.isArray(cartData) ? cartData : [];
-              
+
               // Tìm item trong cart và cập nhật số lượng từ buyNowItem
               const cartItemIndex = items.findIndex(
-                item => item.book?.id === buyNowItem.bookId
+                (item) => item.book?.id === buyNowItem.bookId
               );
-              
+
               if (cartItemIndex !== -1) {
                 // Cập nhật số lượng từ buyNowItem
                 items[cartItemIndex].quantity = buyNowItem.quantity;
@@ -93,7 +106,7 @@ export default function CheckoutPage() {
                 items.push({
                   book: buyNowItem.book,
                   quantity: buyNowItem.quantity,
-                  price: buyNowItem.book.sellingPrice
+                  price: buyNowItem.book.sellingPrice,
                 });
               }
             } else {
@@ -135,7 +148,7 @@ export default function CheckoutPage() {
               `http://localhost:8080/api/book-discounts/book/${item.book.id}`
             );
             if (!discountRes.ok) continue;
-            
+
             const discountData = await discountRes.json();
 
             // Tìm discount active (trong khoảng thời gian) - giống productDetail
@@ -181,7 +194,7 @@ export default function CheckoutPage() {
     };
 
     window.addEventListener("storage", handleStorageChange);
-    
+
     // Lắng nghe custom event từ product detail page
     const handleBuyNowUpdate = () => {
       fetchData();
@@ -193,6 +206,48 @@ export default function CheckoutPage() {
       window.removeEventListener("buy-now-updated", handleBuyNowUpdate);
     };
   }, []);
+
+  async function handleApplyPromotion(e) {
+    e?.preventDefault();
+    if (!promoCode.trim()) {
+      setPromoError("Vui lòng nhập mã khuyến mãi");
+      return;
+    }
+
+    setPromoApplying(true);
+    setPromoError("");
+
+    try {
+      const res = await fetch("http://localhost:8080/api/promotions/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: promoCode.trim(),
+          totalAmount: total,
+        }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || "Không áp dụng được mã giảm giá");
+      }
+
+      const data = await res.json();
+      setAppliedPromotion(data);
+      setPromoError("");
+    } catch (err) {
+      setAppliedPromotion(null);
+      setPromoError(err.message || "Không áp dụng được mã giảm giá");
+    } finally {
+      setPromoApplying(false);
+    }
+  }
+
+  const handleRemovePromotion = () => {
+    setAppliedPromotion(null);
+    setPromoCode("");
+    setPromoError("");
+  };
 
   async function handlePlaceOrder(e) {
     e.preventDefault();
@@ -206,13 +261,15 @@ export default function CheckoutPage() {
       return;
     }
 
-      // Giả định mặc định: serviceId = 1, paymentId = 1
-      const userId = localStorage.getItem("userId");
-      const orderPayload = {
-        userId: userId ? parseInt(userId) : null,
+    // Giả định mặc định: serviceId = 1, paymentId = 1
+    const userId = localStorage.getItem("userId");
+    const orderPayload = {
+      userId: userId ? parseInt(userId) : null,
       serviceId: 1,
       paymentId: 1,
-      note: "Giao buổi sáng",
+      note: appliedPromotion
+        ? `Giao buổi sáng - Áp dụng mã ${appliedPromotion.code}`
+        : "Giao buổi sáng",
       status: "PENDING",
       orderDate: new Date().toISOString(), // Gửi full ISO string để Jackson parse thành Date
       shippingAddress: user.address,
@@ -229,6 +286,9 @@ export default function CheckoutPage() {
           price: priceAfterDiscount, // Sử dụng giá sau discount
         };
       }),
+      promotionCode: appliedPromotion?.code || null,
+      promotionDiscountAmount: orderLevelDiscount,
+      orderTotal: orderTotalAfterPromo,
     };
 
     try {
@@ -264,10 +324,10 @@ export default function CheckoutPage() {
       // Xóa cart count
       localStorage.setItem("cartCount", "0");
       window.dispatchEvent(new Event("cart-updated"));
-      
+
       // Thêm delay nhỏ để đảm bảo order được lưu vào DB
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Redirect đến order history
       window.location.href = "/orderhistory";
     } catch (err) {
@@ -361,6 +421,84 @@ export default function CheckoutPage() {
         {/* RIGHT */}
         <div className="checkout-right">
           <div className="order-summary">
+            <div
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 8,
+                padding: 16,
+                marginBottom: 16,
+              }}
+            >
+              <p style={{ fontWeight: 600, marginBottom: 8 }}>Mã khuyến mãi</p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <input
+                  type="text"
+                  value={promoCode}
+                  placeholder="Nhập mã giảm giá"
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  disabled={!!appliedPromotion}
+                  style={{
+                    flex: 1,
+                    minWidth: 180,
+                    padding: "10px 12px",
+                    borderRadius: 6,
+                    border: "1px solid #d1d5db",
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                  }}
+                />
+                {appliedPromotion ? (
+                  <button
+                    type="button"
+                    onClick={handleRemovePromotion}
+                    style={{
+                      backgroundColor: "#f87171",
+                      color: "white",
+                      border: "none",
+                      padding: "10px 16px",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Hủy mã
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleApplyPromotion}
+                    disabled={promoApplying}
+                    style={{
+                      backgroundColor: "#2563eb",
+                      color: "white",
+                      border: "none",
+                      padding: "10px 16px",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      opacity: promoApplying ? 0.7 : 1,
+                    }}
+                  >
+                    {promoApplying ? "Đang áp dụng..." : "Áp dụng"}
+                  </button>
+                )}
+              </div>
+              {promoError && (
+                <p style={{ color: "#dc2626", marginTop: 8 }}>{promoError}</p>
+              )}
+              {appliedPromotion && !promoError && (
+                <p style={{ color: "#15803d", marginTop: 8 }}>
+                  Đã áp dụng mã {appliedPromotion.code} (-{" "}
+                  {orderLevelDiscount.toLocaleString("vi-VN")}đ)
+                </p>
+              )}
+            </div>
+
             {cartItems.length === 0 && (
               <p style={{ textAlign: "center", padding: "20px", opacity: 0.7 }}>
                 Không có sản phẩm nào trong giỏ hàng
@@ -444,9 +582,14 @@ export default function CheckoutPage() {
             {originalTotal > total && (
               <div className="summary-line" style={{ color: "#e53935" }}>
                 <span>Giảm giá</span>
-                <span>
-                  -{(originalTotal - total).toLocaleString("vi-VN")}đ
-                </span>
+                <span>-{(originalTotal - total).toLocaleString("vi-VN")}đ</span>
+              </div>
+            )}
+
+            {appliedPromotion && orderLevelDiscount > 0 && (
+              <div className="summary-line" style={{ color: "#16a34a" }}>
+                <span>Mã {appliedPromotion.code}</span>
+                <span>-{orderLevelDiscount.toLocaleString("vi-VN")}đ</span>
               </div>
             )}
 
@@ -457,7 +600,7 @@ export default function CheckoutPage() {
 
             <div className="summary-total">
               <span>Tổng cộng</span>
-              <span>{total.toLocaleString("vi-VN")}đ</span>
+              <span>{orderTotalAfterPromo.toLocaleString("vi-VN")}đ</span>
             </div>
           </div>
         </div>

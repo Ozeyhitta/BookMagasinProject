@@ -20,6 +20,7 @@ public class Promotion {
     private int id;
     @Column(name = "name")
     private String name;
+
     @Column(name = "discount_percent")
     private double discountPercent;
 
@@ -31,6 +32,8 @@ public class Promotion {
 
     @OneToMany(mappedBy = "promotion",cascade = CascadeType.ALL)
     private List<OrderPromotion> orderPromotions;
-
-
+    @Column(name = "code")
+    private String code;
+    @Column(name = "max_discount")
+    private Double maxDiscount;
 }

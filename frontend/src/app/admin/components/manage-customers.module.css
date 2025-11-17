@@ -35,16 +35,6 @@
 }
 
 /* Form thêm khách hàng */
-.form {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  border: 1px solid #e0e0e0;
-  position: relative;
-  z-index: 0;
-}
-
 .formRow {
   display: flex;
   gap: 15px;
@@ -376,4 +366,85 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.formModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.formModal {
+  background: #fff;
+  border-radius: 14px;
+  width: min(640px, 100%);
+  max-height: 95vh;
+  overflow-y: auto;
+  box-shadow: 0 15px 40px rgba(15, 23, 42, 0.25);
+  animation: fadeIn 0.22s ease-out;
+}
+
+.formModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 0;
+}
+
+.formModalHeader h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #111827;
+}
+
+.formCloseBtn {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  transition: background 0.2s ease;
+}
+
+.formCloseBtn:hover {
+  background: rgba(107, 114, 128, 0.15);
+}
+
+.formModalBody {
+  padding: 24px;
+}
+
+.formModalBody .formRow input,
+.formModalBody .formRow select {
+  background: #f9fafb;
+  border: 1.5px solid #d1d5db;
+}
+
+.formModalBody .formRow input:focus,
+.formModalBody .formRow select:focus {
+  border-color: #2563eb;
+  outline: none;
+  background: #fff;
+}
+
+.formModalBody .formRow select {
+  appearance: none;
+}
+
+.formModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 24px 24px;
+}
+
+.formModalActions .saveButton,
+.formModalActions .cancelButton {
+  min-width: 110px;
 }

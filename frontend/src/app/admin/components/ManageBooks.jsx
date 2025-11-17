@@ -905,8 +905,8 @@ export default function ManageBooks() {
               <th>Tên sách</th>
               <th>Tác giả</th>
               <th>Giá bán</th>
-              <th>Ngày XB</th>
-              <th>Lần XB</th>
+              <th>Ngày xuất bản</th>
+              <th>Lần Xuất bản</th>
               <th>Danh mục</th>
               <th>Hành động</th>
             </tr>
