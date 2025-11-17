@@ -14,6 +14,12 @@
   margin-bottom: 16px;
 }
 
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .addButton {
   background-color: #2563eb;
   color: white;
@@ -30,6 +36,88 @@
 
 .addButton:hover {
   background-color: #1d4ed8;
+}
+
+.secondaryButton {
+  background-color: #f97316;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.secondaryButton:hover {
+  background-color: #ea580c;
+}
+
+.categoryForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.categoryInputRow {
+  display: flex;
+  gap: 8px;
+}
+
+.categoryInputRow input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.categoryList {
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categoryItemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background-color: #f8fafc;
+}
+
+.categoryDeleteBtn {
+  border: none;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.categoryDeleteBtn:hover {
+  background-color: #b91c1c;
+  color: white;
+}
+
+.emptyText {
+  text-align: center;
+  color: #6b7280;
+  margin: 16px 0;
 }
 
 /* SEARCH BOX */
@@ -113,7 +201,8 @@
 
 .btnView,
 .btnEdit,
-.btnDelete {
+.btnDelete,
+.btnDiscount {
   width: 34px;
   height: 34px;
   border-radius: 8px;
@@ -135,6 +224,11 @@
   color: #d97706;
 }
 
+.btnDiscount {
+  background-color: #eef2ff;
+  color: #4338ca;
+}
+
 .btnDelete {
   background-color: #fee2e2;
   color: #b91c1c;
@@ -150,6 +244,11 @@
   color: white;
 }
 
+.btnDiscount:hover {
+  background-color: #4338ca;
+  color: #fff;
+}
+
 .btnDelete:hover {
   background-color: #b91c1c;
   color: white;
@@ -159,7 +258,7 @@
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0,0,0,0.45);
+  background-color: rgba(0, 0, 0, 0.45);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -172,6 +271,8 @@
   border-radius: 12px;
   padding: 20px;
   animation: fadeIn 0.2s ease;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modalHeader {
@@ -185,6 +286,16 @@
   margin: 0;
   font-size: 18px;
   font-weight: 600;
+}
+
+.categoryModal {
+  width: 600px;
+  max-width: 92vw;
+}
+
+.discountModal {
+  width: 620px;
+  max-width: 95vw;
 }
 
 .closeBtn {
@@ -243,16 +354,198 @@
   background-color: #d1d5db;
 }
 
+.deleteConfirmBtn {
+  background-color: #dc2626;
+  border: none;
+  padding: 8px 16px;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.deleteConfirmBtn:hover {
+  background-color: #b91c1c;
+}
+
+.detailSection {
+  margin-top: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  background-color: #f8fafc;
+}
+
+.categorySection {
+  margin-top: 12px;
+}
+
+.categoryCheckboxList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  background-color: #f9fafb;
+}
+
+.categoryCheckbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #1f2937;
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 6px 12px;
+}
+
+.categoryCheckbox input {
+  accent-color: #2563eb;
+}
+
+.detailSection h4 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.detailField label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.detailField input,
+.detailField textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background-color: #fff;
+}
+
+.detailField textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.fullWidthField {
+  grid-column: 1 / -1;
+}
+
+.discountForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.discountGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.discountMethodRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.radioOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.discountGrid label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  gap: 4px;
+}
+
+.discountField {
+  display: flex;
+}
+
+.discountFieldHidden {
+  display: none;
+}
+
+.discountGrid input {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.discountList {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.discountItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #f8fafc;
+}
+
+.discountTitle {
+  font-weight: 600;
+  margin: 0;
+  color: #111827;
+}
+
+.discountMeta {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 4px 0 0;
+}
+
 /* ANIMATION */
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 /* ===== FIX INPUT DARK TEXT PROBLEM ===== */
 
 .modal input {
-  background-color: #f9fafb !important;   /* nền sáng */
-  color: #111 !important;                 /* chữ rõ */
+  background-color: #f9fafb !important; /* nền sáng */
+  color: #111 !important; /* chữ rõ */
   border: 1.5px solid #d1d5db !important;
   padding: 10px 12px;
   border-radius: 6px;
@@ -273,7 +566,7 @@
 .modal {
   background-color: #ffffff !important;
   color: #111 !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 /* Optional: nút disabled làm nhạt rõ ràng */

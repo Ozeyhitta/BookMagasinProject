@@ -74,7 +74,10 @@ public class BookServiceImpl implements BookService {
         dto.setPublicationDate(book.getPublicationDate());
         dto.setEdition(book.getEdition());
         dto.setAuthor(book.getAuthor());
-        dto.setBookDetailId(book.getBookDetail() != null ? book.getBookDetail().getId() : 0);
+        if (book.getBookDetail() != null) {
+            dto.setBookDetailId(book.getBookDetail().getId());
+            dto.setBookDetail(mapDetailToDto(book.getBookDetail()));
+        }
         // map category IDs
         if (book.getCategories() != null && !book.getCategories().isEmpty()) {
             List<Integer> categoryIds = book.getCategories().stream()
@@ -93,7 +96,13 @@ public class BookServiceImpl implements BookService {
         book.setAuthor(dto.getAuthor());
 
         // BookDetail
-        if (dto.getBookDetailId() > 0) {
+        if (dto.getBookDetail() != null) {
+            BookDetail detail = resolveBookDetailEntity(dto, book);
+            applyDetail(dto.getBookDetail(), detail);
+            detail.setBook(book);
+            BookDetail savedDetail = bookDetailRepository.save(detail);
+            book.setBookDetail(savedDetail);
+        } else if (dto.getBookDetailId() > 0) {
             bookDetailRepository.findById(dto.getBookDetailId())
                     .ifPresent(book::setBookDetail);
         }
@@ -168,6 +177,48 @@ public class BookServiceImpl implements BookService {
         return true;
     }
 
+    private BookDetailDto mapDetailToDto(BookDetail detail) {
+        if (detail == null) {
+            return null;
+        }
+        BookDetailDto detailDto = new BookDetailDto();
+        detailDto.setId(detail.getId());
+        detailDto.setPublisher(detail.getPublisher());
+        detailDto.setSupplier(detail.getSupplier());
+        detailDto.setLength(detail.getLength());
+        detailDto.setWidth(detail.getWidth());
+        detailDto.setHeight(detail.getHeight());
+        detailDto.setWeight(detail.getWeight());
+        detailDto.setPages(detail.getPages());
+        detailDto.setDescription(detail.getDescription());
+        detailDto.setImageUrl(detail.getImageUrl());
+        return detailDto;
+    }
+
+    private BookDetail resolveBookDetailEntity(BookDto dto, Book book) {
+        BookDetail currentDetail = book.getBookDetail();
+        int requestedDetailId = dto.getBookDetail().getId();
+
+        if (requestedDetailId > 0) {
+            return bookDetailRepository.findById(requestedDetailId)
+                    .orElseGet(() -> currentDetail != null ? currentDetail : new BookDetail());
+        }
+
+        return currentDetail != null ? currentDetail : new BookDetail();
+    }
+
+    private void applyDetail(BookDetailDto detailDto, BookDetail detail) {
+        detail.setPublisher(detailDto.getPublisher());
+        detail.setSupplier(detailDto.getSupplier());
+        detail.setLength(detailDto.getLength());
+        detail.setWidth(detailDto.getWidth());
+        detail.setHeight(detailDto.getHeight());
+        detail.setWeight(detailDto.getWeight());
+        detail.setPages(detailDto.getPages());
+        detail.setDescription(detailDto.getDescription());
+        detail.setImageUrl(detailDto.getImageUrl());
+    }
+
 
     private BookResponseDto mapToResponseDto(Book book) {
         BookResponseDto dto = new BookResponseDto();
@@ -180,22 +231,7 @@ public class BookServiceImpl implements BookService {
 
         // ✅ Thêm đầy đủ thuộc tính BookDetail
         if (book.getBookDetail() != null) {
-            BookDetail bd = book.getBookDetail();
-            BookDetailDto detailDto = new BookDetailDto();
-            detailDto.setId(bd.getId());
-            detailDto.setPublisher(bd.getPublisher());
-            detailDto.setSupplier(bd.getSupplier());
-            detailDto.setPages(bd.getPages());
-            detailDto.setDescription(bd.getDescription());
-
-            // 🔹 Thêm các trường còn thiếu
-            detailDto.setLength(bd.getLength());
-            detailDto.setWidth(bd.getWidth());
-            detailDto.setHeight(bd.getHeight());
-            detailDto.setWeight(bd.getWeight());
-            detailDto.setImageUrl(bd.getImageUrl());
-
-            dto.setBookDetail(detailDto);
+            dto.setBookDetail(mapDetailToDto(book.getBookDetail()));
         }
 
         // ✅ Map categories

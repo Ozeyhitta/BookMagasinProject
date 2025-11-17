@@ -18,8 +18,15 @@ body {
 
 /* ==== DANH MỤC ==== */
 
-.categoryBox {
+.leftColumn {
   width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.categoryBox {
+  width: 100%;
   background-color: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 6px;
@@ -27,6 +34,28 @@ body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   position: relative;
   z-index: 10;
+}
+
+.bestSellerBox {
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 15px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.miniBanner {
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.miniBanner img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .categoryTitle {

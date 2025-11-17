@@ -223,11 +223,11 @@ export default function MainPage() {
             if (discountRes.ok) {
               const discountData = await discountRes.json();
               console.log(`Discounts for book ${book.id}:`, discountData);
-              
+
               // Luôn lấy discount đầu tiên (không check active - để test/hiển thị tất cả discount)
               // TODO: Sau này có thể thêm logic check active nếu cần
               let activeDiscount = null;
-              
+
               if (discountData && discountData.length > 0) {
                 // Ưu tiên tìm discount active trước
                 activeDiscount = discountData.find((discount) => {
@@ -236,13 +236,19 @@ export default function MainPage() {
                   const isActive = now >= startDate && now <= endDate;
                   return isActive;
                 });
-                
+
                 // Nếu không có active, lấy discount đầu tiên (để test/hiển thị)
                 if (!activeDiscount) {
                   activeDiscount = discountData[0];
-                  console.log(`Using first discount for book ${book.id} (not active but for display):`, activeDiscount);
+                  console.log(
+                    `Using first discount for book ${book.id} (not active but for display):`,
+                    activeDiscount
+                  );
                 } else {
-                  console.log(`Found active discount for book ${book.id}:`, activeDiscount);
+                  console.log(
+                    `Found active discount for book ${book.id}:`,
+                    activeDiscount
+                  );
                 }
               }
 
@@ -259,7 +265,7 @@ export default function MainPage() {
 
         // Đợi tất cả promises hoàn thành
         const discountResults = await Promise.all(discountPromises);
-        
+
         // Map kết quả vào discountMap
         discountResults.forEach(({ bookId, discount }) => {
           if (discount) {
@@ -372,89 +378,81 @@ export default function MainPage() {
   return (
     <div className={styles.mainWrapper}>
       <div className={styles.layout}>
-        {/* --- CỘT TRÁI: DANH MỤC + SÁCH MỚI BÁN CHẠY --- */}
+        {/* --- CỘT TRÁI: TÁCH DANH MỤC & SÁCH BÁN CHẠY --- */}
+        <div className={styles.leftColumn}>
+          <div className={styles.categoryBox}>
+            <h2 className={styles.categoryTitle}>
+              <BookText className={styles.categoryIconTitle} />
+              Danh mục sản phẩm
+            </h2>
 
-        <div className={styles.categoryBox}>
-          <h2 className={styles.categoryTitle}>
-            <BookText className={styles.categoryIconTitle} />
-            Danh mục sản phẩm
-          </h2>
+            <ul className={styles.categoryList}>
+              {categories.map((cat, index) => (
+                <li
+                  key={index}
+                  className={styles.categoryItem}
+                  onMouseEnter={() => setHoveredIdx(index)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                >
+                  <span className={styles.categoryIcon}></span>
+                  <span className={styles.categoryText}>{cat.label}</span>
+                  <span className={styles.arrow}>›</span>
 
-          <ul className={styles.categoryList}>
-            {categories.map((cat, index) => (
-              <li
-                key={index}
-                className={styles.categoryItem}
-                onMouseEnter={() => setHoveredIdx(index)}
-                onMouseLeave={() => setHoveredIdx(null)}
-              >
-                <span className={styles.categoryIcon}></span>
-                <span className={styles.categoryText}>{cat.label}</span>
-                <span className={styles.arrow}>›</span>
-
-                {/* ✅ Submenu hiện khi hover */}
-                {hoveredIdx === index && cat.children?.length > 0 && (
-                  <div
-                    className={styles.subMenu}
-                    onMouseEnter={() => setHoveredIdx(index)}
-                    onMouseLeave={() => setHoveredIdx(null)}
-                  >
-                    {cat.children.map((sub, i) => (
-                      <div key={i} className={styles.subMenuItem}>
-                        {sub}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-          {/* Banner Tủ sách Trinh Thám - Kinh Dị */}
-          <div
-            className={styles.suggestionSection}
-            style={{ padding: "0", border: "none", marginTop: "20px" }}
-          >
-            <img
-              src="https://i.pinimg.com/originals/a0/0c/84/a00c841a1c97a5b3a86c6c721b5e54d8.jpg"
-              alt="Tủ sách Trinh Thám - Kinh Dị"
-              style={{ width: "100%", borderRadius: "6px" }}
-            />
-          </div>
-
-          {/* --- START: GỢI Ý SÁCH (Sách Mới Bán Chạy) --- */}
-          {/* SỬ DỤNG popularBooks */}
-          <div className={styles.suggestionSection}>
-            <h4 className={styles.suggestionTitle}>Sách Mới Bán Chạy ✨</h4>
-            {popularBooks.map((book, index) => (
-              <a href="#" key={index} className={styles.suggestedBookItem}>
-                <div className={styles.suggestedImageContainer}>
-                  {/* THẺ HÌNH ẢNH ĐÃ ĐƯỢC THÊM VÀO ĐÂY */}
-                  <img
-                    src={book.image}
-                    alt={book.title}
-                    className={styles.suggestedImage}
-                  />
-                  {book.discount && (
-                    <span className={styles.suggestionSaleTag}>
-                      {book.discount}
-                    </span>
+                  {/* ✅ Submenu hiện khi hover */}
+                  {hoveredIdx === index && cat.children?.length > 0 && (
+                    <div
+                      className={styles.subMenu}
+                      onMouseEnter={() => setHoveredIdx(index)}
+                      onMouseLeave={() => setHoveredIdx(null)}
+                    >
+                      {cat.children.map((sub, i) => (
+                        <div key={i} className={styles.subMenuItem}>
+                          {sub}
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </div>
-                <div className={styles.suggestedDetails}>
-                  <p className={styles.suggestedTitle}>{book.title}</p>
-                  <div>
-                    <span className={styles.suggestedPriceCurrent}>
-                      {book.price}
-                    </span>
-                    <span className={styles.suggestedPriceOld}>
-                      {book.oldPrice}
-                    </span>
-                  </div>
-                </div>
-              </a>
-            ))}
+                </li>
+              ))}
+            </ul>
           </div>
-          {/* --- END: GỢI Ý SÁCH --- */}
+
+          <div className={styles.bestSellerBox}>
+            {/* --- START: GỢI Ý SÁCH (Sách Mới Bán Chạy) --- */}
+            {/* SỬ DỤNG popularBooks */}
+            <div className={styles.suggestionSection}>
+              <h4 className={styles.suggestionTitle}>Sách Mới Bán Chạy ✨</h4>
+              {popularBooks.map((book, index) => (
+                <a href="#" key={index} className={styles.suggestedBookItem}>
+                  <div className={styles.suggestedImageContainer}>
+                    {/* THẺ HÌNH ẢNH ĐÃ ĐƯỢC THÊM VÀO ĐÂY */}
+                    <img
+                      src={book.image}
+                      alt={book.title}
+                      className={styles.suggestedImage}
+                    />
+                    {book.discount && (
+                      <span className={styles.suggestionSaleTag}>
+                        {book.discount}
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.suggestedDetails}>
+                    <p className={styles.suggestedTitle}>{book.title}</p>
+                    <div>
+                      <span className={styles.suggestedPriceCurrent}>
+                        {book.price}
+                      </span>
+                      <span className={styles.suggestedPriceOld}>
+                        {book.oldPrice}
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+            {/* --- END: GỢI Ý SÁCH --- */}
+          </div>
         </div>
 
         {/* --- CỘT PHẢI: BANNER + PHẦN SÁCH GRID --- */}
@@ -491,23 +489,27 @@ export default function MainPage() {
             <div className={styles.productGrid}>
               {books.map((book) => {
                 const discount = discounts[book.id];
-                
+
                 // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
                 const priceAfterDiscount = discount
                   ? Math.round(
-                      discount.discountPercent != null && discount.discountPercent > 0
+                      discount.discountPercent != null &&
+                        discount.discountPercent > 0
                         ? book.price * (1 - discount.discountPercent / 100)
-                        : discount.discountAmount != null && discount.discountAmount > 0
+                        : discount.discountAmount != null &&
+                          discount.discountAmount > 0
                         ? Math.max(0, book.price - discount.discountAmount)
                         : book.price
                     )
                   : book.price;
-                
+
                 // Hiển thị text discount - ưu tiên discountPercent
                 const discountText = discount
-                  ? discount.discountPercent != null && discount.discountPercent > 0
+                  ? discount.discountPercent != null &&
+                    discount.discountPercent > 0
                     ? `-${discount.discountPercent}%`
-                    : discount.discountAmount != null && discount.discountAmount > 0
+                    : discount.discountAmount != null &&
+                      discount.discountAmount > 0
                     ? `-${discount.discountAmount.toLocaleString("vi-VN")}đ`
                     : null
                   : null;
@@ -516,7 +518,7 @@ export default function MainPage() {
                   discount,
                   discountText,
                   price: book.price,
-                  priceAfterDiscount
+                  priceAfterDiscount,
                 });
 
                 return (
@@ -525,7 +527,9 @@ export default function MainPage() {
                     id={book.id}
                     title={book.title}
                     price={priceAfterDiscount.toLocaleString("vi-VN") + "đ"}
-                    oldPrice={discount ? book.price.toLocaleString("vi-VN") + "đ" : null}
+                    oldPrice={
+                      discount ? book.price.toLocaleString("vi-VN") + "đ" : null
+                    }
                     discount={discountText}
                     image={book.imageUrl}
                   />
@@ -553,33 +557,40 @@ export default function MainPage() {
                 <div className={styles.productGrid}>
                   {booksInCategory.map((book) => {
                     const discount = discounts[book.id];
-                    
+
                     // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
                     const priceAfterDiscount = discount
                       ? Math.round(
-                          discount.discountPercent != null && discount.discountPercent > 0
+                          discount.discountPercent != null &&
+                            discount.discountPercent > 0
                             ? book.price * (1 - discount.discountPercent / 100)
-                            : discount.discountAmount != null && discount.discountAmount > 0
+                            : discount.discountAmount != null &&
+                              discount.discountAmount > 0
                             ? Math.max(0, book.price - discount.discountAmount)
                             : book.price
                         )
                       : book.price;
-                    
+
                     // Hiển thị text discount - ưu tiên discountPercent
                     const discountText = discount
-                      ? discount.discountPercent != null && discount.discountPercent > 0
+                      ? discount.discountPercent != null &&
+                        discount.discountPercent > 0
                         ? `-${discount.discountPercent}%`
-                        : discount.discountAmount != null && discount.discountAmount > 0
+                        : discount.discountAmount != null &&
+                          discount.discountAmount > 0
                         ? `-${discount.discountAmount.toLocaleString("vi-VN")}đ`
                         : null
                       : null;
 
-                    console.log(`Rendering ProductCard for category book ${book.id}:`, {
-                      discount,
-                      discountText,
-                      price: book.price,
-                      priceAfterDiscount
-                    });
+                    console.log(
+                      `Rendering ProductCard for category book ${book.id}:`,
+                      {
+                        discount,
+                        discountText,
+                        price: book.price,
+                        priceAfterDiscount,
+                      }
+                    );
 
                     return (
                       <ProductCard
@@ -587,7 +598,11 @@ export default function MainPage() {
                         id={book.id}
                         title={book.title}
                         price={priceAfterDiscount.toLocaleString("vi-VN") + "đ"}
-                        oldPrice={discount ? book.price.toLocaleString("vi-VN") + "đ" : null}
+                        oldPrice={
+                          discount
+                            ? book.price.toLocaleString("vi-VN") + "đ"
+                            : null
+                        }
                         discount={discountText}
                         image={book.imageUrl}
                       />
