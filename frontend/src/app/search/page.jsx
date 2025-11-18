@@ -197,10 +197,11 @@ export default function SearchPage() {
                     const matchedDetail = detailsData.find(
                         (d) => d.book?.id === book.id
                     );
-                    
-                    // 🔑 TẠM THỜI GÁN MẢNG RỖNG CHO categoryIds ĐỂ TRÁNH LỖI PHÂN LOẠI
-                    const categoryIds = []; 
-        
+                    // Lấy categoryIds từ book.categories nếu có
+                    const categoryIds = Array.isArray(book.categories)
+                        ? book.categories.map((cat) => cat.id)
+                        : [];
+
                     return {
                         id: book.id,
                         title: book.title,
