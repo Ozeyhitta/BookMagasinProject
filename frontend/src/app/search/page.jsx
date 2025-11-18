@@ -1,335 +1,478 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Sparkles, RotateCcw } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+// Đảm bảo import đầy đủ các icon cho phân trang
+import { Sparkles, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react"; 
 import { useSearchParams } from "next/navigation";
 import styles from "./SearchPage.module.css";
 import ProductCard from "../category/ProductCard";
 
+// Danh sách các mức giá tối đa cho dropdown
+const PRICE_OPTIONS = [
+    { value: "all", label: "Mức giá: Tất cả" },
+    { value: 100000, label: "Dưới 100.000đ" },
+    { value: 200000, label: "Dưới 200.000đ" },
+    { value: 300000, label: "Dưới 300.000đ" },
+    { value: 400000, label: "Dưới 400.000đ" },
+    { value: 500000, label: "Dưới 500.000đ" },
+];
+
+const BOOKS_PER_PAGE = 12;
+
 export default function SearchPage() {
-  const searchParams = useSearchParams();
-  const keyword = (searchParams.get("keyword") || "").trim();
+    const searchParams = useSearchParams();
+    const keyword = (searchParams.get("keyword") || "").trim();
 
-  const [filters, setFilters] = useState({
-    mainCategory: "all",
-    category: "all",
-    brand: "all",
-    ageGroup: "all",
-    publisher: "all",
-    supplier: "all",
-    priceFrom: "",
-    priceTo: "",
-    sort: "default",
-  });
-
-  const [books, setBooks] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [discounts, setDiscounts] = useState({});
-
-  const handleChange = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
-  };
-
-  const handleFilter = () => {
-    console.log("Lọc với:", filters);
-    // TODO: Có thể kết hợp filters với keyword để lọc nâng cao
-  };
-
-  const handleReset = () => {
-    setFilters({
-      mainCategory: "all",
-      category: "all",
-      brand: "all",
-      ageGroup: "all",
-      publisher: "all",
-      supplier: "all",
-      priceFrom: "",
-      priceTo: "",
-      sort: "default",
+    const [filters, setFilters] = useState({
+        category: "all",
+        author: "all", 
+        publisher: "all",
+        supplier: "all",
+        priceMax: "all", 
+        sort: "default",
     });
-  };
 
-  // 🔍 Fetch & lọc sách theo keyword
-  useEffect(() => {
-    // Nếu không có keyword thì không cần gọi API
-    if (!keyword) {
-      setBooks([]);
-      return;
-    }
+    const [filteredBooks, setFilteredBooks] = useState([]); 
+    const [booksToFilter, setBooksToFilter] = useState([]); 
+    
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    
+    const [categories, setCategories] = useState([]);
+    const [authors, setAuthors] = useState([]);
+    const [publishers, setPublishers] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError("");
+    const [currentPage, setCurrentPage] = useState(1); 
+    const startIndex = (currentPage - 1) * BOOKS_PER_PAGE;
+    const endIndex = startIndex + BOOKS_PER_PAGE;
+    const books = filteredBooks.slice(startIndex, endIndex); 
+    const totalPages = Math.ceil(filteredBooks.length / BOOKS_PER_PAGE);
 
-        // Lấy toàn bộ sách + chi tiết giống MainPage
-        const booksRes = await fetch("http://localhost:8080/api/books");
-        const booksData = await booksRes.json();
 
-        const detailsRes = await fetch(
-          "http://localhost:8080/api/books-details"
-        );
-        const detailsData = await detailsRes.json();
+    const handleChange = (e) => {
+        let value = e.target.value;
+        if (e.target.name === 'priceMax' && value !== 'all') {
+            value = parseInt(value, 10);
+        }
+        setFilters({ ...filters, [e.target.name]: value });
+        setCurrentPage(1);
+    };
+    
+    // =================================================================
+    // LỌC VÀ SẮP XẾP SÁCH THEO FILTERS HIỆN TẠI (Logic lọc category vẫn giữ nguyên)
+    const applyFilterAndSort = useCallback((dataToFilter, currentFilters) => {
+        let filteredAndSortedBooks = dataToFilter;
 
-        const merged = booksData.map((book) => {
-          const matchedDetail = detailsData.find(
-            (d) => d.book?.id === book.id
+        // 1. LỌC THEO TÁC GIẢ
+        if (currentFilters.author !== 'all') {
+          filteredAndSortedBooks = filteredAndSortedBooks.filter(book => 
+            book.author === currentFilters.author
           );
-
-          return {
-            id: book.id,
-            title: book.title,
-            price: book.sellingPrice,
-            imageUrl:
-              matchedDetail?.imageUrl ||
-              "https://via.placeholder.com/200x280?text=No+Image",
-          };
-        });
-
-        // Lọc theo tiêu đề chứa keyword (không phân biệt hoa thường)
-        const lower = keyword.toLowerCase();
-        const filtered = merged.filter((b) =>
-          b.title.toLowerCase().includes(lower)
-        );
-
-        setBooks(filtered);
-
-        // Fetch discounts cho các books đã lọc
-        const discountMap = {};
-        const now = new Date();
-
-        for (const book of filtered) {
-          try {
-            const discountRes = await fetch(
-              `http://localhost:8080/api/book-discounts/book/${book.id}`
-            );
-            if (discountRes.ok) {
-              const discountData = await discountRes.json();
-              
-              // Tìm discount active
-              const activeDiscount = discountData.find((discount) => {
-                const startDate = new Date(discount.startDate);
-                const endDate = new Date(discount.endDate);
-                return now >= startDate && now <= endDate;
-              });
-
-              if (activeDiscount) {
-                discountMap[book.id] = activeDiscount;
-              }
-            }
-          } catch (err) {
-            console.error(`Error fetching discount for book ${book.id}:`, err);
-          }
         }
 
-        setDiscounts(discountMap);
-      } catch (err) {
-        console.error("Lỗi load sách:", err);
-        setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại sau.");
-      } finally {
-        setLoading(false);
-      }
+        // 2. LỌC THEO NHÀ PHÁT HÀNH
+        if (currentFilters.publisher !== 'all') {
+          filteredAndSortedBooks = filteredAndSortedBooks.filter(book => 
+            book.publisher === currentFilters.publisher
+          );
+        }
+
+        // 3. LỌC THEO NHÀ CUNG CẤP
+        if (currentFilters.supplier !== 'all') {
+          filteredAndSortedBooks = filteredAndSortedBooks.filter(book => 
+            book.supplier === currentFilters.supplier
+          );
+        }
+        
+        // 4. LỌC THEO THỂ LOẠI (Vẫn giữ logic, nhưng cần dữ liệu categoryIds từ API)
+        if (currentFilters.category !== 'all') {
+            const targetCategoryId = parseInt(currentFilters.category, 10); 
+            
+            filteredAndSortedBooks = filteredAndSortedBooks.filter(book => {
+                // Nếu book.categoryIds là mảng rỗng (do API thứ 3 bị bỏ qua) thì sẽ không lọc được
+                return book.categoryIds && book.categoryIds.includes(targetCategoryId);
+            });
+        }
+
+        // 5. LỌC THEO MỨC GIÁ TỐI ĐA
+        if (currentFilters.priceMax !== 'all') {
+            filteredAndSortedBooks = filteredAndSortedBooks.filter(book => 
+                book.price <= currentFilters.priceMax
+            );
+        }
+
+        // 6. SẮP XẾP
+        if (currentFilters.sort !== 'default') {
+          filteredAndSortedBooks = [...filteredAndSortedBooks].sort((a, b) => {
+            if (currentFilters.sort === 'priceAsc') {
+              return a.price - b.price;
+            }
+            if (currentFilters.sort === 'priceDesc') {
+              return b.price - a.price;
+            }
+            return 0;
+          });
+        }
+
+        setFilteredBooks(filteredAndSortedBooks);
+        setCurrentPage(1); 
+    }, []); 
+
+
+    const handleFilter = () => {
+        let keywordFilteredBooks = booksToFilter;
+        const lower = keyword.toLowerCase();
+        
+        if (keyword) {
+            keywordFilteredBooks = booksToFilter.filter((b) =>
+                b.title.toLowerCase().includes(lower)
+            );
+        }
+        
+        applyFilterAndSort(keywordFilteredBooks, filters);
     };
 
-    fetchData();
-  }, [keyword]);
+    const handleReset = () => {
+        setFilters({
+            category: "all",
+            author: "all", 
+            publisher: "all",
+            supplier: "all",
+            priceMax: "all", 
+            sort: "default",
+        });
+        setCurrentPage(1);
+    };
+    
+    // Hàm thay đổi trang (Giữ nguyên)
+    const handlePageChange = (page) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
 
-  return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Tìm kiếm sản phẩm</h1>
+    // 📚 useEffect 1: Tải danh mục (Giữ nguyên)
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const categoriesRes = await fetch("http://localhost:8080/api/categories");
+                if (!categoriesRes.ok) {
+                    throw new Error("Failed to fetch categories");
+                }
+                const categoriesData = await categoriesRes.json();
+                setCategories(categoriesData); 
+            } catch (err) {
+                console.error("Lỗi tải danh mục:", err);
+            }
+        };
+        
+        fetchCategories();
+    }, []); 
 
-      {/* Bộ lọc (tạm thời chỉ hiển thị, chưa kết hợp với API) */}
-      <div className={styles.filterRow}>
-        <select
-          name="mainCategory"
-          value={filters.mainCategory}
-          onChange={handleChange}
-          className={styles.select}
-        >
-          <option value="all">Danh mục chính: Tất cả</option>
-          <option value="books">Sách</option>
-          <option value="toys">Đồ chơi</option>
-          <option value="stationery">Văn phòng phẩm</option>
-        </select>
 
-        <select
-          name="category"
-          value={filters.category}
-          onChange={handleChange}
-          className={styles.select}
-        >
-          <option value="all">Danh mục phụ: Tất cả</option>
-          <option value="education">Giáo dục</option>
-          <option value="comics">Truyện tranh</option>
-          <option value="novel">Tiểu thuyết</option>
-        </select>
+    // 📦 useEffect 2: Tải Sách và Chi tiết sách (Đã sửa để chỉ dùng 2 API gốc)
+    useEffect(() => {
+        const fetchAllDataAndExtractFilters = async () => {
+            try {
+                setLoading(true);
+                // CHỈ GỌI 2 API CỦA CODE GỐC
+                const [booksRes, detailsRes] = await Promise.all([
+                    fetch("http://localhost:8080/api/books"),
+                    fetch("http://localhost:8080/api/books-details")
+                ]);
 
-        <select
-          name="brand"
-          value={filters.brand}
-          onChange={handleChange}
-          className={styles.select}
-        >
-          <option value="all">Thương hiệu: Tất cả</option>
-          <option value="nxbtre">NXB Trẻ</option>
-          <option value="kimdong">Kim Đồng</option>
-          <option value="fahasa">FAHASA</option>
-        </select>
+                if (!booksRes.ok || !detailsRes.ok) {
+                    // Nếu một trong hai lỗi, báo lỗi
+                    throw new Error("Failed to fetch primary book data.");
+                }
+                
+                const booksData = await booksRes.json();
+                const detailsData = await detailsRes.json();
+                // 🚀 bookCategoryData không cần thiết lúc này
 
-        <select
-          name="ageGroup"
-          value={filters.ageGroup}
-          onChange={handleChange}
-          className={styles.select}
-        >
-          <option value="all">Lứa tuổi: Tất cả</option>
-          <option value="kids">Thiếu nhi</option>
-          <option value="teen">Thiếu niên</option>
-          <option value="adult">Người lớn</option>
-        </select>
+                // 1. Gộp dữ liệu
+                const merged = booksData.map((book) => {
+                    const matchedDetail = detailsData.find(
+                        (d) => d.book?.id === book.id
+                    );
+                    
+                    // 🔑 TẠM THỜI GÁN MẢNG RỖNG CHO categoryIds ĐỂ TRÁNH LỖI PHÂN LOẠI
+                    const categoryIds = []; 
+        
+                    return {
+                        id: book.id,
+                        title: book.title,
+                        price: book.sellingPrice,
+                        author: book.author, 
+                        publisher: matchedDetail?.publisher, 
+                        supplier: matchedDetail?.supplier,   
+                        imageUrl:
+                            matchedDetail?.imageUrl ||
+                            "https://via.placeholder.com/200x280?text=No+Image",
+                        categoryIds: categoryIds, 
+                    };
+                });
+                setBooksToFilter(merged); 
 
-        <select
-          name="publisher"
-          value={filters.publisher}
-          onChange={handleChange}
-          className={styles.select}
-        >
-          <option value="all">Nhà phát hành: Tất cả</option>
-          <option value="nxbkimdong">NXB Kim Đồng</option>
-          <option value="nxbtre">NXB Trẻ</option>
-          <option value="alphabooks">Alpha Books</option>
-        </select>
+                // 2. TRÍCH XUẤT BỘ LỌC (Giữ nguyên)
+                const allAuthors = booksData
+                    .map(book => book.author)
+                    .filter(author => author && typeof author === 'string' && author.trim() !== '');
 
-        <select
-          name="supplier"
-          value={filters.supplier}
-          onChange={handleChange}
-          className={styles.select}
-        >
-          <option value="all">Nhà cung cấp: Tất cả</option>
-          <option value="fahasa">FAHASA</option>
-          <option value="tiki">Tiki</option>
-          <option value="vinabook">Vinabook</option>
-        </select>
+                const uniqueAuthors = [...new Set(allAuthors)].map(name => ({ name, value: name }));
+                setAuthors(uniqueAuthors);
 
-        <div className={styles.priceGroup}>
-          <label className={styles.label}>Mức giá:</label>
-          <input
-            type="number"
-            name="priceFrom"
-            placeholder="Từ"
-            value={filters.priceFrom}
-            onChange={handleChange}
-            className={styles.input}
-          />
-          <span>-</span>
-          <input
-            type="number"
-            name="priceTo"
-            placeholder="Đến"
-            value={filters.priceTo}
-            onChange={handleChange}
-            className={styles.input}
-          />
-        </div>
+                const allPublishers = detailsData
+                    .map(detail => detail.publisher)
+                    .filter(p => p && p.trim() !== '');
+                    
+                const allSuppliers = detailsData
+                    .map(detail => detail.supplier)
+                    .filter(s => s && s.trim() !== '');
+                
+                const uniquePublishers = [...new Set(allPublishers)].map(name => ({ name, value: name }));
+                setPublishers(uniquePublishers);
+                
+                const uniqueSuppliers = [...new Set(allSuppliers)].map(name => ({ name, value: name }));
+                setSuppliers(uniqueSuppliers);
+                
+                setError("");
+            } catch (err) {
+                console.error("Lỗi tải dữ liệu cơ bản để trích xuất bộ lọc:", err);
+                setError("Lỗi tải dữ liệu cơ bản.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchAllDataAndExtractFilters();
+    }, []); 
 
-        <select
-          name="sort"
-          value={filters.sort}
-          onChange={handleChange}
-          className={styles.select}
-        >
-          <option value="default">Sắp xếp: Mặc định</option>
-          <option value="priceAsc">Giá tăng dần</option>
-          <option value="priceDesc">Giá giảm dần</option>
-          <option value="newest">Mới nhất</option>
-        </select>
 
-        <button onClick={handleFilter} className={styles.filterButton}>
-          <Sparkles
-            size={18}
-            strokeWidth={2}
-            className={styles.icon}
-            aria-hidden="true"
-          />
-          Lọc
-        </button>
-      </div>
-
-      <button onClick={handleReset} className={styles.resetButton}>
-        <RotateCcw
-          size={18}
-          strokeWidth={2}
-          className={styles.icon}
-          aria-hidden="true"
-        />
-        Khôi phục bộ lọc
-      </button>
-
-      {/* Kết quả tìm kiếm */}
-      <div className={styles.resultsSection}>
-        <h2 className={styles.resultsTitle}>
-          Kết quả tìm kiếm cho{" "}
-          <span>"{keyword || "Không có từ khóa"}"</span>
-        </h2>
-
-        {loading && <p className={styles.resultsCount}>Đang tải...</p>}
-        {error && <p className={styles.resultsCount}>{error}</p>}
-
-        {!loading && !error && keyword && (
-          <p className={styles.resultsCount}>
-            Có <strong>{books.length}</strong> sản phẩm cho tìm kiếm
-          </p>
-        )}
-
-        {!loading && !error && keyword && books.length === 0 && (
-          <p className={styles.resultsCount}>
-            Không tìm thấy sản phẩm nào phù hợp với từ khóa.
-          </p>
-        )}
-
-        <div className={styles.productGrid}>
-          {books.map((book) => {
-            const discount = discounts[book.id];
-            
-            // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
-            const priceAfterDiscount = discount
-              ? Math.round(
-                  discount.discountPercent != null && discount.discountPercent > 0
-                    ? book.price * (1 - discount.discountPercent / 100)
-                    : discount.discountAmount != null && discount.discountAmount > 0
-                    ? Math.max(0, book.price - discount.discountAmount)
-                    : book.price
-                )
-              : book.price;
-            
-            // Hiển thị text discount - ưu tiên discountPercent
-            const discountText = discount
-              ? discount.discountPercent != null && discount.discountPercent > 0
-                ? `-${discount.discountPercent}%`
-                : discount.discountAmount != null && discount.discountAmount > 0
-                ? `-${discount.discountAmount.toLocaleString("vi-VN")}đ`
-                : null
-              : null;
-
-            return (
-              <ProductCard
-                key={book.id}
-                id={book.id}
-                title={book.title}
-                price={priceAfterDiscount.toLocaleString("vi-VN") + "đ"}
-                oldPrice={discount ? book.price.toLocaleString("vi-VN") + "đ" : null}
-                discount={discountText}
-                image={book.imageUrl}
-              />
+    // 🔍 useEffect 3: Lọc sách theo keyword VÀ Sắp xếp MẶC ĐỊNH (Giữ nguyên)
+    useEffect(() => {
+        if (booksToFilter.length === 0) {
+            setFilteredBooks([]);
+            return;
+        }
+        // ... (Logic lọc và sắp xếp giữ nguyên)
+        const lower = keyword.toLowerCase();
+        let initialFilteredBooks = booksToFilter;
+        if (keyword) {
+            initialFilteredBooks = booksToFilter.filter((b) =>
+                b.title.toLowerCase().includes(lower)
             );
-          })}
-        </div>
-      </div>
+        }
+        
+        let defaultSortedBooks = [...initialFilteredBooks].sort((a, b) => {
+            if (filters.sort === 'priceAsc') return a.price - b.price;
+            if (filters.sort === 'priceDesc') return b.price - a.price;
+            return 0;
+        });
 
-      {/* Phân trang tạm để nguyên, sau này có thể làm server-side / client-side paging */}
-      {/* <div className={styles.pagination}>...</div> */}
-    </div>
-  );
+        setFilteredBooks(defaultSortedBooks);
+        setCurrentPage(1); 
+
+    }, [keyword, booksToFilter, filters.sort]); 
+
+
+    // 🆕 Component Phân Trang (Giữ nguyên)
+    const Pagination = () => {
+        if (totalPages <= 1) return null;
+
+        const pages = [];
+        const maxVisiblePages = 5; 
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        if (startPage > 1) {
+            pages.push(1);
+            if (startPage > 2) { pages.push('dots-start'); }
+        }
+        
+        for (let i = startPage; i <= endPage; i++) { pages.push(i); }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) { pages.push('dots-end'); }
+            if (!pages.includes(totalPages)) { pages.push(totalPages); }
+        }
+        
+        return (
+            <div className={styles.pagination}>
+                <span 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    className={`${styles.nextArrow} ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    aria-label="Trang trước"
+                >
+                    <ChevronLeft size={20} />
+                </span>
+
+                {pages.map((page, index) => {
+                    if (page === 'dots-start' || page === 'dots-end') {
+                        return <span key={index} className={styles.dots}>...</span>;
+                    }
+                    return (
+                        <span
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`${styles.pageNumber} ${currentPage === page ? styles.active : ''}`}
+                        >
+                            {page}
+                        </span>
+                    );
+                })}
+
+                <span 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    className={`${styles.nextArrow} ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    aria-label="Trang sau"
+                >
+                    <ChevronRight size={20} />
+                </span>
+            </div>
+        );
+    };
+
+
+    return (
+        <div className={styles.container}>
+            <h1 className={styles.title}>Tìm kiếm sản phẩm</h1>
+
+            {/* Bộ lọc */}
+            <div className={styles.filterRow}>
+                {/* THỂ LOẠI SÁCH */}
+                <select
+                    name="category"
+                    value={filters.category}
+                    onChange={handleChange}
+                    className={styles.select}
+                >
+                    <option value="all">Thể loại sách: Tất cả</option> 
+                    {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                        </option>
+                    ))}
+                </select>
+
+                {/* TÁC GIẢ, NXB, NCC, GIÁ, SẮP XẾP... (Giữ nguyên) */}
+                <select
+                    name="author"
+                    value={filters.author}
+                    onChange={handleChange}
+                    className={styles.select}
+                >
+                    <option value="all">Tác giả: Tất cả</option>
+                    {authors.map((auth) => (
+                        <option key={auth.name} value={auth.value}> 
+                                {auth.name}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    name="publisher"
+                    value={filters.publisher}
+                    onChange={handleChange}
+                    className={styles.select}
+                >
+                    <option value="all">Nhà phát hành: Tất cả</option>
+                    {publishers.map((pub) => (
+                        <option key={pub.name} value={pub.value}>
+                            {pub.name}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    name="supplier"
+                    value={filters.supplier}
+                    onChange={handleChange}
+                    className={styles.select}
+                >
+                    <option value="all">Nhà cung cấp: Tất cả</option>
+                    {suppliers.map((sup) => (
+                        <option key={sup.name} value={sup.value}>
+                            {sup.name}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    name="priceMax"
+                    value={filters.priceMax}
+                    onChange={handleChange}
+                    className={styles.select}
+                >
+                    {PRICE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    name="sort"
+                    value={filters.sort}
+                    onChange={handleChange}
+                    className={styles.select}
+                >
+                    <option value="default">Sắp xếp: Mặc định</option>
+                    <option value="priceAsc">Giá tăng dần</option>
+                    <option value="priceDesc">Giá giảm dần</option>
+                </select>
+
+                <button onClick={handleFilter} className={styles.filterButton}>
+                    <Sparkles size={18} strokeWidth={2} className={styles.icon} aria-hidden="true" />
+                    Lọc
+                </button>
+            </div>
+
+            <button onClick={handleReset} className={styles.resetButton}>
+                <RotateCcw size={18} strokeWidth={2} className={styles.icon} aria-hidden="true" />
+                Khôi phục bộ lọc
+            </button>
+
+            {/* Kết quả tìm kiếm */}
+            <div className={styles.resultsSection}>
+                <h2 className={styles.resultsTitle}>
+                    Kết quả tìm kiếm cho{" "}
+                    <span>"{keyword || "Không có từ khóa"}"</span>
+                </h2>
+
+                {loading && <p className={styles.resultsCount}>Đang tải...</p>}
+                {error && <p className={styles.resultsCount}>{error}</p>}
+
+                {!loading && !error && (
+                    <p className={styles.resultsCount}>
+                        Có <strong>{filteredBooks.length}</strong> sản phẩm được tìm thấy
+                    </p>
+                )}
+
+                {!loading && !error && books.length === 0 && (
+                    <p className={styles.resultsCount}>
+                        Không tìm thấy sản phẩm nào phù hợp với các tiêu chí lọc.
+                    </p>
+                )}
+
+                <div className={styles.productGrid}>
+                    {books.map((book) => (
+                        <ProductCard
+                            key={book.id}
+                            id={book.id}
+                            title={book.title}
+                            price={book.price?.toLocaleString("vi-VN") + "đ"}
+                            oldPrice={null}
+                            discount={null}
+                            image={book.imageUrl}
+                        />
+                    ))}
+                </div>
+                
+                <Pagination /> 
+            </div>
+        </div>
+    );
 }
