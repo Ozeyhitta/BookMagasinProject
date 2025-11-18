@@ -37,32 +37,67 @@ export default function ManageStaffs() {
   const [requests, setRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
 
+  // Modal thông báo và xác nhận
+  const [notification, setNotification] = useState({
+    show: false,
+    type: "success", // success, error
+    message: "",
+  });
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+  const [viewModal, setViewModal] = useState({
+    show: false,
+    staff: null,
+  });
+
   useEffect(() => {
     loadStaffs();
   }, []);
 
   // ======================
-  // LẤY DANH SÁCH STAFF
+  // LẤY DANH SÁCH STAFF ĐÃ ĐƯỢC DUYỆT (APPROVED)
   // ======================
- const loadStaffs = () => {
-  fetch("http://localhost:8080/api/admin/staffs")
-    .then((res) => res.json())
-    .then((data) => {
-      const mapped = data.map((s) => ({
-        id: s.id,
-        email: s.email,
-        status: s.activated ? "active" : "locked",
-        fullName: s.fullName || "",
-        phoneNumber: s.phoneNumber || "",
-        position: s.position || "",
-        joinDate: s.joinDate || "",
-      }));
+  const loadStaffs = () => {
+    fetch("http://localhost:8080/api/admin/staff-requests?status=APPROVED")
+      .then((res) => res.json())
+      .then((data) => {
+        const mapped = data.map((s) => {
+          const u = s.user || {};
+          // Format ngày: có thể là string hoặc object Date
+          let joinDateStr = "";
+          if (s.joinDate) {
+            if (typeof s.joinDate === "string") {
+              joinDateStr = s.joinDate.split("T")[0];
+            } else if (s.joinDate instanceof Date) {
+              joinDateStr = s.joinDate.toISOString().split("T")[0];
+            } else if (Array.isArray(s.joinDate)) {
+              joinDateStr = `${s.joinDate[0]}-${String(s.joinDate[1]).padStart(
+                2,
+                "0"
+              )}-${String(s.joinDate[2]).padStart(2, "0")}`;
+            }
+          }
+          return {
+            id: s.id,
+            email: u.email || "",
+            status: s.activated !== false ? "active" : "locked", // Dựa vào activated từ Account
+            fullName: u.fullName || "",
+            phoneNumber: u.phoneNumber || "",
+            position: s.position || "",
+            joinDate: joinDateStr,
+            staffId: s.id, // ID của record trong bảng staff
+            activated: s.activated !== false, // Lưu trạng thái activated
+          };
+        });
 
-      setStaffs(mapped);
-    })
-    .catch((err) => console.error("Error loading staffs:", err));
-};
-
+        setStaffs(mapped);
+      })
+      .catch((err) => console.error("Error loading staffs:", err));
+  };
 
   // ======================
   // LẤY YÊU CẦU ĐĂNG KÍ STAFF
@@ -74,11 +109,35 @@ export default function ManageStaffs() {
       .then((data) => {
         const mapped = data.map((req) => {
           const u = req.user || {};
+          // Format ngày: có thể là string hoặc object Date
+          let joinDateStr = "";
+          if (req.joinDate) {
+            if (typeof req.joinDate === "string") {
+              joinDateStr = req.joinDate.split("T")[0];
+            } else if (req.joinDate instanceof Date) {
+              joinDateStr = req.joinDate.toISOString().split("T")[0];
+            } else if (Array.isArray(req.joinDate)) {
+              // Nếu là array [year, month, day] từ Jackson
+              joinDateStr = `${req.joinDate[0]}-${String(
+                req.joinDate[1]
+              ).padStart(2, "0")}-${String(req.joinDate[2]).padStart(2, "0")}`;
+            }
+          }
+          // Format requestDate
+          let requestDateStr = "";
+          if (req.requestDate) {
+            if (typeof req.requestDate === "string") {
+              requestDateStr = req.requestDate.split("T")[0];
+            } else if (req.requestDate instanceof Date) {
+              requestDateStr = req.requestDate.toISOString().split("T")[0];
+            }
+          }
           return {
             id: req.id,
-            status: req.status,
+            status: req.status || "PENDING",
             position: req.position || "",
-            joinDate: req.joinDate ? req.joinDate.split("T")[0] : "",
+            joinDate: joinDateStr,
+            requestDate: requestDateStr,
             fullName: u.fullName || "",
             email: u.email || "",
             phoneNumber: u.phoneNumber || "",
@@ -96,28 +155,80 @@ export default function ManageStaffs() {
   };
 
   const handleApproveRequest = (id) => {
-    if (!confirm("Duyệt yêu cầu này?")) return;
-    fetch(`http://localhost:8080/api/admin/staff-requests/${id}/approve`, {
-      method: "PUT",
-    })
-      .then(() => {
-        setRequests((prev) => prev.filter((r) => r.id !== id));
-        loadStaffs();
-        alert("Đã duyệt yêu cầu!");
-      })
-      .catch(() => alert("Lỗi khi duyệt yêu cầu!"));
+    setConfirmModal({
+      show: true,
+      title: "Xác nhận duyệt yêu cầu",
+      message: "Bạn có chắc chắn muốn duyệt yêu cầu đăng ký nhân viên này?",
+      onConfirm: () => {
+        fetch(`http://localhost:8080/api/admin/staff-requests/${id}/approve`, {
+          method: "PUT",
+        })
+          .then(() => {
+            setRequests((prev) => prev.filter((r) => r.id !== id));
+            loadStaffs();
+            setNotification({
+              show: true,
+              type: "success",
+              message: "Đã duyệt yêu cầu thành công!",
+            });
+            // Tự động đóng sau 2 giây
+            setTimeout(() => {
+              setNotification({ show: false, type: "success", message: "" });
+            }, 2000);
+          })
+          .catch(() => {
+            setNotification({
+              show: true,
+              type: "error",
+              message: "Lỗi khi duyệt yêu cầu!",
+            });
+          });
+        setConfirmModal({
+          show: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
   };
 
   const handleRejectRequest = (id) => {
-    if (!confirm("Từ chối yêu cầu này?")) return;
-    fetch(`http://localhost:8080/api/admin/staff-requests/${id}/reject`, {
-      method: "PUT",
-    })
-      .then(() => {
-        setRequests((prev) => prev.filter((r) => r.id !== id));
-        alert("Đã từ chối yêu cầu!");
-      })
-      .catch(() => alert("Lỗi khi từ chối yêu cầu!"));
+    setConfirmModal({
+      show: true,
+      title: "Xác nhận từ chối yêu cầu",
+      message: "Bạn có chắc chắn muốn từ chối yêu cầu đăng ký nhân viên này?",
+      onConfirm: () => {
+        fetch(`http://localhost:8080/api/admin/staff-requests/${id}/reject`, {
+          method: "PUT",
+        })
+          .then(() => {
+            setRequests((prev) => prev.filter((r) => r.id !== id));
+            setNotification({
+              show: true,
+              type: "success",
+              message: "Đã từ chối yêu cầu thành công!",
+            });
+            // Tự động đóng sau 2 giây
+            setTimeout(() => {
+              setNotification({ show: false, type: "success", message: "" });
+            }, 2000);
+          })
+          .catch(() => {
+            setNotification({
+              show: true,
+              type: "error",
+              message: "Lỗi khi từ chối yêu cầu!",
+            });
+          });
+        setConfirmModal({
+          show: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
   };
 
   // ======================
@@ -155,8 +266,25 @@ export default function ManageStaffs() {
       .then(() => {
         loadStaffs();
         setShowEditModal(false);
+        setNotification({
+          show: true,
+          type: "success",
+          message: editingId
+            ? "Cập nhật nhân viên thành công!"
+            : "Thêm nhân viên thành công!",
+        });
+        // Tự động đóng sau 2 giây
+        setTimeout(() => {
+          setNotification({ show: false, type: "success", message: "" });
+        }, 2000);
       })
-      .catch(() => alert("Lỗi khi lưu nhân viên!"));
+      .catch(() => {
+        setNotification({
+          show: true,
+          type: "error",
+          message: "Lỗi khi lưu nhân viên!",
+        });
+      });
   };
 
   const handleEdit = (id) => {
@@ -181,20 +309,128 @@ export default function ManageStaffs() {
   const handleView = (id) => {
     const s = staffs.find((x) => x.id === id);
     if (!s) return;
-    alert(`👤 Tên: ${s.fullName}\nEmail: ${s.email}`);
+    setViewModal({
+      show: true,
+      staff: s,
+    });
   };
 
   const handleDelete = (id) => {
-    if (!confirm("Xoá nhân viên này?")) return;
-    fetch(`http://localhost:8080/api/admin/staffs/${id}`, {
-      method: "DELETE",
-    }).then(loadStaffs);
+    const staff = staffs.find((s) => (s.staffId || s.id) === id);
+    setConfirmModal({
+      show: true,
+      title: "Xác nhận xóa nhân viên",
+      message: `Bạn có chắc chắn muốn xóa nhân viên "${
+        staff?.fullName || ""
+      }"? (Sẽ xóa quyền staff và record trong bảng staff)`,
+      onConfirm: () => {
+        fetch(`http://localhost:8080/api/admin/staff-requests/${id}`, {
+          method: "DELETE",
+        })
+          .then(() => {
+            loadStaffs();
+            setNotification({
+              show: true,
+              type: "success",
+              message: "Đã xóa nhân viên thành công!",
+            });
+            // Tự động đóng sau 2 giây
+            setTimeout(() => {
+              setNotification({ show: false, type: "success", message: "" });
+            }, 2000);
+          })
+          .catch(() => {
+            setNotification({
+              show: true,
+              type: "error",
+              message: "Lỗi khi xóa nhân viên!",
+            });
+          });
+        setConfirmModal({
+          show: false,
+          title: "",
+          message: "",
+          onConfirm: null,
+        });
+      },
+    });
   };
 
-  const handleToggleLock = (id) => {
-    fetch(`http://localhost:8080/api/admin/staffs/${id}/toggle`, {
-      method: "PUT",
-    }).then(loadStaffs);
+  // Khóa / mở khóa -> dùng API toggle (giống ManageCustomers)
+  const handleToggleLock = async (id) => {
+    try {
+      const staff = staffs.find((s) => s.id === id);
+      if (!staff) {
+        throw new Error("Không tìm thấy nhân viên");
+      }
+
+      const staffId = staff.staffId || id;
+      console.log("Toggle lock for staffId:", staffId, "staff:", staff);
+
+      const res = await fetch(
+        `http://localhost:8080/api/admin/staff-requests/${staffId}/toggle`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Đọc response body (chỉ được đọc một lần)
+      const contentType = res.headers.get("content-type");
+      const textResponse = await res.text();
+
+      console.log("Response status:", res.status);
+      console.log("Response content-type:", contentType);
+      console.log("Response body:", textResponse);
+
+      if (!res.ok) {
+        // Nếu response là error, throw với error message
+        throw new Error(
+          textResponse || "Toggle thất bại, status " + res.status
+        );
+      }
+
+      // Parse JSON response
+      let updated;
+      try {
+        updated = JSON.parse(textResponse);
+      } catch (parseErr) {
+        console.error("JSON parse error:", parseErr);
+        throw new Error("Response không phải JSON hợp lệ: " + textResponse);
+      }
+
+      console.log("Parsed response:", updated);
+
+      // Kiểm tra xem response có chứa activated không
+      if (updated && typeof updated.activated === "boolean") {
+        // Cập nhật state trực tiếp (giống ManageCustomers)
+        setStaffs((prev) =>
+          prev.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  status: updated.activated ? "active" : "locked",
+                  activated: updated.activated,
+                }
+              : s
+          )
+        );
+      } else {
+        console.error("Response không chứa activated:", updated);
+        throw new Error("Response không chứa trạng thái activated");
+      }
+    } catch (err) {
+      console.error("Toggle error:", err);
+      const errorMessage =
+        err.message || "Không thể thay đổi trạng thái nhân viên.";
+      setNotification({
+        show: true,
+        type: "error",
+        message: errorMessage,
+      });
+    }
   };
 
   const filtered = staffs.filter(
@@ -207,19 +443,23 @@ export default function ManageStaffs() {
   return (
     <div className={styles.container}>
       {/* HEADER */}
-      <div className={styles.headerRow}>
+      <div className={styles.header}>
+        <h2>Quản lý nhân viên</h2>
         <button className={styles.addButton} onClick={openRequestModal}>
-          <ClipboardList size={16} /> Xem yêu cầu
+          <ClipboardList size={18} />
+          <span>Xem yêu cầu</span>
         </button>
+      </div>
 
-        <div className={styles.searchBox}>
-          <Search size={16} className={styles.searchIcon} />
-          <input
-            placeholder="Tìm tên, email, chức vụ..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      {/* Ô tìm kiếm */}
+      <div className={styles.searchBar}>
+        <Search className={styles.searchIcon} />
+        <input
+          type="text"
+          placeholder="Tìm kiếm nhân viên..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       {/* MODAL YÊU CẦU ĐĂNG KÍ NHÂN VIÊN */}
@@ -255,7 +495,8 @@ export default function ManageStaffs() {
                     <th>Email</th>
                     <th>SĐT</th>
                     <th>Chức vụ</th>
-                    <th>Ngày thuê</th>
+                    <th>Ngày yêu cầu</th>
+                    <th>Ngày thuê (mong muốn)</th>
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
                   </tr>
@@ -264,11 +505,11 @@ export default function ManageStaffs() {
                 <tbody>
                   {loadingRequests ? (
                     <tr>
-                      <td colSpan={7}>Đang tải...</td>
+                      <td colSpan={8}>Đang tải...</td>
                     </tr>
                   ) : requests.length === 0 ? (
                     <tr>
-                      <td colSpan={7}>Không có yêu cầu nào</td>
+                      <td colSpan={8}>Không có yêu cầu nào</td>
                     </tr>
                   ) : (
                     requests.map((r) => (
@@ -277,21 +518,40 @@ export default function ManageStaffs() {
                         <td>{r.email}</td>
                         <td>{r.phoneNumber}</td>
                         <td>{r.position}</td>
-                        <td>{r.joinDate}</td>
-                        <td>{r.status}</td>
-                        <td className={styles.actions}>
-                          <button
-                            onClick={() => handleApproveRequest(r.id)}
-                            className={styles.btnEdit}
+                        <td>{r.requestDate || "-"}</td>
+                        <td>{r.joinDate || "-"}</td>
+                        <td>
+                          <span
+                            className={`${styles.badge} ${
+                              r.status === "PENDING"
+                                ? styles.pending
+                                : r.status === "APPROVED"
+                                ? styles.active
+                                : styles.locked
+                            }`}
                           >
-                            Duyệt
-                          </button>
-                          <button
-                            onClick={() => handleRejectRequest(r.id)}
-                            className={styles.btnDelete}
-                          >
-                            Từ chối
-                          </button>
+                            {r.status === "PENDING"
+                              ? "Chờ duyệt"
+                              : r.status === "APPROVED"
+                              ? "Đã duyệt"
+                              : "Từ chối"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className={styles.actionButtons}>
+                            <button
+                              onClick={() => handleApproveRequest(r.id)}
+                              className={`${styles.btn} ${styles.btnEdit}`}
+                            >
+                              Duyệt
+                            </button>
+                            <button
+                              onClick={() => handleRejectRequest(r.id)}
+                              className={`${styles.btn} ${styles.btnDelete}`}
+                            >
+                              Từ chối
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -305,92 +565,119 @@ export default function ManageStaffs() {
 
       {/* MODAL THÊM / SỬA NHÂN VIÊN */}
       {showEditModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
+        <div
+          className={styles.formModalOverlay}
+          onClick={() => {
+            setShowEditModal(false);
+            setEditingId(null);
+          }}
+        >
+          <div
+            className={styles.formModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.formModalHeader}>
               <h3>
                 {editingId ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}
               </h3>
               <button
-                className={styles.closeBtn}
-                onClick={() => setShowEditModal(false)}
+                type="button"
+                className={styles.formCloseBtn}
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingId(null);
+                }}
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className={styles.modalForm}>
-              <label>Họ tên:</label>
-              <input
-                name="fullName"
-                value={newStaff.fullName}
-                onChange={handleChange}
-                required
-              />
+            <form className={styles.formModalBody} onSubmit={handleSubmit}>
+              <div className={styles.formRow}>
+                <input
+                  type="text"
+                  placeholder="Tên nhân viên"
+                  name="fullName"
+                  value={newStaff.fullName}
+                  onChange={handleChange}
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  name="email"
+                  value={newStaff.email}
+                  onChange={handleChange}
+                  required
+                  disabled={!!editingId}
+                />
+              </div>
 
-              <label>Email:</label>
-              <input
-                name="email"
-                type="email"
-                value={newStaff.email}
-                onChange={handleChange}
-                required
-              />
+              <div className={styles.formRow}>
+                <input
+                  type="text"
+                  placeholder="Số điện thoại"
+                  name="phoneNumber"
+                  value={newStaff.phoneNumber}
+                  onChange={handleChange}
+                  required
+                />
+                <input
+                  type="date"
+                  placeholder="Ngày sinh"
+                  name="dateOfBirth"
+                  value={newStaff.dateOfBirth}
+                  onChange={handleChange}
+                />
+              </div>
 
-              <label>Số điện thoại:</label>
-              <input
-                name="phoneNumber"
-                value={newStaff.phoneNumber}
-                onChange={handleChange}
-              />
+              <div className={styles.formRow}>
+                <input
+                  type="text"
+                  placeholder="Địa chỉ"
+                  name="address"
+                  value={newStaff.address}
+                  onChange={handleChange}
+                />
+                <input
+                  type="text"
+                  placeholder="Avatar URL"
+                  name="avatarUrl"
+                  value={newStaff.avatarUrl}
+                  onChange={handleChange}
+                />
+              </div>
 
-              <label>Ngày sinh:</label>
-              <input
-                name="dateOfBirth"
-                type="date"
-                value={newStaff.dateOfBirth}
-                onChange={handleChange}
-              />
+              <div className={styles.formRow}>
+                <input
+                  type="text"
+                  placeholder="Chức vụ"
+                  name="position"
+                  value={newStaff.position}
+                  onChange={handleChange}
+                />
+                <input
+                  type="date"
+                  placeholder="Ngày tham gia"
+                  name="joinDate"
+                  value={newStaff.joinDate}
+                  onChange={handleChange}
+                />
+              </div>
 
-              <label>Địa chỉ:</label>
-              <input
-                name="address"
-                value={newStaff.address}
-                onChange={handleChange}
-              />
-
-              <label>Avatar URL:</label>
-              <input
-                name="avatarUrl"
-                value={newStaff.avatarUrl}
-                onChange={handleChange}
-              />
-
-              <label>Chức vụ:</label>
-              <input
-                name="position"
-                value={newStaff.position}
-                onChange={handleChange}
-              />
-
-              <label>Ngày tham gia:</label>
-              <input
-                name="joinDate"
-                type="date"
-                value={newStaff.joinDate}
-                onChange={handleChange}
-              />
-
-              <div className={styles.modalActions}>
+              <div className={styles.formModalActions}>
                 <button
                   type="button"
-                  className={styles.cancelBtn}
-                  onClick={() => setShowEditModal(false)}
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingId(null);
+                  }}
                 >
                   Hủy
                 </button>
-                <button type="submit" className={styles.saveBtn}>
-                  {editingId ? "Lưu thay đổi" : "Thêm mới"}
+                <button type="submit" className={styles.saveButton}>
+                  {editingId ? "Cập nhật" : "Lưu"}
                 </button>
               </div>
             </form>
@@ -413,43 +700,225 @@ export default function ManageStaffs() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((staff) => (
-              <tr key={staff.id}>
-                <td>{staff.fullName}</td>
-                <td>{staff.email}</td>
-                <td>{staff.phoneNumber}</td>
-                <td>{staff.position}</td>
-                <td>{staff.joinDate}</td>
-                <td>
-                  <span
-                    className={`${styles.badge} ${styles[staff.status]}`}
-                  >
-                    {staff.status === "active" ? "Hoạt động" : "Khoá"}
-                  </span>
-                </td>
-                <td className={styles.actions}>
-                  <button onClick={() => handleView(staff.id)}>
-                    <Eye size={16} />
-                  </button>
-                  <button onClick={() => handleEdit(staff.id)}>
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={() => handleToggleLock(staff.id)}>
-                    {staff.status === "active" ? (
-                      <Lock size={16} />
-                    ) : (
-                      <Unlock size={16} />
-                    )}
-                  </button>
-                  <button onClick={() => handleDelete(staff.id)}>
-                    <Trash2 size={16} />
-                  </button>
+            {filtered.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  Không có nhân viên nào
                 </td>
               </tr>
-            ))}
+            ) : (
+              filtered.map((staff) => (
+                <tr key={staff.id}>
+                  <td>{staff.fullName}</td>
+                  <td>{staff.email}</td>
+                  <td>{staff.phoneNumber}</td>
+                  <td>{staff.position}</td>
+                  <td>{staff.joinDate}</td>
+                  <td>
+                    <span className={`${styles.badge} ${styles[staff.status]}`}>
+                      {staff.status === "active" ? "Hoạt động" : "Khoá"}
+                    </span>
+                  </td>
+                  <td>
+                    <div className={styles.actionButtons}>
+                      <button
+                        className={`${styles.btn} ${styles.btnView}`}
+                        onClick={() => handleView(staff.id)}
+                        title="Xem chi tiết"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        className={`${styles.btn} ${styles.btnEdit}`}
+                        onClick={() => handleEdit(staff.id)}
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        className={`${styles.btn} ${
+                          staff.status === "active"
+                            ? styles.btnLock
+                            : styles.btnUnlock
+                        }`}
+                        onClick={() => handleToggleLock(staff.id)}
+                        title={
+                          staff.status === "active"
+                            ? "Khóa tài khoản"
+                            : "Mở khóa tài khoản"
+                        }
+                      >
+                        {staff.status === "active" ? (
+                          <Lock size={16} />
+                        ) : (
+                          <Unlock size={16} />
+                        )}
+                      </button>
+                      <button
+                        className={`${styles.btn} ${styles.btnDelete}`}
+                        onClick={() => handleDelete(staff.staffId || staff.id)}
+                        title="Xóa nhân viên"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* MODAL THÔNG BÁO */}
+      {notification.show && (
+        <div className={styles.modalOverlay}>
+          <div
+            className={`${styles.modal} ${
+              notification.type === "success" ? styles.success : styles.error
+            }`}
+          >
+            <div className={styles.modalHeader}>
+              <h3>
+                {notification.type === "success" ? "✅ Thành công" : "❌ Lỗi"}
+              </h3>
+              <button
+                className={styles.closeBtn}
+                onClick={() =>
+                  setNotification({ show: false, type: "success", message: "" })
+                }
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p style={{ margin: "10px 0", fontSize: "15px", color: "#444" }}>
+              {notification.message}
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.saveButton}
+                onClick={() =>
+                  setNotification({ show: false, type: "success", message: "" })
+                }
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XÁC NHẬN */}
+      {confirmModal.show && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h3>{confirmModal.title}</h3>
+              <button
+                className={styles.closeBtn}
+                onClick={() =>
+                  setConfirmModal({
+                    show: false,
+                    title: "",
+                    message: "",
+                    onConfirm: null,
+                  })
+                }
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p style={{ margin: "10px 0", fontSize: "15px", color: "#444" }}>
+              {confirmModal.message}
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.cancelButton}
+                onClick={() =>
+                  setConfirmModal({
+                    show: false,
+                    title: "",
+                    message: "",
+                    onConfirm: null,
+                  })
+                }
+              >
+                Hủy
+              </button>
+              <button
+                className={styles.saveButton}
+                onClick={() => {
+                  if (confirmModal.onConfirm) {
+                    confirmModal.onConfirm();
+                  }
+                }}
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XEM CHI TIẾT NHÂN VIÊN */}
+      {viewModal.show && viewModal.staff && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h3>Thông tin nhân viên</h3>
+              <button
+                className={styles.closeBtn}
+                onClick={() => setViewModal({ show: false, staff: null })}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div>
+              <p>
+                <strong>ID:</strong> {viewModal.staff.id}
+              </p>
+              <p>
+                <strong>Họ tên:</strong> {viewModal.staff.fullName}
+              </p>
+              <p>
+                <strong>Email:</strong> {viewModal.staff.email}
+              </p>
+              <p>
+                <strong>SĐT:</strong> {viewModal.staff.phoneNumber || "Chưa có"}
+              </p>
+              <p>
+                <strong>Chức vụ:</strong>{" "}
+                {viewModal.staff.position || "Chưa có"}
+              </p>
+              <p>
+                <strong>Ngày tham gia:</strong>{" "}
+                {viewModal.staff.joinDate || "Chưa có"}
+              </p>
+              <p>
+                <strong>Trạng thái:</strong>{" "}
+                <span
+                  className={`${styles.badge} ${
+                    styles[viewModal.staff.status]
+                  }`}
+                >
+                  {viewModal.staff.status === "active" ? "Hoạt động" : "Khoá"}
+                </span>
+              </p>
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.saveButton}
+                onClick={() => setViewModal({ show: false, staff: null })}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

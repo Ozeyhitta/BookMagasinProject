@@ -1,5 +1,6 @@
 package com.bookmagasin.entity;
 
+import com.bookmagasin.enums.RequestStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -24,8 +25,16 @@ public class Staff {
     @Column(name = "position")
     private String position;
 
-    @Temporal(TemporalType.DATE)
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    @Column(name = "hire_date")
-    private Date hireDate;
+    @Column(name="status")
+    @Enumerated(EnumType.STRING)
+    private RequestStatus status;
+
+
+    @Column(name = "request_date")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date requestDate;
+
+    @Column(name = "approved_date")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date approvedDate;
 }

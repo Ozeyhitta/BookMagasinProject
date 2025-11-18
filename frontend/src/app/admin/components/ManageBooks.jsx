@@ -205,42 +205,80 @@ export default function ManageBooks() {
   };
 
   // ===================== SUBMIT FORM =====================
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const detailPayload = bookForm.bookDetail
-      ? {
-          ...bookForm.bookDetail,
-          pages: Number(bookForm.bookDetail.pages) || 0,
-          length: Number(bookForm.bookDetail.length) || 0,
-          width: Number(bookForm.bookDetail.width) || 0,
-          height: Number(bookForm.bookDetail.height) || 0,
-          weight: Number(bookForm.bookDetail.weight) || 0,
-          id: Number(bookForm.bookDetail.id) || 0,
+    try {
+      // Xử lý bookDetail: khi tạo mới không gửi id (hoặc gửi id = 0 nếu không có bookDetail cũ)
+      const detailPayload = bookForm.bookDetail
+        ? {
+            publisher: bookForm.bookDetail.publisher || "",
+            supplier: bookForm.bookDetail.supplier || "",
+            pages: Number(bookForm.bookDetail.pages) || 0,
+            length: Number(bookForm.bookDetail.length) || 0,
+            width: Number(bookForm.bookDetail.width) || 0,
+            height: Number(bookForm.bookDetail.height) || 0,
+            weight: Number(bookForm.bookDetail.weight) || 0,
+            description: bookForm.bookDetail.description || "",
+            imageUrl: bookForm.bookDetail.imageUrl || "",
+            // Chỉ gửi id nếu đang edit và id > 0
+            ...(editingId &&
+            bookForm.bookDetail.id &&
+            Number(bookForm.bookDetail.id) > 0
+              ? { id: Number(bookForm.bookDetail.id) }
+              : {}),
+          }
+        : null;
+
+      // Xử lý publicationDate: convert string (yyyy-MM-dd) thành Date object hoặc null
+      let publicationDate = null;
+      if (bookForm.publicationDate) {
+        const date = new Date(bookForm.publicationDate + "T00:00:00");
+        if (!isNaN(date.getTime())) {
+          publicationDate = date.toISOString();
         }
-      : null;
+      }
 
-    const body = {
-      ...bookForm,
-      sellingPrice: Number(bookForm.sellingPrice),
-      edition: Number(bookForm.edition),
-      bookDetail: detailPayload,
-    };
+      const body = {
+        title: bookForm.title || "",
+        sellingPrice: Number(bookForm.sellingPrice) || 0,
+        edition: Number(bookForm.edition) || 1,
+        author: bookForm.author || "",
+        publicationDate: publicationDate,
+        categoryIds: bookForm.categoryIds || [],
+        bookDetail: detailPayload,
+      };
 
-    const url = editingId
-      ? `http://localhost:8080/api/books/${editingId}`
-      : "http://localhost:8080/api/books";
+      const url = editingId
+        ? `http://localhost:8080/api/books/${editingId}`
+        : "http://localhost:8080/api/books";
 
-    const method = editingId ? "PUT" : "POST";
+      const method = editingId ? "PUT" : "POST";
 
-    fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }).then(() => {
+      console.log("Submitting book:", body);
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Error response:", errorText);
+        throw new Error(errorText || `Lỗi ${res.status}: ${res.statusText}`);
+      }
+
+      const result = await res.json();
+      console.log("Book saved successfully:", result);
+
       loadBooks();
       setShowModal(false);
-    });
+      alert(editingId ? "Cập nhật sách thành công!" : "Thêm sách thành công!");
+    } catch (err) {
+      console.error("Error saving book:", err);
+      alert("Lỗi: " + (err.message || "Không thể lưu sách. Vui lòng thử lại."));
+    }
   };
 
   // ===================== VIEW =====================

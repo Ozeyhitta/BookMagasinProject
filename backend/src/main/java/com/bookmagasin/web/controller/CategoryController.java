@@ -4,7 +4,7 @@ package com.bookmagasin.web.controller;
 import com.bookmagasin.service.CategoryService;
 import com.bookmagasin.web.dto.CategoryDto;
 import com.bookmagasin.web.dtoResponse.CategoryResponseDto;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +14,9 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/categories")
+@RequiredArgsConstructor
 public class CategoryController {
-    @Autowired
-    private CategoryService categoryService;
+    private final CategoryService categoryService;
 
     @PostMapping
     public ResponseEntity<CategoryResponseDto> createCategory(@RequestBody CategoryDto dto){

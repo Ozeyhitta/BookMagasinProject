@@ -1,138 +1,288 @@
-package com.bookmagasin.controller;
+package com.bookmagasin.web.controller;
 
-import com.bookmagasin.dto.StaffRequestCreateDTO;
 import com.bookmagasin.entity.Account;
 import com.bookmagasin.entity.Staff;
-import com.bookmagasin.entity.StaffRequest;
 import com.bookmagasin.entity.User;
 import com.bookmagasin.enums.ERole;
 import com.bookmagasin.enums.RequestStatus;
 import com.bookmagasin.repository.AccountRepository;
 import com.bookmagasin.repository.StaffRepository;
-import com.bookmagasin.repository.StaffRequestRepository;
 import com.bookmagasin.repository.UserRepository;
+import com.bookmagasin.web.dto.StaffRegisterDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-public class StaffRequestController {
+public class  StaffRequestController {
 
-    private final StaffRequestRepository staffRequestRepository;
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final StaffRepository staffRepository;
+    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-    // 1️⃣ User (trang account) gửi yêu cầu đăng kí nhân viên
+    // User tự đăng ký làm nhân viên
     @PostMapping("/staff-requests")
-    public ResponseEntity<?> createStaffRequest(@RequestBody StaffRequestCreateDTO dto) {
-        User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public ResponseEntity<?> registerStaff(@RequestBody StaffRegisterDTO dto) {
+        try {
+            // Tìm user theo userId
+            User user = userRepository.findById(dto.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 🔍 Kiểm tra request gần nhất của user
-        StaffRequest lastReq = staffRequestRepository
-                .findTopByUserOrderByIdDesc(user)
-                .orElse(null);
+            // Kiểm tra user đã có account chưa
+            Account account = accountRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Account not found for user"));
 
-        if (lastReq != null) {
-            // Nếu đang có yêu cầu PENDING thì không cho gửi nữa
-            if (lastReq.getStatus() == RequestStatus.PENDING) {
-                return ResponseEntity
-                        .badRequest()
-                        .body("Bạn đã gửi yêu cầu và đang chờ duyệt!");
+
+            // Kiểm tra user đã có yêu cầu đăng ký chưa
+            Staff existingStaff = staffRepository.findByUser(user).orElse(null);
+            if (existingStaff != null) {
+                // Nếu đã có record và có role STAFF -> đã được duyệt rồi
+                if (account.hasRole(ERole.STAFF)) {
+                    return ResponseEntity.badRequest()
+                            .body("Bạn đã là nhân viên rồi!");
+                }
+                // Nếu có record với status PENDING -> đang chờ duyệt
+                if (existingStaff.getStatus() == RequestStatus.PENDING) {
+                    return ResponseEntity.badRequest()
+                            .body("Bạn đã gửi yêu cầu đăng ký nhân viên và đang chờ duyệt!");
+                }
+                // Nếu có record với status REJECTED -> có thể gửi lại
+                // Xóa record cũ để tạo lại
+                staffRepository.delete(existingStaff);
             }
 
-            // Nếu đã được duyệt thì không cho gửi lại
-            if (lastReq.getStatus() == RequestStatus.APPROVED) {
-                return ResponseEntity
-                        .badRequest()
-                        .body("Bạn đã được duyệt nhân viên rồi!");
-            }
+            // Tạo record trong bảng Staff với status PENDING
+            Staff staff = new Staff();
+            staff.setUser(user);
+            staff.setPosition(dto.getPosition());
+            staff.setStatus(RequestStatus.PENDING);
+            staff.setRequestDate(new Date()); // Ngày gửi yêu cầu
+            staffRepository.save(staff);
+
+
+
+            return ResponseEntity.ok("Gửi yêu cầu đăng ký làm nhân viên thành công! Vui lòng chờ admin duyệt.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi server: " + e.getMessage());
         }
-
-        // Nếu qua được đoạn trên -> tạo yêu cầu mới
-        StaffRequest req = new StaffRequest();
-        req.setUser(user);
-        req.setPosition(dto.getPosition());
-        req.setJoinDate(dto.getJoinDate());
-        req.setStatus(RequestStatus.PENDING);
-
-        staffRequestRepository.save(req);
-        return ResponseEntity.ok("Created");
     }
 
-    // 2️⃣ Admin lấy danh sách yêu cầu (Manage Staffs -> Xem yêu cầu)
+    // User kiểm tra trạng thái đăng ký nhân viên của mình
+    @GetMapping("/staff-requests/status/{userId}")
+    public ResponseEntity<?> getStaffStatusByUserId(@PathVariable Integer userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Account account = accountRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Account not found"));
+
+            Staff staff = staffRepository.findByUser(user).orElse(null);
+
+            Map<String, Object> response = new HashMap<>();
+            
+            if (staff == null) {
+                // Không có record trong staff
+                response.put("hasStaffRecord", false);
+                response.put("hasStaffRole", account.hasRole(ERole.STAFF));
+                response.put("status", null);
+                response.put("isActivated", account.isActivated());
+                response.put("isApproved", false);
+            } else {
+                // Có record trong staff
+                response.put("hasStaffRecord", true);
+                response.put("hasStaffRole", account.hasRole(ERole.STAFF));
+                response.put("status", staff.getStatus() != null ? staff.getStatus().name() : null);
+                response.put("isActivated", account.isActivated());
+                // isApproved = true chỉ khi: status APPROVED, có role STAFF, VÀ account đang activated
+                boolean isApproved = staff.getStatus() == RequestStatus.APPROVED 
+                    && account.hasRole(ERole.STAFF) 
+                    && account.isActivated();
+                response.put("isApproved", isApproved);
+            }
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi server: " + e.getMessage());
+        }
+    }
+
+    // Admin lấy danh sách yêu cầu đăng ký nhân viên
     @GetMapping("/admin/staff-requests")
-    public List<StaffRequest> getStaffRequests(
-            @RequestParam(required = false) String status) {
-
-        if (status == null || status.isBlank()) {
-            return staffRequestRepository.findAll();
+    public ResponseEntity<?> getStaffRequests(@RequestParam(required = false) String status) {
+        try {
+            // Lấy tất cả staff
+            List<Staff> allStaffs = staffRepository.findAll();
+            
+            // Filter theo status (nếu có) hoặc lấy tất cả PENDING
+            RequestStatus filterStatus = null;
+            if (status != null && !status.isEmpty()) {
+                try {
+                    filterStatus = RequestStatus.valueOf(status.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    // Nếu status không hợp lệ, mặc định lấy PENDING
+                    filterStatus = RequestStatus.PENDING;
+                }
+            } else {
+                filterStatus = RequestStatus.PENDING; // Mặc định lấy PENDING
+            }
+            
+            final RequestStatus finalFilterStatus = filterStatus;
+            
+            List<Map<String, Object>> requests = allStaffs.stream()
+                    .filter(staff -> {
+                        // Lọc theo status
+                        if (staff.getStatus() == null) {
+                            return false;
+                        }
+                        if (finalFilterStatus != null && staff.getStatus() != finalFilterStatus) {
+                            return false;
+                        }
+                        // Đảm bảo account tồn tại
+                        Account acc = accountRepository.findByUser(staff.getUser()).orElse(null);
+                        return acc != null;
+                    })
+                    .map(staff -> {
+                        User user = staff.getUser();
+                        Account acc = accountRepository.findByUser(user).orElse(null);
+                        Map<String, Object> req = new HashMap<>();
+                        req.put("id", staff.getId());
+                        req.put("status", staff.getStatus() != null ? staff.getStatus().name() : "PENDING");
+                        req.put("position", staff.getPosition());
+                        req.put("joinDate", staff.getApprovedDate() != null ? sdf.format(staff.getApprovedDate()) : null);
+                        req.put("requestDate", staff.getRequestDate() != null ? staff.getRequestDate().toString() : null);
+                        req.put("activated", acc != null ? acc.isActivated() : true); // Thêm trạng thái activated từ Account
+                        Map<String, Object> userMap = new HashMap<>();
+                        userMap.put("id", user.getId());
+                        userMap.put("fullName", user.getFullName() != null ? user.getFullName() : "");
+                        userMap.put("email", acc != null ? acc.getEmail() : "");
+                        userMap.put("phoneNumber", user.getPhoneNumber() != null ? user.getPhoneNumber() : "");
+                        req.put("user", userMap);
+                        return req;
+                    })
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(requests);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi server: " + e.getMessage());
         }
-
-        RequestStatus st = RequestStatus.valueOf(status.toUpperCase());
-        return staffRequestRepository.findByStatus(st);
     }
 
-    // 3️⃣ Admin DUYỆT yêu cầu
+    // Admin duyệt yêu cầu đăng ký nhân viên
     @PutMapping("/admin/staff-requests/{id}/approve")
     public ResponseEntity<?> approveStaffRequest(@PathVariable Integer id) {
-        StaffRequest req = staffRequestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Staff request not found"));
+        try {
+            Staff staff = staffRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Staff request not found"));
 
-        // 3.1. Cập nhật trạng thái yêu cầu hiện tại
-        req.setStatus(RequestStatus.APPROVED);
-        staffRequestRepository.save(req);
+            User user = staff.getUser();
+            Account account = accountRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Account not found for user"));
 
-        // 3.2. Lấy user gửi yêu cầu
-        User user = req.getUser();
+            // Cập nhật status và approvedDate
+            staff.setStatus(RequestStatus.APPROVED);
+            staff.setApprovedDate(new Date());
+            staffRepository.save(staff);
 
-        // 3.3. ĐỔI ROLE TỪ CUSTOMER → STAFF TRONG BẢNG ACCOUNT
-        Account account = accountRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Account not found for user"));
+            // Set role STAFF cho account
+            account.setRole(ERole.STAFF);
+            accountRepository.save(account);
 
-        account.setRole(ERole.STAFF);
-        accountRepository.save(account);
-
-        // 3.4. LƯU THÔNG TIN CHỨC VỤ & NGÀY THAM GIA VÀO BẢNG staff
-        // Nếu user này chưa có bản ghi staff -> tạo mới, ngược lại thì update
-        Staff staff = staffRepository.findByUser(user).orElse(null);
-        if (staff == null) {
-            staff = new Staff();
-            staff.setUser(user);
+            return ResponseEntity.ok("Đã duyệt yêu cầu đăng ký nhân viên!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi server: " + e.getMessage());
         }
-
-        staff.setPosition(req.getPosition());
-        staff.setHireDate(req.getJoinDate());
-        staffRepository.save(staff);
-
-        // 3.5. Tự động REJECT các request PENDING khác của cùng user (nếu có)
-        List<StaffRequest> pendings = staffRequestRepository
-                .findByUserAndStatus(user, RequestStatus.PENDING);
-
-        for (StaffRequest r : pendings) {
-            if (!r.getId().equals(req.getId())) {
-                r.setStatus(RequestStatus.REJECTED);
-                staffRequestRepository.save(r);
-            }
-        }
-
-        return ResponseEntity.ok("Approved");
     }
 
-    // 4️⃣ Admin TỪ CHỐI yêu cầu
+    // Admin từ chối yêu cầu đăng ký nhân viên
     @PutMapping("/admin/staff-requests/{id}/reject")
     public ResponseEntity<?> rejectStaffRequest(@PathVariable Integer id) {
-        StaffRequest req = staffRequestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Staff request not found"));
+        try {
+            Staff staff = staffRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Staff request not found"));
 
-        req.setStatus(RequestStatus.REJECTED);
-        staffRequestRepository.save(req);
+            // Cập nhật status thành REJECTED thay vì xóa record
+            staff.setStatus(RequestStatus.REJECTED);
+            staffRepository.save(staff);
 
-        return ResponseEntity.ok("Rejected");
+            return ResponseEntity.ok("Đã từ chối yêu cầu đăng ký nhân viên!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi server: " + e.getMessage());
+        }
+    }
+
+    // Admin toggle lock/unlock nhân viên (từ staffId)
+    @PutMapping("/admin/staff-requests/{staffId}/toggle")
+    public ResponseEntity<?> toggleStaffStatus(@PathVariable Integer staffId) {
+        try {
+            Staff staff = staffRepository.findById(staffId)
+                    .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+            User user = staff.getUser();
+            Account account = accountRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Account not found for user"));
+
+            // Toggle activated status
+            account.setActivated(!account.isActivated());
+            Account savedAccount = accountRepository.save(account);
+
+            // Trả về Account object để frontend cập nhật state (giống ManageCustomers)
+            Map<String, Object> response = new HashMap<>();
+            response.put("activated", savedAccount.isActivated());
+            response.put("id", savedAccount.getId());
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi server: " + e.getMessage());
+        }
+    }
+
+    // Admin xóa nhân viên (xóa record trong staff và remove role STAFF)
+    @DeleteMapping("/admin/staff-requests/{id}")
+    public ResponseEntity<?> deleteStaff(@PathVariable Integer id) {
+        try {
+            Staff staff = staffRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+            User user = staff.getUser();
+            Account account = accountRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Account not found for user"));
+
+            // Xóa role STAFF khỏi account
+            if (account.getRole() == ERole.STAFF) {
+                account.setRole(ERole.CUSTOMER);
+                accountRepository.save(account);
+            }
+
+            // Xóa record trong bảng staff
+            staffRepository.delete(staff);
+
+            return ResponseEntity.ok("Đã xóa nhân viên thành công!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi server: " + e.getMessage());
+        }
     }
 }
+

@@ -4,13 +4,12 @@ import lombok.Data;
 
 @Data
 public class StaffListDTO {
-    private Integer id;          // id account
+    private Integer id;
     private String email;
-    private boolean activated;
-
+    private Boolean activated;
     private String fullName;
     private String phoneNumber;
-
     private String position;
-    private String joinDate;     // dạng "yyyy-MM-dd" cho dễ render
+    private String joinDate;
 }
+

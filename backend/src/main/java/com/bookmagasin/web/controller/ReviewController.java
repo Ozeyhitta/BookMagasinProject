@@ -5,7 +5,7 @@ import com.bookmagasin.repository.ReviewRepository;
 import com.bookmagasin.service.ReviewService;
 import com.bookmagasin.web.dto.ReviewDto;
 import com.bookmagasin.web.dtoResponse.ReviewResponseDto;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +15,10 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/reviews")
+@RequiredArgsConstructor
 public class ReviewController {
 
-    @Autowired
-    private ReviewService reviewService;
+    private final ReviewService reviewService;
 
     // Tạo mới review
     @PostMapping
