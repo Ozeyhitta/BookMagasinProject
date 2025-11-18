@@ -49,7 +49,7 @@ export default function LoginPage() {
       } else if (data.role === "STAFF") {
         redirectUrl = "/staff";
       }
-      
+
       window.location.href = redirectUrl;
     } catch (err) {
       setError("Lỗi kết nối đến server");
@@ -84,7 +84,17 @@ export default function LoginPage() {
         setResetMessage("✅ Mã OTP 6 số đã được gửi đến email của bạn!");
         setShowOtpForm(true); // ✅ Bật form OTP
       } else {
-        setResetMessage("❌ " + text);
+        // Parse JSON error response nếu có
+        let errorMessage = text;
+        try {
+          const errorJson = JSON.parse(text);
+          // Lấy message từ JSON error response
+          errorMessage = errorJson.message || errorJson.error || text;
+        } catch {
+          // Nếu không phải JSON, giữ nguyên text
+          errorMessage = text;
+        }
+        setResetMessage("❌ " + errorMessage);
       }
     } catch (error) {
       setResetMessage("❌ Lỗi kết nối đến server!");
@@ -112,7 +122,17 @@ export default function LoginPage() {
 
         window.location.href = `/reset-password`;
       } else {
-        setResetMessage("❌ " + text);
+        // Parse JSON error response nếu có
+        let errorMessage = text;
+        try {
+          const errorJson = JSON.parse(text);
+          // Lấy message từ JSON error response
+          errorMessage = errorJson.message || errorJson.error || text;
+        } catch {
+          // Nếu không phải JSON, giữ nguyên text
+          errorMessage = text;
+        }
+        setResetMessage("❌ " + errorMessage);
       }
     } catch (error) {
       setResetMessage("❌ Lỗi kết nối server!");

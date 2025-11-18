@@ -18,8 +18,15 @@ public class PasswordController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
-        passwordResetService.createResetToken(request.get("email"));
-        return ResponseEntity.ok("✅ Email đặt lại mật khẩu đã được gửi!");
+        try {
+            passwordResetService.createResetToken(request.get("email"));
+            return ResponseEntity.ok("✅ Email đặt lại mật khẩu đã được gửi!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi server: " + e.getMessage());
+        }
     }
 
     @PostMapping("/verify-otp")
@@ -37,13 +44,18 @@ public class PasswordController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
-
-        passwordResetService.resetPassword(
-                request.get("email"),
-                request.get("newPassword")
-        );
-
-        return ResponseEntity.ok("✅ Mật khẩu đã được đặt lại thành công!");
+        try {
+            passwordResetService.resetPassword(
+                    request.get("email"),
+                    request.get("newPassword")
+            );
+            return ResponseEntity.ok("✅ Mật khẩu đã được đặt lại thành công!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi server: " + e.getMessage());
+        }
     }
 
 }

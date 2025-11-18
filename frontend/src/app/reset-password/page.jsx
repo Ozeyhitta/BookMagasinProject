@@ -40,12 +40,24 @@ function ResetPasswordContent() {
         body: JSON.stringify({ email, newPassword }),
       });
 
+      const text = await res.text();
+
       if (res.ok) {
         setMsg("success");
         localStorage.removeItem("resetEmail");
         setTimeout(() => router.replace("/login"), 2000);
       } else {
-        setMsg("error");
+        // Parse JSON error response nếu có
+        let errorMessage = text;
+        try {
+          const errorJson = JSON.parse(text);
+          // Lấy message từ JSON error response
+          errorMessage = errorJson.message || errorJson.error || text;
+        } catch {
+          // Nếu không phải JSON, giữ nguyên text
+          errorMessage = text;
+        }
+        setMsg("❌ " + errorMessage);
       }
     } catch {
       setMsg("network");
