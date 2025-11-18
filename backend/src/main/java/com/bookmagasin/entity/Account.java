@@ -29,6 +29,7 @@ public class Account {
     private String password;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "role")
     private ERole role;
 
 
@@ -47,6 +48,21 @@ public class Account {
 
     public void setActivated(boolean isActivated) {
         this.isActivated = isActivated;
+    }
+
+    // Helper methods để làm việc với role
+    public boolean hasRole(ERole role) {
+        return this.role == role;
+    }
+
+    public void addRole(ERole role) {
+        this.role = role;
+    }
+
+    public void removeRole(ERole role) {
+        if (this.role == role) {
+            this.role = ERole.CUSTOMER; // Mặc định về CUSTOMER
+        }
     }
 
     // Đảm bảo setter được gọi khi tạo mới hoặc cập nhật tài khoản

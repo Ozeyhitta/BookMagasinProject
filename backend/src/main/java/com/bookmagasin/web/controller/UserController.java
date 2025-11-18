@@ -5,7 +5,7 @@ import com.bookmagasin.service.UserService;
 import com.bookmagasin.web.dto.UserDto;
 import com.bookmagasin.web.dtoResponse.UserResponseDto;
 import com.bookmagasin.web.mapper.UserMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +17,10 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "http://localhost:3000") // Để React truy cập
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     // CREATE
     @PostMapping

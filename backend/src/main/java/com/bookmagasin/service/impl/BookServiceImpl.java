@@ -49,7 +49,10 @@ public class BookServiceImpl implements BookService {
     public BookDto createBook(BookDto dto) {
         Book book = new Book();
         mapToEntity(dto, book);
-        return mapToDto(bookRepository.save(book));
+        
+        // Lưu Book trước (Hibernate sẽ tự động cascade lưu BookDetail nếu có CascadeType.ALL)
+        Book savedBook = bookRepository.save(book);
+        return mapToDto(savedBook);
     }
 
     @Override
@@ -95,13 +98,13 @@ public class BookServiceImpl implements BookService {
         book.setEdition(dto.getEdition());
         book.setAuthor(dto.getAuthor());
 
-        // BookDetail
+        // BookDetail - Không lưu riêng, để Hibernate cascade tự động xử lý
         if (dto.getBookDetail() != null) {
             BookDetail detail = resolveBookDetailEntity(dto, book);
             applyDetail(dto.getBookDetail(), detail);
-            detail.setBook(book);
-            BookDetail savedDetail = bookDetailRepository.save(detail);
-            book.setBookDetail(savedDetail);
+            // KHÔNG set detail.setBook(book) và KHÔNG lưu detail riêng ở đây
+            // Chỉ set vào book, khi lưu book với CascadeType.ALL, Hibernate sẽ tự động lưu detail
+            book.setBookDetail(detail);
         } else if (dto.getBookDetailId() > 0) {
             bookDetailRepository.findById(dto.getBookDetailId())
                     .ifPresent(book::setBookDetail);

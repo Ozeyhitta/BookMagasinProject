@@ -42,8 +42,14 @@ export default function LoginPage() {
       localStorage.setItem("userId", data.userId);
       localStorage.setItem("role", data.role);
 
-      const redirectUrl =
-        data.redirectUrl || (data.role === "ADMIN" ? "/admin" : "/mainpage");
+      // Xác định redirect URL dựa trên role
+      let redirectUrl = "/mainpage";
+      if (data.role === "ADMIN") {
+        redirectUrl = "/admin";
+      } else if (data.role === "STAFF") {
+        redirectUrl = "/staff";
+      }
+      
       window.location.href = redirectUrl;
     } catch (err) {
       setError("Lỗi kết nối đến server");

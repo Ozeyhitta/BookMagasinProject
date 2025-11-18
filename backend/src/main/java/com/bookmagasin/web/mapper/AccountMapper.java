@@ -24,6 +24,12 @@ public class AccountMapper {
         dto.setId(account.getId());
         dto.setEmail(account.getEmail());
         dto.setRole(account.getRole());
+        // Tạo Set chứa 1 role để tương thích với frontend
+        if (account.getRole() != null) {
+            dto.setRoles(java.util.Collections.singleton(account.getRole()));
+        } else {
+            dto.setRoles(new java.util.HashSet<>());
+        }
         dto.setActivated(account.isActivated());
 
         if (account.getUser() != null) {
