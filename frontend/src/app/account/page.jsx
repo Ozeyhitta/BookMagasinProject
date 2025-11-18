@@ -12,11 +12,17 @@ export default function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // 🆕 state cho ĐĂNG KÍ NHÂN VIÊN
+  const [showStaffForm, setShowStaffForm] = useState(false);
+  const [position, setPosition] = useState("");
+  const [joinDate, setJoinDate] = useState("");
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [staffMessage, setStaffMessage] = useState("");
+
   useEffect(() => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("token");
 
-    // ⛔ Nếu chưa đăng nhập → quay về /login
     if (!userId || !token) {
       router.push("/login");
       return;
@@ -59,7 +65,6 @@ export default function AccountPage() {
       });
   }, [router]);
 
-  // Hiển thị loading khi đang fetch data
   if (loading || !formData) {
     return (
       <div className={styles.accountPage}>
@@ -74,13 +79,14 @@ export default function AccountPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSave = async () => {
     try {
       const id = formData.userId;
 
       await axiosClient.put(`/users/${id}`, {
         fullName: formData.fullName,
-        dateOfBirth: formData.dateOfBirth, // yyyy-MM-dd
+        dateOfBirth: formData.dateOfBirth,
         gender: formData.gender,
         phoneNumber: formData.phoneNumber,
         address: formData.address,
@@ -88,10 +94,36 @@ export default function AccountPage() {
       });
 
       alert("✅ Cập nhật thành công!");
-      setIsEditing(false); // khóa lại form sau khi lưu
+      setIsEditing(false);
     } catch (error) {
       console.log(error);
       alert("❌ Lỗi khi lưu!");
+    }
+  };
+
+  // 🆕 gửi yêu cầu đăng kí nhân viên
+  const handleStaffRegister = async (e) => {
+    e.preventDefault();
+    setStaffMessage("");
+    setStaffLoading(true);
+
+    try {
+      const res = await axiosClient.post("/staff-requests", {
+        userId: formData.userId,
+        position,
+        joinDate, // yyyy-MM-dd
+      });
+
+      if (res.status >= 200 && res.status < 300) {
+        setStaffMessage("✅ Gửi yêu cầu đăng kí nhân viên thành công!");
+      } else {
+        setStaffMessage("❌ Gửi yêu cầu thất bại!");
+      }
+    } catch (err) {
+      console.error(err);
+      setStaffMessage("❌ Lỗi kết nối server!");
+    } finally {
+      setStaffLoading(false);
     }
   };
 
@@ -154,6 +186,7 @@ export default function AccountPage() {
               </div>
             </div>
           </div>
+
           <div className={styles.buttonGroup}>
             <button
               className={styles.editButton}
@@ -170,8 +203,94 @@ export default function AccountPage() {
             >
               Lưu thay đổi
             </button>
+
+            {/* 🆕 nút đăng kí nhân viên */}
+            <button
+              className={styles.saveButton}
+              style={{ marginTop: 8, backgroundColor: "#f59e0b" }}
+              onClick={() => {
+                setShowStaffForm((prev) => !prev);
+                setStaffMessage("");
+              }}
+            >
+              Đăng kí nhân viên
+            </button>
           </div>
         </div>
+
+        {/* 🆕 form đăng kí nhân viên */}
+        {showStaffForm && (
+          <div
+            style={{
+              marginTop: 16,
+              padding: 16,
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              background: "#fafafa",
+              maxWidth: 600,
+            }}
+          >
+            <h3 style={{ marginBottom: 12 }}>Đăng kí trở thành nhân viên</h3>
+
+            <form onSubmit={handleStaffRegister}>
+              <div className={styles.formGrid}>
+                <div className={styles.formGroup}>
+                  <label>Chức vụ</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Nhân viên bán hàng, Quản lý kho..."
+                    value={position}
+                    onChange={(e) => setPosition(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>Ngày thuê</label>
+                  <input
+                    type="date"
+                    value={joinDate}
+                    onChange={(e) => setJoinDate(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <button
+                  type="submit"
+                  className={styles.saveButton}
+                  disabled={staffLoading}
+                >
+                  {staffLoading ? "Đang gửi..." : "Gửi yêu cầu"}
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.editButton}
+                  style={{ marginLeft: 8 }}
+                  onClick={() => {
+                    setShowStaffForm(false);
+                    setStaffMessage("");
+                  }}
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+
+            {staffMessage && (
+              <p
+                style={{
+                  marginTop: 10,
+                  color: staffMessage.startsWith("✅") ? "green" : "red",
+                }}
+              >
+                {staffMessage}
+              </p>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Personal info */}
@@ -217,7 +336,7 @@ export default function AccountPage() {
             <label>Số điện thoại</label>
             <input
               type="text"
-              name="phoneNumber" // đổi
+              name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleInputChange}
               disabled={!isEditing}
@@ -258,7 +377,9 @@ export default function AccountPage() {
           </div>
         ))}
 
-        <button className={styles.addEmailButton}>+ Thêm địa chỉ email</button>
+        <button className={styles.addEmailButton}>
+          + Thêm địa chỉ email
+        </button>
       </section>
     </div>
   );

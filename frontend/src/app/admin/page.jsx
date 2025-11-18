@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "./admin.module.css";
 import {
   LayoutGrid,
@@ -13,23 +13,22 @@ import {
   LogOut,
 } from "lucide-react";
 
-// Import các component quản lý
 import ManageCustomers from "./components/ManageCustomers";
 import ManageStaffs from "./components/ManageStaffs";
 import ManagePromotions from "./components/ManagePromotions";
 import ViewSalesReports from "./components/ViewSalesReports";
-import ManageBooks from "./components/ManageBooks"; // ✅ Thêm mới
+import ManageBooks from "./components/ManageBooks";
 
 export default function AdminPage() {
   const [activeMenu, setActiveMenu] = useState("dashboards");
 
-  useEffect(() => {
-    const role = localStorage.getItem("role");
-    const token = localStorage.getItem("token");
-    if (role !== "ADMIN" || !token) {
-      window.location.replace("/login");
-    }
-  }, []);
+  // ❌ ĐÃ BỎ useEffect kiểm tra token
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   if (!token) {
+  //     window.location.replace("/login");
+  //   }
+  // }, []);
 
   const menuItems = [
     { id: "dashboards", label: "Dashboards", icon: LayoutGrid },
@@ -38,7 +37,7 @@ export default function AdminPage() {
     { id: "staffs", label: "Manage Staffs", icon: UserCheck },
     { id: "promotions", label: "Manage Promotions", icon: Tag },
     { id: "reports", label: "View Sales Reports", icon: BarChart3 },
-    { id: "books", label: "Manage Books", icon: Book }, // ✅ Thêm menu mới
+    { id: "books", label: "Manage Books", icon: Book },
   ];
 
   const outlineItems = [
@@ -63,7 +62,7 @@ export default function AdminPage() {
       case "reports":
         return <ViewSalesReports />;
       case "books":
-        return <ManageBooks />; // ✅ Thêm phần quản lý sách
+        return <ManageBooks />;
       case "dashboards":
       default:
         return <p>Dashboard content will be displayed here.</p>;
@@ -71,6 +70,7 @@ export default function AdminPage() {
   };
 
   const handleMenuClick = (id) => setActiveMenu(id);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
@@ -80,28 +80,24 @@ export default function AdminPage() {
 
   return (
     <div className={styles.dashboardWrapper}>
-      {/* --- SIDEBAR --- */}
+      {/* SIDEBAR */}
       <div className={styles.sidebar}>
-        {/* Header */}
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarLogo}>B</div>
           <span>Book Shop</span>
         </div>
 
-        {/* Add New Button */}
         <button className={styles.addNewButton}>
           <Plus size={16} />
           Add New
         </button>
 
-        {/* Search Box */}
         <input
           type="text"
           placeholder="Search..."
           className={styles.searchBox}
         />
 
-        {/* Pages Section */}
         <div className={styles.sectionLabel}>Pages</div>
         <ul className={styles.menuList}>
           {menuItems.map((item) => {
@@ -128,7 +124,6 @@ export default function AdminPage() {
           Đăng xuất
         </button>
 
-        {/* Outline Section */}
         <div className={styles.sectionLabel} style={{ marginTop: "30px" }}>
           Outline
         </div>
@@ -141,7 +136,6 @@ export default function AdminPage() {
           ))}
         </ul>
 
-        {/* User Profile */}
         <div className={styles.userProfile}>
           <div className={styles.userAvatar}>K</div>
           <div style={{ flex: 1 }}>
@@ -153,9 +147,8 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* --- MAIN CONTENT --- */}
+      {/* MAIN CONTENT */}
       <div className={styles.mainContent}>
-        {/* Header */}
         <div className={styles.header}>
           <div>
             <h1 className={styles.headerTitle}>{getPageTitle()}</h1>
@@ -175,10 +168,8 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Content Area */}
         <div className={styles.contentArea}>{renderContent()}</div>
 
-        {/* Footer */}
         <div className={styles.footer}>
           <p>2025 © Keenthemes Inc.</p>
           <div className={styles.footerLinks}>
