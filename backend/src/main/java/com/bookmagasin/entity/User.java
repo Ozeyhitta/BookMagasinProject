@@ -3,9 +3,7 @@ package com.bookmagasin.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Date;
 import java.util.List;
@@ -13,16 +11,19 @@ import java.util.List;
 @Entity
 @Table(name = "users")
 @NoArgsConstructor
-@Data
-@EqualsAndHashCode(exclude = {"account", "userNotifications", "carts", "reviews"})
+@Getter
+@Setter
 @Inheritance(strategy = InheritanceType.JOINED)
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ToString.Include
+    @EqualsAndHashCode.Include
     private int id;
 
     @Column(name = "full_name")
+    @ToString.Include
     private String fullName;
 
     @Column(name = "date_of_birth")
@@ -46,6 +47,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
+
     private List<UserNotification> userNotifications;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
@@ -55,5 +57,6 @@ public class User {
     @OneToMany(mappedBy = "createBy", cascade = CascadeType.ALL)
     @JsonBackReference
     private List<Review> reviews;
+
 
 }

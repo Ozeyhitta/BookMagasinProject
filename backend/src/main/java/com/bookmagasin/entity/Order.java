@@ -2,9 +2,7 @@ package com.bookmagasin.entity;
 
 import com.bookmagasin.enums.EStatusBooking;
 import jakarta.persistence.*;
-import lombok.CustomLog;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.BatchSize;
 
 import java.util.Date;
@@ -13,7 +11,9 @@ import java.util.List;
 @Entity
 @Table(name="orders")
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
 @Inheritance(strategy = InheritanceType.JOINED) //class cha ke thua
 public class Order {
     @Id

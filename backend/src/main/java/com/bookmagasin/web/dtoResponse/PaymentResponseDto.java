@@ -14,5 +14,7 @@ public class PaymentResponseDto {
     private Double amount;
     private EMethod method;
     private EStatusPayment paymentStatus;
+    private String errorMessage;  // Thông báo lỗi chi tiết từ VNPay
+    private String vnpTxnRef;      // Mã giao dịch VNPay
 }
 
