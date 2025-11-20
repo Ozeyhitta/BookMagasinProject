@@ -14,4 +14,5 @@ public interface NotificationService {
     void deleteNotificationById(Integer id);
     List<NotificationResponseDto> getNotificationsByUser(Integer userId);
     void markAsRead(Integer userId, Integer notificationId);
+    long countUnreadByUser(Integer userId);
 }

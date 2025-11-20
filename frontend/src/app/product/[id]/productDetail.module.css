@@ -475,3 +475,173 @@
     width: 100%; /* 👈 Trên mobile, cho nút full chiều rộng để dễ bấm */
   }
 }
+/* ==== ĐÁNH GIÁ SẢN PHẨM ==== */
+.ratingSection {
+  margin-top: 40px;
+  padding: 24px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.06);
+}
+
+.ratingSection h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.ratingTop {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.ratingScore {
+  min-width: 160px;
+  text-align: center;
+}
+
+.ratingNumber {
+  font-size: 32px;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.ratingMax {
+  font-size: 18px;
+  margin-left: 4px;
+}
+
+.ratingStars {
+  margin-top: 4px;
+  font-size: 20px;
+  color: #f59e0b;
+}
+
+.ratingTotal {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  color: #555;
+}
+
+.ratingBars {
+  flex: 1;
+  min-width: 220px;
+}
+
+.ratingBarRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.ratingBarOuter {
+  flex: 1;
+  height: 8px;
+  background-color: #eee;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ratingBarInner {
+  height: 100%;
+  background-color: #f59e0b;
+}
+
+.ratingForm {
+  margin-top: 24px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.ratingForm h3 {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.starSelector {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.starFilled {
+  color: #f59e0b;
+  cursor: pointer;
+}
+
+.starEmpty {
+  color: #ccc;
+  cursor: pointer;
+}
+
+.commentInput {
+  width: 100%;
+  min-height: 80px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.submitReviewBtn {
+  padding: 8px 16px;
+  border: none;
+  background-color: #ee0033;
+  color: #fff;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submitReviewBtn:hover {
+  background-color: #d1002c;
+}
+
+.reviewList {
+  margin-top: 16px;
+}
+
+.reviewItem {
+  padding: 8px 0;
+  border-top: 1px solid #f1f1f1;
+}
+
+.reviewerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.reviewerId {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.reviewStars {
+  font-size: 16px;
+}
+
+.reviewComment {
+  margin-top: 4px;
+  font-size: 14px;
+}
+.reviewerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.reviewerId {
+  font-size: 12px;
+  color: #6b7280;
+}

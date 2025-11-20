@@ -1,245 +1,133 @@
 "use client";
+
 import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-
 import styles from "./productDetail.module.css";
 
 export default function ProductDetail({ params }) {
-  // Await params trong Next.js App Router
   const resolvedParams = use(params);
-  const id = resolvedParams?.id; // id lấy từ URL /product/[id]
+  const id = resolvedParams?.id;
+
+  const router = useRouter();
 
   const [book, setBook] = useState(null);
-  const [bookDetail, setBookDetail] = useState(null); // 💡 thêm state cho chi tiết
-  const [discount, setDiscount] = useState(null); // 💡 thêm state cho discount
+  const [detail, setBookDetail] = useState({});
+  const [discount, setDiscount] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [animateQty, setAnimateQty] = useState(false); // State cho animation
+  const [animateQty, setAnimateQty] = useState(false);
 
-  const increaseQty = () => {
-    const newQuantity = quantity + 1;
-    setQuantity(newQuantity);
-    // Trigger animation
-    setAnimateQty(true);
-    setTimeout(() => setAnimateQty(false), 300);
+  const [reviews, setReviews] = useState([]);
+  const [ratingSummary, setRatingSummary] = useState(null);
+  const [related, setRelated] = useState([]);
 
-    // ✅ Cập nhật buyNowItem trong sessionStorage nếu có
-    const buyNowItemStr = sessionStorage.getItem("buyNowItem");
-    if (buyNowItemStr) {
+  const formatCurrency = (value) => {
+    if (value === null || value === undefined) return "";
+    try {
+      return value.toLocaleString("vi-VN") + "đ";
+    } catch {
+      return `${value}đ`;
+    }
+  };
+
+  const calculateSummary = (reviewsList) => {
+    if (!reviewsList || reviewsList.length === 0) return null;
+    const totalReviews = reviewsList.length;
+    const averageRate = reviewsList.reduce((sum, r) => sum + r.rate, 0) / totalReviews;
+    const starCount = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    reviewsList.forEach((r) => {
+      if (r.rate >= 1 && r.rate <= 5) {
+        starCount[r.rate] = (starCount[r.rate] || 0) + 1;
+      }
+    });
+    return {
+      totalReviews,
+      averageRate,
+      star5: starCount[5],
+      star4: starCount[4],
+      star3: starCount[3],
+      star2: starCount[2],
+      star1: starCount[1],
+    };
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const buyNowItem = JSON.parse(buyNowItemStr);
-        if (buyNowItem.bookId === book.id) {
-          buyNowItem.quantity = newQuantity;
-          sessionStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
-          // Dispatch event để checkout page cập nhật
-          window.dispatchEvent(new Event("buy-now-updated"));
+        const [bookRes, reviewsRes] = await Promise.all([
+          fetch(`http://localhost:8080/api/books/${id}`),
+          fetch(`http://localhost:8080/api/reviews/book/${id}`),
+        ]);
+
+        if (bookRes.ok) {
+          const bookData = await bookRes.json();
+          setBook(bookData);
+          setBookDetail(bookData.bookDetail || {});
+          setDiscount(bookData.bookDiscount || null);
+
+          // fetch related books by shared category
+          try {
+            const relRes = await fetch("http://localhost:8080/api/books");
+            if (relRes.ok) {
+              const allBooks = await relRes.json();
+              const currentCategories = (bookData.categories || []).map((c) => c.id);
+              const filtered = allBooks
+                .filter((b) => b.id !== bookData.id)
+                .filter((b) => {
+                  if (!currentCategories.length) return false;
+                  const cats = (b.categories || []).map((c) => c.id);
+                  return cats.some((idCat) => currentCategories.includes(idCat));
+                })
+                .slice(0, 4);
+              setRelated(filtered);
+            }
+          } catch (e) {
+            console.error("Error fetching related books", e);
+          }
+        }
+
+        if (reviewsRes.ok) {
+          const reviewsData = await reviewsRes.json();
+          setReviews(reviewsData);
+          setRatingSummary(calculateSummary(reviewsData));
         }
       } catch (err) {
-        console.error("Error updating buyNowItem:", err);
+        console.error("Error fetching product data:", err);
       }
-    }
+    };
+    if (id) fetchData();
+  }, [id]);
+
+  const increaseQty = () => {
+    setQuantity((prev) => prev + 1);
+    setAnimateQty(true);
+    setTimeout(() => setAnimateQty(false), 150);
   };
 
   const decreaseQty = () => {
     if (quantity > 1) {
-      const newQuantity = quantity - 1;
-      setQuantity(newQuantity);
-      // Trigger animation
+      setQuantity((prev) => prev - 1);
       setAnimateQty(true);
-      setTimeout(() => setAnimateQty(false), 300);
-
-      // ✅ Cập nhật buyNowItem trong sessionStorage nếu có
-      const buyNowItemStr = sessionStorage.getItem("buyNowItem");
-      if (buyNowItemStr) {
-        try {
-          const buyNowItem = JSON.parse(buyNowItemStr);
-          if (buyNowItem.bookId === book.id) {
-            buyNowItem.quantity = newQuantity;
-            sessionStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
-            // Dispatch event để checkout page cập nhật
-            window.dispatchEvent(new Event("buy-now-updated"));
-          }
-        } catch (err) {
-          console.error("Error updating buyNowItem:", err);
-        }
-      }
+      setTimeout(() => setAnimateQty(false), 150);
     }
   };
-  const router = useRouter();
 
-  const handleBuyNow = () => {
+  const addToCart = async ({ redirectAfterAdd = false } = {}) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Vui lòng đăng nhập trước khi mua hàng!");
-      router.push("/login");
-      return;
+      alert("Vui lòng đăng nhập trước khi mua.");
+      return false;
     }
 
-    // ✅ Lưu thông tin "Mua ngay" vào sessionStorage và chuyển trang ngay
-    const priceAfterDiscount = calculatePriceAfterDiscount(book.sellingPrice);
-    const buyNowItem = {
-      bookId: book.id,
-      book: book,
-      quantity: quantity,
-      price: priceAfterDiscount,
-      timestamp: Date.now(),
-    };
-    sessionStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
-
-    // Chuyển trang ngay lập tức
-    router.push("/checkout");
-  };
-
-  // Helper function để format số an toàn (tránh hydration mismatch)
-  const formatPrice = (price) => {
-    if (typeof window === "undefined") {
-      // Server-side: trả về string đơn giản
-      return String(price).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    }
-    // Client-side: dùng toLocaleString
-    return price.toLocaleString("vi-VN");
-  };
-
-  // Fetch book + bookDetail
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchData = async () => {
-      try {
-        // 1. Lấy sách theo id
-        const bookRes = await fetch(`http://localhost:8080/api/books/${id}`);
-        if (!bookRes.ok) {
-          throw new Error("Không fetch được dữ liệu sách");
-        }
-        const bookData = await bookRes.json();
-        setBook(bookData);
-
-        // 2. Lấy danh sách book-details và tìm cái khớp id
-        const detailRes = await fetch(
-          "http://localhost:8080/api/books-details"
-        );
-        if (detailRes.ok) {
-          const detailsData = await detailRes.json();
-          const matchedDetail = detailsData.find(
-            (d) => d.book?.id === bookData.id
-          );
-          setBookDetail(matchedDetail || null);
-        }
-
-        // 3. Fetch discount cho book này
-        try {
-          const discountRes = await fetch(
-            `http://localhost:8080/api/book-discounts/book/${bookData.id}`
-          );
-          if (discountRes.ok) {
-            const discountData = await discountRes.json();
-            const now = new Date();
-
-            // Tìm discount active hoặc lấy discount đầu tiên (để test)
-            let activeDiscount = discountData.find((disc) => {
-              const startDate = new Date(disc.startDate);
-              const endDate = new Date(disc.endDate);
-              return now >= startDate && now <= endDate;
-            });
-
-            // Nếu không có active, lấy discount đầu tiên (để test)
-            if (!activeDiscount && discountData.length > 0) {
-              activeDiscount = discountData[0];
-            }
-
-            setDiscount(activeDiscount || null);
-          }
-        } catch (err) {
-          console.error("Error fetching discount:", err);
-        }
-      } catch (error) {
-        console.error("Lỗi khi tải dữ liệu sách:", error);
-      }
-    };
-
-    fetchData();
-  }, [id]);
-
-  if (!book) {
-    return <p className={styles.loading}>Đang tải thông tin sách...</p>;
-  }
-
-  const originalPrice = book.sellingPrice || 0;
-
-  // Kiểm tra có discount hợp lệ không
-  const hasDiscount =
-    discount &&
-    ((discount.discountPercent != null && discount.discountPercent > 0) ||
-      (discount.discountAmount != null && discount.discountAmount > 0));
-
-  // Tính giá sau discount - chỉ tính nếu có discount
-  const calculatePriceAfterDiscount = (price) => {
-    if (!hasDiscount) return price;
-
-    let finalPrice = price;
-
-    // Ưu tiên discountPercent nếu có cả 2
-    if (discount.discountPercent != null && discount.discountPercent > 0) {
-      finalPrice = price * (1 - discount.discountPercent / 100);
-    } else if (discount.discountAmount != null && discount.discountAmount > 0) {
-      finalPrice = Math.max(0, price - discount.discountAmount);
-    }
-
-    return Math.round(finalPrice);
-  };
-
-  // Nếu không có discount → hiển thị giá gốc
-  // Nếu có discount → hiển thị giá sau discount
-  const displayPrice = hasDiscount
-    ? calculatePriceAfterDiscount(originalPrice)
-    : originalPrice;
-
-  // Format giá - sử dụng helper function để tránh hydration mismatch
-  const priceFormatted = formatPrice(displayPrice);
-
-  // Giá cũ chỉ hiển thị khi có discount
-  const oldPriceFormatted = hasDiscount ? formatPrice(originalPrice) : null;
-
-  // Format discount text - chỉ hiển thị khi có discount
-  const discountText = hasDiscount
-    ? discount.discountPercent != null && discount.discountPercent > 0
-      ? `-${discount.discountPercent}%`
-      : discount.discountAmount != null && discount.discountAmount > 0
-      ? `-${formatPrice(discount.discountAmount)}đ`
-      : null
-    : null;
-
-  // Năm xuất bản (từ publicationDate)
-  const publicationYear = book.publicationDate
-    ? String(book.publicationDate).split("T")[0].split("-")[0]
-    : "";
-
-  // Một số field từ bookDetail (nếu có)
-  const detail = bookDetail || {};
-
-  const weight = detail.weight ? `${detail.weight} g` : "Đang cập nhật";
-  const size =
-    detail.height && detail.width
-      ? `${detail.height} x ${detail.width} cm`
-      : "Đang cập nhật";
-
-  const handleAddToCart = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Vui lòng đăng nhập trước khi thêm vào giỏ!");
-      return;
-    }
-
-    // 🔹 Lấy thông tin user từ token hoặc từ localStorage (ví dụ)
     const userId = localStorage.getItem("userId");
     if (!userId) {
       alert("Không tìm thấy thông tin người dùng!");
-      return;
+      return false;
     }
 
     const cartItem = {
-      userId: parseInt(userId),
+      userId: parseInt(userId, 10),
       bookId: book.id,
-      quantity: quantity,
+      quantity,
     };
 
     try {
@@ -253,11 +141,15 @@ export default function ProductDetail({ params }) {
       });
 
       if (response.ok) {
-        alert("🛒 Đã thêm vào giỏ hàng!");
-        // 🆕 Tăng localStorage cartCount
-        const current = parseInt(localStorage.getItem("cartCount") || "0");
+        const current = parseInt(localStorage.getItem("cartCount") || "0", 10);
         localStorage.setItem("cartCount", current + 1);
         window.dispatchEvent(new Event("cart-updated"));
+        if (redirectAfterAdd) {
+          router.push("/checkout");
+        } else {
+          alert("Đã thêm vào giỏ hàng!");
+        }
+        return true;
       } else {
         const text = await response.text();
         alert("Lỗi thêm giỏ hàng: " + text);
@@ -266,7 +158,25 @@ export default function ProductDetail({ params }) {
       console.error("Error:", error);
       alert("Không thể kết nối đến server!");
     }
+    return false;
   };
+
+  const handleAddToCart = () => addToCart({ redirectAfterAdd: false });
+  const handleBuyNow = () => addToCart({ redirectAfterAdd: true });
+
+  if (!book) return <div>Đang tải...</div>;
+
+  const priceFormatted = book.price ? book.price.toLocaleString("vi-VN") + "đ" : "";
+  const oldPriceFormatted =
+    discount && discount.discountPercent
+      ? Math.round((book.price * 100) / (100 - discount.discountPercent)).toLocaleString("vi-VN") + "đ"
+      : "";
+  const hasDiscount = !!discount;
+  const discountText = hasDiscount ? `-${discount.discountPercent}%` : "";
+
+  const publicationYear = book.publicationYear || detail.publicationYear;
+  const weight = detail.weight ? `${detail.weight} g` : "Đang cập nhật";
+  const size = detail.size ? detail.size : "100 x 100 cm";
 
   return (
     <div className={styles.productPage}>
@@ -274,11 +184,7 @@ export default function ProductDetail({ params }) {
         {/* Cột 1: Hình ảnh */}
         <div className={styles.productImage}>
           <img
-            src={
-              book.imageUrl || // nếu backend sau này map imageUrl vào BookResponseDto
-              detail.imageUrl || // nếu image nằm trong BookDetail
-              "https://via.placeholder.com/300x400?text=No+Image"
-            }
+            src={book.imageUrl || detail.imageUrl || "https://via.placeholder.com/300x400?text=No+Image"}
             alt={book.title}
           />
         </div>
@@ -289,40 +195,22 @@ export default function ProductDetail({ params }) {
 
           {book.isbn && <p className={styles.isbn}>ISBN: {book.isbn}</p>}
 
-          {detail.publisher && (
-            <p className={styles.publisher}>{detail.publisher}</p>
-          )}
+          {detail.publisher && <p className={styles.publisher}>{detail.publisher}</p>}
 
           <div className={styles.priceBox}>
             <div className={styles.priceRow}>
-              <span className={styles.price}>{priceFormatted}đ</span>
-              {/* Badge discount kế bên giá */}
-              {hasDiscount && discountText && (
-                <span className={styles.discountBadge}>{discountText}</span>
-              )}
+              <span className={styles.price}>{priceFormatted}</span>
+              {hasDiscount && discountText && <span className={styles.discountBadge}>{discountText}</span>}
             </div>
-            {oldPriceFormatted && (
-              <span className={styles.oldPrice}>{oldPriceFormatted}đ</span>
-            )}
+            {oldPriceFormatted && <span className={styles.oldPrice}>{oldPriceFormatted}</span>}
           </div>
 
           <div className={styles.quantityContainer}>
-            <button
-              className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`}
-              onClick={decreaseQty}
-            >
-              −
+            <button className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`} onClick={decreaseQty}>
+              -
             </button>
-            <input
-              type="text"
-              value={quantity}
-              readOnly
-              className={animateQty ? styles.animate : ""}
-            />
-            <button
-              className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`}
-              onClick={increaseQty}
-            >
+            <input type="text" value={quantity} readOnly className={animateQty ? styles.animate : ""} />
+            <button className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`} onClick={increaseQty}>
               +
             </button>
           </div>
@@ -341,24 +229,20 @@ export default function ProductDetail({ params }) {
         <div className={styles.sideBox}>
           <h3>Chỉ có ở Vinabook</h3>
           <ul>
-            <li>📗 Sản phẩm 100% chính hãng</li>
-            <li>👩‍💼 Tư vấn mua sách trong giờ hành chính</li>
-            <li>🚚 Miễn phí vận chuyển cho đơn hàng từ 250.000đ</li>
-            <li>📞 Hotline: 1900 6401</li>
+            <li>Sản phẩm 100% chính hãng</li>
+            <li>Tư vấn mua sách trong giờ hành chính</li>
+            <li>Miễn phí vận chuyển cho đơn từ 250.000đ</li>
+            <li>Hotline: 1900 6401</li>
           </ul>
         </div>
 
-        {/* ✅ GIỚI THIỆU + THÔNG TIN CHI TIẾT */}
+        {/* Giới thiệu + Thông tin chi tiết */}
         <div className={styles.bottomInfo}>
-          {/* GIỚI THIỆU SÁCH */}
           <div className={styles.bookDescription}>
             <h2>GIỚI THIỆU SÁCH</h2>
-            <p>
-              {detail.description || "Chưa có phần mô tả cho sản phẩm này."}
-            </p>
+            <p>{detail.description || "Chưa có phần mô tả cho sản phẩm này."}</p>
           </div>
 
-          {/* THÔNG TIN CHI TIẾT */}
           <div className={styles.detailInfo}>
             <h2>Thông tin chi tiết</h2>
             <table className={styles.infoTable}>
@@ -392,7 +276,7 @@ export default function ProductDetail({ params }) {
                   <td>{weight}</td>
                 </tr>
                 <tr>
-                  <td>Kích Thước Bao Bì</td>
+                  <td>Kích thước bao bì</td>
                   <td>{size}</td>
                 </tr>
                 <tr>
@@ -409,63 +293,108 @@ export default function ProductDetail({ params }) {
         </div>
       </div>
 
-      {/* ===================== SẢN PHẨM LIÊN QUAN (tạm để static) ===================== */}
-      <div className={styles.relatedSection}>
-        <h2 className={styles.relatedTitle}>Sản phẩm liên quan</h2>
+      {/* Đánh giá sản phẩm */}
+      <div className={styles.ratingSection}>
+        <h2>Đánh giá sản phẩm</h2>
 
-        <div className={styles.relatedGrid}>
-          <div className={styles.relatedCard}>
-            <div className={styles.discountBadge}>-10%</div>
-            <img
-              src="https://cdn0.fahasa.com/media/catalog/product/i/m/image_195509.jpg"
-              alt="Nâng Cao Tư Duy Phản Biện Trong Văn Nghị Luận Xã Hội"
-            />
-            <h3>Nâng Cao Tư Duy Phản Biện Trong Văn Nghị Luận Xã Hội</h3>
-            <div className={styles.priceBox}>
-              <span className={styles.price}>94,500đ</span>
-              <span className={styles.oldPrice}>105,000đ</span>
+        <div className={styles.ratingTop}>
+          <div className={styles.ratingScore}>
+            <span className={styles.ratingNumber}>{ratingSummary ? ratingSummary.averageRate.toFixed(1) : "0"}</span>
+            <span className={styles.ratingMax}>/5</span>
+            <div className={styles.ratingStars}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span key={star} className={styles.starFilled}>
+                  ★
+                </span>
+              ))}
             </div>
+            <span className={styles.ratingTotal}>{ratingSummary ? ratingSummary.totalReviews : 0} đánh giá</span>
           </div>
 
-          <div className={styles.relatedCard}>
-            <div className={styles.discountBadge}>-10%</div>
-            <img
-              src="https://cdn0.fahasa.com/media/catalog/product/i/m/image_195477.jpg"
-              alt="13 Giờ Sáng - Khung Giờ Vô Thực"
-            />
-            <h3>13 Giờ Sáng - Khung Giờ Vô Thực</h3>
-            <div className={styles.priceBox}>
-              <span className={styles.price}>79,200đ</span>
-              <span className={styles.oldPrice}>88,000đ</span>
-            </div>
-          </div>
+          <div className={styles.ratingBars}>
+            {[5, 4, 3, 2, 1].map((star) => {
+              if (!ratingSummary || !ratingSummary.totalReviews) {
+                return (
+                  <div className={styles.ratingBarRow} key={star}>
+                    <span>{star} sao</span>
+                    <div className={styles.ratingBarOuter}>
+                      <div className={styles.ratingBarInner} style={{ width: "0%" }} />
+                    </div>
+                    <span>0%</span>
+                  </div>
+                );
+              }
 
-          <div className={styles.relatedCard}>
-            <div className={styles.discountBadge}>-10%</div>
-            <img
-              src="https://www.netabooks.vn/Data/Sites/1/Product/78503/thumbs/ngon-ngot-thanh-thanh.jpg"
-              alt="Ngon Ngọt Thanh Thanh"
-            />
-            <h3>Ngon Ngọt Thanh Thanh</h3>
-            <div className={styles.priceBox}>
-              <span className={styles.price}>193,500đ</span>
-              <span className={styles.oldPrice}>215,000đ</span>
-            </div>
-          </div>
+              const counts = {
+                5: ratingSummary.star5,
+                4: ratingSummary.star4,
+                3: ratingSummary.star3,
+                2: ratingSummary.star2,
+                1: ratingSummary.star1,
+              };
+              const count = counts[star] || 0;
+              const percent = Math.round((count / ratingSummary.totalReviews) * 100);
 
-          <div className={styles.relatedCard}>
-            <div className={styles.discountBadge}>-10%</div>
-            <img
-              src="https://bizweb.dktcdn.net/thumb/1024x1024/100/417/638/products/vn-11134207-820l4-mgbz5xto9urt50-1761638763711.jpg?v=1761639204750"
-              alt="Mở Mắt Ra Đi Em"
-            />
-            <h3>Mở Mắt Ra Đi Em</h3>
-            <div className={styles.priceBox}>
-              <span className={styles.price}>116,100đ</span>
-              <span className={styles.oldPrice}>129,000đ</span>
-            </div>
+              return (
+                <div className={styles.ratingBarRow} key={star}>
+                  <span>{star} sao</span>
+                  <div className={styles.ratingBarOuter}>
+                    <div className={styles.ratingBarInner} style={{ width: `${percent}%` }} />
+                  </div>
+                  <span>{percent}%</span>
+                </div>
+              );
+            })}
           </div>
         </div>
+
+        {/* Danh sach danh gia */}
+        <div className={styles.reviewList}>
+          {reviews.length === 0 ? (
+            <p>Chưa có đánh giá nào.</p>
+          ) : (
+            reviews.map((rev) => (
+              <div key={rev.id} className={styles.reviewItem}>
+                <div className={styles.reviewerMeta}>
+                  <strong>{rev.createBy?.fullName || "Khách hàng"}</strong>
+                  <span className={styles.reviewerId}>Tài khoản: #{rev.createBy?.id ?? "-"}</span>
+                </div>
+                <div className={styles.reviewStars}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span key={star} className={star <= rev.rate ? styles.starFilled : styles.starEmpty}>
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <p className={styles.reviewComment}>{rev.content}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Sản phẩm liên quan */}
+      <div className={styles.relatedSection}>
+        <h2 className={styles.relatedTitle}>Sản phẩm liên quan</h2>
+        {related.length === 0 ? (
+          <p style={{ marginTop: 12 }}>Chưa có sản phẩm liên quan.</p>
+        ) : (
+          <div className={styles.relatedGrid}>
+            {related.map((item) => {
+              const cover = item.imageUrl || item.bookDetail?.imageUrl || "https://via.placeholder.com/240x320?text=No+Image";
+              const price = formatCurrency(item.price ?? item.sellingPrice ?? 0);
+              return (
+                <div key={item.id} className={styles.relatedCard} onClick={() => router.push(`/product/${item.id}`)}>
+                  <img src={cover} alt={item.title} />
+                  <h3>{item.title}</h3>
+                  <div className={styles.priceBox}>
+                    <span className={styles.price}>{price}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

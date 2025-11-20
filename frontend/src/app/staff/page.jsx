@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, Bell, List, Type } from "lucide-react";
+import { LayoutDashboard, Bell, List, Type, Star } from "lucide-react";
 import axiosClient from "../../utils/axiosClient";
 
 import "./staff.css";
@@ -10,6 +10,7 @@ import InformationManagement from "./components/InformationManagement";
 import ViewNotifications from "./components/ViewNotifications";
 import BookList from "./components/BookList";
 import ProcessOrders from "./components/ProcessOrders";
+import ViewReviews from "./components/ViewReviews"; // 🔹 mới
 
 export default function StaffPage() {
   const router = useRouter();
@@ -26,10 +27,13 @@ export default function StaffPage() {
     }
 
     // Kiểm tra role STAFF từ localStorage
-    const hasStaffRoleFromStorage = role === "STAFF" || (role && role.includes("STAFF"));
-    
+    const hasStaffRoleFromStorage =
+      role === "STAFF" || (role && role.includes("STAFF"));
+
     if (!hasStaffRoleFromStorage) {
-      alert("Bạn không có quyền truy cập trang này! Chỉ nhân viên mới có thể truy cập.");
+      alert(
+        "Bạn không có quyền truy cập trang này! Chỉ nhân viên mới có thể truy cập."
+      );
       router.push("/");
       return;
     }
@@ -41,13 +45,17 @@ export default function StaffPage() {
         const statusData = statusRes.data;
         // isApproved = true chỉ khi: status APPROVED, có role STAFF, VÀ account đang activated
         const isApprovedStaff = statusData.isApproved === true;
-        
+
         if (!isApprovedStaff) {
           // Nếu không còn là staff hoặc đã bị khóa, chuyển về trang chủ
           if (statusData.isActivated === false) {
-            alert("Tài khoản nhân viên của bạn đã bị khóa! Vui lòng liên hệ quản trị viên.");
+            alert(
+              "Tài khoản nhân viên của bạn đã bị khóa! Vui lòng liên hệ quản trị viên."
+            );
           } else {
-            alert("Bạn không có quyền truy cập trang này! Chỉ nhân viên mới có thể truy cập.");
+            alert(
+              "Bạn không có quyền truy cập trang này! Chỉ nhân viên mới có thể truy cập."
+            );
           }
           router.push("/");
           return;
@@ -59,11 +67,14 @@ export default function StaffPage() {
         // (fallback behavior)
       });
   }, [router]);
+
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: "Information Management" },
     { icon: <Bell size={20} />, label: "View notifications" },
     { icon: <List size={20} />, label: "View book list" },
     { icon: <Type size={20} />, label: "Process Orders" },
+    // 🔹 Mục mới: View reviews
+    { icon: <Star size={20} />, label: "View reviews" },
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -98,6 +109,7 @@ export default function StaffPage() {
         {activeIndex === 1 && <ViewNotifications />}
         {activeIndex === 2 && <BookList />}
         {activeIndex === 3 && <ProcessOrders />}
+        {activeIndex === 4 && <ViewReviews />}{/* 🔹 tab mới */}
       </main>
     </div>
   );

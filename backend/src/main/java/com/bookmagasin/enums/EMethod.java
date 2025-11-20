@@ -1,7 +1,6 @@
 package com.bookmagasin.enums;
 
 public enum EMethod {
-    CASH,
-    CREDIT_CARD,
+    COD,
     BANK_TRANSFER
 }

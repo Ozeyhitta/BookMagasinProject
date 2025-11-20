@@ -19,4 +19,9 @@ public class NotificationResponseDto {
 
     // CUSTOMER / STAFF / ADMIN
     private String type;
+
+    // Trạng thái đã đọc của user (null khi không map theo user)
+    private Boolean read;
+
+    private Date readAt;
 }

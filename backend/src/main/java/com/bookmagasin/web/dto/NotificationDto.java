@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,4 +15,7 @@ public class NotificationDto {
 
     // CUSTOMER / STAFF / ADMIN
     private String type;
+
+    // Tùy chọn: gửi cho danh sách userId cụ thể
+    private List<Integer> userIds;
 }

@@ -4,6 +4,7 @@ import com.bookmagasin.entity.Notification;
 import com.bookmagasin.entity.User;
 import com.bookmagasin.entity.UserNotification;
 import com.bookmagasin.entity.UserNotificationId;
+import com.bookmagasin.enums.ERole;
 import com.bookmagasin.repository.NotificationRepository;
 import com.bookmagasin.repository.UserNotificationRepository;
 import com.bookmagasin.repository.UserRepository;
@@ -15,8 +16,10 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,14 +42,43 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = new Notification();
         notification.setTitle(dto.getTitle());
         notification.setMessage(dto.getMessage());
-        notification.setType(dto.getType());    // ⭐ Gán loại thông báo
+        notification.setType(dto.getType());
         notification.setSendDate(new Date());
 
         Notification saved = notificationRepository.save(notification);
 
-        // Gắn thông báo cho tất cả user
+        String type = dto.getType() != null ? dto.getType().toUpperCase() : "";
+        List<Integer> targetIds = dto.getUserIds();
+
         List<User> users = userRepository.findAll();
-        for (User user : users) {
+        Set<Integer> targetSet = new HashSet<>();
+        if (targetIds != null) {
+            targetSet.addAll(targetIds);
+        }
+
+        List<User> targetUsers = users.stream()
+                .filter(u -> u.getAccount() != null)
+                .filter(u -> {
+                    if ("STAFF".equals(type)) {
+                        return u.getAccount().getRole() == ERole.STAFF;
+                    }
+                    return true;
+                })
+                .filter(u -> {
+                    if (!targetSet.isEmpty()) {
+                        Integer userId = u.getId();
+                        Integer accountId = u.getAccount() != null ? u.getAccount().getId() : null;
+                        return targetSet.contains(userId) || (accountId != null && targetSet.contains(accountId));
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        if (targetUsers.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy người nhận thông báo");
+        }
+
+        for (User user : targetUsers) {
             UserNotification userNotification = new UserNotification();
             userNotification.setId(new UserNotificationId(user.getId(), saved.getId()));
             userNotification.setUser(user);
@@ -81,7 +113,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         notification.setTitle(dto.getTitle());
         notification.setMessage(dto.getMessage());
-        notification.setType(dto.getType());    // ⭐ Cập nhật loại
+        notification.setType(dto.getType());
 
         Notification updated = notificationRepository.save(notification);
         return NotificationMapper.toResponseDto(updated);
@@ -98,8 +130,12 @@ public class NotificationServiceImpl implements NotificationService {
     public List<NotificationResponseDto> getNotificationsByUser(Integer userId) {
         return userNotificationRepository.findByUser_Id(userId)
                 .stream()
-                .map(UserNotification::getNotification)
-                .map(NotificationMapper::toResponseDto)
+                .map(un -> {
+                    NotificationResponseDto dto = NotificationMapper.toResponseDto(un.getNotification());
+                    dto.setRead(un.isRead());
+                    dto.setReadAt(un.getReadAt());
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -113,5 +149,10 @@ public class NotificationServiceImpl implements NotificationService {
         userNotification.setReadAt(new Date());
 
         userNotificationRepository.save(userNotification);
+    }
+
+    @Override
+    public long countUnreadByUser(Integer userId) {
+        return userNotificationRepository.countByUser_IdAndIsReadFalse(userId);
     }
 }

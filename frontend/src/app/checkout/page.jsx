@@ -11,13 +11,42 @@ export default function CheckoutPage() {
   const [promoError, setPromoError] = useState("");
   const [promoApplying, setPromoApplying] = useState(false);
 
+  // 🚚 SHIPPING
+  const SHIPPING_METHODS = [
+    {
+      id: 1,
+      name: "Giao hàng tiêu chuẩn",
+      desc: "2 - 4 ngày làm việc",
+      fee: 20000,
+    },
+    {
+      id: 2,
+      name: "Giao nhanh",
+      desc: "Trong 24 - 48 giờ",
+      fee: 40000,
+    },
+    {
+      id: 3,
+      name: "Nhận tại cửa hàng",
+      desc: "Nhận tại điểm giao dịch, miễn phí vận chuyển",
+      fee: 0,
+    },
+  ];
+
+  const [selectedShipping, setSelectedShipping] = useState(null);
+  const [shippingFee, setShippingFee] = useState(0);
+
+  const handleSelectShipping = (method) => {
+    setSelectedShipping(method);
+    setShippingFee(method.fee || 0);
+  };
+
   // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
   function calculatePriceAfterDiscount(book, discount) {
     if (!discount) return book.sellingPrice;
 
     let finalPrice = book.sellingPrice;
 
-    // Ưu tiên discountPercent nếu có cả 2
     if (discount.discountPercent != null && discount.discountPercent > 0) {
       finalPrice = book.sellingPrice * (1 - discount.discountPercent / 100);
     } else if (discount.discountAmount != null && discount.discountAmount > 0) {
@@ -27,7 +56,7 @@ export default function CheckoutPage() {
     return Math.round(finalPrice);
   }
 
-  // Tính tổng với discount
+  // Tính tổng với discount (chưa gồm phí ship & mã khuyến mãi toàn đơn)
   const total = cartItems.reduce((sum, item) => {
     const discount = discounts[item.book.id];
     const priceAfterDiscount = calculatePriceAfterDiscount(item.book, discount);
@@ -38,10 +67,14 @@ export default function CheckoutPage() {
     appliedPromotion?.discountAmount != null
       ? appliedPromotion.discountAmount
       : 0;
+
   const orderTotalAfterPromo = Math.max(
     0,
     appliedPromotion?.finalAmount != null ? appliedPromotion.finalAmount : total
   );
+
+  // Tổng cuối cùng = tiền hàng sau mã KM + phí ship (hiển thị cho người dùng)
+  const grandTotal = orderTotalAfterPromo + shippingFee;
 
   // Tổng giá gốc (không discount)
   const originalTotal = cartItems.reduce(
@@ -50,7 +83,6 @@ export default function CheckoutPage() {
   );
 
   useEffect(() => {
-    // Lấy userId từ localStorage (giống như cart page)
     const userId = localStorage.getItem("userId");
     if (!userId) {
       setUser({ fullName: "", phoneNumber: "", address: "", email: "" });
@@ -81,11 +113,9 @@ export default function CheckoutPage() {
         if (buyNowItemStr) {
           try {
             const buyNowItem = JSON.parse(buyNowItemStr);
-            // Kiểm tra xem item có còn hợp lệ không (trong vòng 5 phút)
             const isValid = Date.now() - buyNowItem.timestamp < 5 * 60 * 1000;
 
             if (isValid) {
-              // Nếu có buyNowItem, lấy từ cart và cập nhật số lượng
               const cartRes = await fetch(
                 `http://localhost:8080/api/carts/users/${userId}`
               );
@@ -93,16 +123,13 @@ export default function CheckoutPage() {
               const cartData = cartRes.ok ? await cartRes.json() : [];
               items = Array.isArray(cartData) ? cartData : [];
 
-              // Tìm item trong cart và cập nhật số lượng từ buyNowItem
               const cartItemIndex = items.findIndex(
                 (item) => item.book?.id === buyNowItem.bookId
               );
 
               if (cartItemIndex !== -1) {
-                // Cập nhật số lượng từ buyNowItem
                 items[cartItemIndex].quantity = buyNowItem.quantity;
               } else if (buyNowItem.book) {
-                // Nếu chưa có trong cart, thêm item từ buyNowItem
                 items.push({
                   book: buyNowItem.book,
                   quantity: buyNowItem.quantity,
@@ -110,7 +137,6 @@ export default function CheckoutPage() {
                 });
               }
             } else {
-              // Item không còn hợp lệ, xóa và lấy từ cart bình thường
               sessionStorage.removeItem("buyNowItem");
               const cartRes = await fetch(
                 `http://localhost:8080/api/carts/users/${userId}`
@@ -120,7 +146,6 @@ export default function CheckoutPage() {
             }
           } catch (err) {
             console.error("Error parsing buyNowItem:", err);
-            // Nếu có lỗi, lấy từ cart bình thường
             const cartRes = await fetch(
               `http://localhost:8080/api/carts/users/${userId}`
             );
@@ -128,7 +153,6 @@ export default function CheckoutPage() {
             items = Array.isArray(cartData) ? cartData : [];
           }
         } else {
-          // Không có buyNowItem, lấy từ cart bình thường
           const cartRes = await fetch(
             `http://localhost:8080/api/carts/users/${userId}`
           );
@@ -138,7 +162,7 @@ export default function CheckoutPage() {
 
         setCartItems(items);
 
-        // Fetch discounts cho từng book - giống cart page
+        // Fetch discounts cho từng book
         const discountMap = {};
         const now = new Date();
 
@@ -151,14 +175,12 @@ export default function CheckoutPage() {
 
             const discountData = await discountRes.json();
 
-            // Tìm discount active (trong khoảng thời gian) - giống productDetail
             let activeDiscount = discountData.find((discount) => {
               const startDate = new Date(discount.startDate);
               const endDate = new Date(discount.endDate);
               return now >= startDate && now <= endDate;
             });
 
-            // Nếu không có active, lấy discount đầu tiên (để test) - giống productDetail
             if (!activeDiscount && discountData.length > 0) {
               activeDiscount = discountData[0];
             }
@@ -178,7 +200,6 @@ export default function CheckoutPage() {
       } catch (err) {
         console.error("Không fetch được, backend chưa bật:", err);
 
-        // ✅ fallback data
         setUser({ fullName: "", phoneNumber: "", address: "", email: "" });
         setCartItems([]);
       }
@@ -186,7 +207,6 @@ export default function CheckoutPage() {
 
     fetchData();
 
-    // ✅ Lắng nghe sự kiện khi back lại và thay đổi số lượng
     const handleStorageChange = (e) => {
       if (e.key === "buyNowItem" || e.key === null) {
         fetchData();
@@ -195,7 +215,6 @@ export default function CheckoutPage() {
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Lắng nghe custom event từ product detail page
     const handleBuyNowUpdate = () => {
       fetchData();
     };
@@ -249,8 +268,10 @@ export default function CheckoutPage() {
     setPromoError("");
   };
 
+  // ✅ HÀM ĐẶT HÀNG
   async function handlePlaceOrder(e) {
     e.preventDefault();
+
     if (!user?.fullName || !user?.address || !user?.phoneNumber) {
       alert("Vui lòng điền đầy đủ thông tin giao hàng!");
       return;
@@ -261,17 +282,31 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Giả định mặc định: serviceId = 1, paymentId = 1
-    const userId = localStorage.getItem("userId");
+    if (!selectedShipping) {
+      alert("Vui lòng chọn phương thức vận chuyển!");
+      return;
+    }
+
+    const userIdStr = localStorage.getItem("userId");
+    const userId = userIdStr ? parseInt(userIdStr, 10) : null;
+
+    if (!userId) {
+      alert("Không tìm thấy thông tin người dùng, hãy đăng nhập lại!");
+      return;
+    }
+
+    const serviceId = selectedShipping.id; // mapping sang Service.id ở backend
+
+    // 👉 Chỉ gửi đúng các field có trong OrderDto ở backend
     const orderPayload = {
-      userId: userId ? parseInt(userId) : null,
-      serviceId: 1,
-      paymentId: 1,
+      userId: userId,
+      serviceId: serviceId,
+      paymentId: 1, // trong DB phải có payment id = 1
       note: appliedPromotion
-        ? `Giao buổi sáng - Áp dụng mã ${appliedPromotion.code}`
-        : "Giao buổi sáng",
+        ? `Giao buổi sáng - ${selectedShipping.name} - Áp dụng mã ${appliedPromotion.code}`
+        : `Giao buổi sáng - ${selectedShipping.name}`,
       status: "PENDING",
-      orderDate: new Date().toISOString(), // Gửi full ISO string để Jackson parse thành Date
+      // KHÔNG gửi orderDate, backend tự set ngày hiện tại
       shippingAddress: user.address,
       phoneNumber: user.phoneNumber,
       cartItems: cartItems.map((item) => {
@@ -282,14 +317,14 @@ export default function CheckoutPage() {
         );
         return {
           bookId: item.book.id,
+          orderId: null, // backend không dùng, có thể để null
           quantity: item.quantity,
-          price: priceAfterDiscount, // Sử dụng giá sau discount
+          price: priceAfterDiscount,
         };
       }),
-      promotionCode: appliedPromotion?.code || null,
-      promotionDiscountAmount: orderLevelDiscount,
-      orderTotal: orderTotalAfterPromo,
     };
+
+    console.log("👉 Payload gửi lên /api/orders:", orderPayload);
 
     try {
       const res = await fetch("http://localhost:8080/api/orders", {
@@ -299,36 +334,32 @@ export default function CheckoutPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Không thể tạo đơn hàng");
+        const text = await res.text();
+        console.error("❌ Lỗi tạo đơn hàng (response):", res.status, text);
+        alert(
+          "Đặt hàng thất bại, lỗi từ server: " +
+            (text || "HTTP " + res.status)
+        );
+        return;
       }
 
       const data = await res.json();
       console.log("✅ Order created:", data);
-      console.log("Order ID:", data.id);
-      console.log("User ID:", orderPayload.userId);
 
-      // ✅ Sau khi đặt hàng thành công thì xóa giỏ hàng
+      // Xóa giỏ hàng
       try {
-        await fetch(
-          `http://localhost:8080/api/carts/users/${orderPayload.userId}`,
-          {
-            method: "DELETE",
-          }
-        );
+        await fetch(`http://localhost:8080/api/carts/users/${userId}`, {
+          method: "DELETE",
+        });
       } catch (err) {
         console.error("Error deleting cart:", err);
-        // Vẫn tiếp tục dù xóa cart có lỗi
       }
 
       alert("Đặt hàng thành công!");
-      // Xóa cart count
       localStorage.setItem("cartCount", "0");
       window.dispatchEvent(new Event("cart-updated"));
 
-      // Thêm delay nhỏ để đảm bảo order được lưu vào DB
       await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Redirect đến order history
       window.location.href = "/orderhistory";
     } catch (err) {
       console.error("❌ Lỗi khi tạo đơn hàng:", err);
@@ -336,7 +367,6 @@ export default function CheckoutPage() {
     }
   }
 
-  // ✅ Chỉ check user, không check giỏ hàng
   if (!user) {
     return (
       <p style={{ padding: 20, textAlign: "center", fontSize: "18px" }}>
@@ -360,10 +390,8 @@ export default function CheckoutPage() {
           </div>
 
           <form className="checkout-form">
-            {/* Họ tên luôn readonly */}
             <input type="text" value={user.fullName || ""} readOnly />
 
-            {/* Số điện thoại */}
             <input
               type="text"
               value={user.phoneNumber || ""}
@@ -377,7 +405,6 @@ export default function CheckoutPage() {
               }}
             />
 
-            {/* Địa chỉ */}
             <input
               type="text"
               value={user.address || ""}
@@ -389,12 +416,52 @@ export default function CheckoutPage() {
 
           <h2 className="section-title">Phương thức vận chuyển</h2>
           <div className="shipping-method">
-            <div className="shipping-box">
-              <img src="https://cdn-icons-png.flaticon.com/512/481/481489.png" />
-              <p>
-                Vui lòng chọn địa chỉ để xem danh sách phương thức vận chuyển.
-              </p>
-            </div>
+            {!user.address?.trim() || cartItems.length === 0 ? (
+              <div className="shipping-box">
+                <img src="https://cdn-icons-png.flaticon.com/512/481/481489.png" />
+                <p>
+                  Vui lòng nhập địa chỉ và có ít nhất 1 sản phẩm để xem danh
+                  sách phương thức vận chuyển.
+                </p>
+              </div>
+            ) : (
+              <div className="shipping-options">
+                {SHIPPING_METHODS.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={
+                      "shipping-option" +
+                      (selectedShipping?.id === m.id ? " active" : "")
+                    }
+                    onClick={() => handleSelectShipping(m)}
+                  >
+                    <div className="shipping-option-header">
+                      <div
+                        className="shipping-option-name"
+                        style={{ color: "#111" }} // 👈 đảm bảo chữ đen
+                      >
+                        {m.name}
+                      </div>
+                      <div
+                        className="shipping-option-fee"
+                        style={{ color: "#111" }} // 👈 đảm bảo chữ đen
+                      >
+                        {m.fee === 0
+                          ? "Miễn phí"
+                          : `${m.fee.toLocaleString("vi-VN")}đ`}
+                      </div>
+                    </div>
+                    <div
+                      className="shipping-option-desc"
+                      style={{ color: "#111" }} // 👈 đảm bảo chữ đen
+                    >
+                      {m.desc}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <h2 className="section-title">Phương thức thanh toán</h2>
@@ -528,7 +595,6 @@ export default function CheckoutPage() {
                           (discount.discountAmount != null &&
                             discount.discountAmount > 0));
 
-                      // Format discount text - giống productDetail
                       const discountText = hasDiscount
                         ? discount.discountPercent != null &&
                           discount.discountPercent > 0
@@ -543,7 +609,6 @@ export default function CheckoutPage() {
 
                       return (
                         <>
-                          {/* Price row - giống productDetail */}
                           <div className="priceRow">
                             <span className="newPrice">
                               {(
@@ -551,14 +616,12 @@ export default function CheckoutPage() {
                               ).toLocaleString("vi-VN")}
                               đ
                             </span>
-                            {/* Badge discount kế bên giá - giống productDetail */}
                             {hasDiscount && discountText && (
                               <span className="discountBadge">
                                 {discountText}
                               </span>
                             )}
                           </div>
-                          {/* Giá cũ - chỉ hiển thị khi có discount */}
                           {hasDiscount && (
                             <span className="oldPrice">
                               {(
@@ -595,12 +658,18 @@ export default function CheckoutPage() {
 
             <div className="summary-line">
               <span>Phí vận chuyển</span>
-              <span>—</span>
+              <span>
+                {selectedShipping
+                  ? shippingFee === 0
+                    ? "Miễn phí"
+                    : `${shippingFee.toLocaleString("vi-VN")}đ`
+                  : "Chưa chọn"}
+              </span>
             </div>
 
             <div className="summary-total">
               <span>Tổng cộng</span>
-              <span>{orderTotalAfterPromo.toLocaleString("vi-VN")}đ</span>
+              <span>{grandTotal.toLocaleString("vi-VN")}đ</span>
             </div>
           </div>
         </div>
