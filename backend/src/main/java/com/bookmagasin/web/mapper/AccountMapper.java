@@ -21,9 +21,10 @@ public class AccountMapper {
 
     public static AccountResponseDto toResponseDto(Account account){
         AccountResponseDto dto = new AccountResponseDto();
+
         dto.setId(account.getId());
         dto.setEmail(account.getEmail());
-        dto.setRole(account.getRole());
+
         // Tạo Set chứa 1 role để tương thích với frontend
         if (account.getRole() != null) {
             dto.setRoles(java.util.Collections.singleton(account.getRole()));
@@ -33,19 +34,9 @@ public class AccountMapper {
         dto.setActivated(account.isActivated());
 
         if (account.getUser() != null) {
-            User user = account.getUser();
-            UserDto userDto = new UserDto();
-
-            userDto.setId(user.getId());
-            userDto.setFullName(user.getFullName());
-            userDto.setDateOfBirth(user.getDateOfBirth());
-            userDto.setGender(user.getGender());
-            userDto.setPhoneNumber(user.getPhoneNumber());
-            userDto.setAddress(user.getAddress());
-            userDto.setAvatarUrl(user.getAvatarUrl());
-
-
-            dto.setUser(userDto);
+            dto.setUser(UserMapper.toDto(account.getUser()));
+        }else {
+            dto.setUser(null);
         }
 
         return dto;

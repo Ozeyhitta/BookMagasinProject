@@ -1,6 +1,7 @@
 package com.bookmagasin.entity;
 
 import com.bookmagasin.enums.ERole;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,6 +28,7 @@ public class Account {
     private String email;
 
 
+    @JsonIgnore
     @Column(name = "password", nullable = false)
     private String password;
 
@@ -38,9 +40,9 @@ public class Account {
     @Column(name = "is_activated")
     private boolean isActivated;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    @JsonManagedReference
+    @JsonIgnore
     private User user;
 
 

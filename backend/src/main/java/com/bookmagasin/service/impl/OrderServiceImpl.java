@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -60,7 +61,7 @@ public class OrderServiceImpl implements OrderService {
 
         // ✅ Chuyển String → Enum
         if (dto.getStatus() != null) {
-            order.setStatus(EStatusBooking.valueOf(dto.getStatus().trim().toUpperCase()));
+            order.setStatus(dto.getStatus());
         } else {
             order.setStatus(EStatusBooking.PENDING);
         }
@@ -71,15 +72,15 @@ public class OrderServiceImpl implements OrderService {
             order.setOrderDate(dto.getOrderDate());
         } else {
             // Nếu không có orderDate, set ngày hiện tại
-            order.setOrderDate(new Date());
+            order.setOrderDate(LocalDateTime.now());
         }
         order.setShippingAddress(dto.getShippingAddress());
         order.setPhoneNumber(dto.getPhoneNumber());
 
         // ✅ Tính tổng tiền từ giỏ hàng
         double totalPrice = 0.0;
-        if (dto.getCartItems() != null) {
-            totalPrice = dto.getCartItems().stream()
+        if (dto.getOrderItems() != null) {
+            totalPrice = dto.getOrderItems().stream()
                     .mapToDouble(item -> item.getPrice() * item.getQuantity())
                     .sum();
         }
@@ -91,8 +92,8 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.flush();
 
         // ✅ Lưu danh sách sản phẩm (OrderItem)
-        if (dto.getCartItems() != null && !dto.getCartItems().isEmpty()) {
-            List<OrderItem> items = dto.getCartItems().stream().map(itemDto -> {
+        if (dto.getOrderItems() != null && !dto.getOrderItems().isEmpty()) {
+            List<OrderItem> items = dto.getOrderItems().stream().map(itemDto -> {
                 Book book = bookRepository.findById(itemDto.getBookId())
                         .orElseThrow(() -> new RuntimeException("Book not found"));
 

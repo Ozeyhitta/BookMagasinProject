@@ -42,20 +42,19 @@ public class User {
     private String avatarUrl;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    @JsonBackReference
+    @JsonIgnore
     private Account account;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
-
     private List<UserNotification> userNotifications;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @JsonBackReference
+    @JsonIgnore
     private List<Cart> carts;
 
     @OneToMany(mappedBy = "createBy", cascade = CascadeType.ALL)
-    @JsonBackReference
+    @JsonIgnore
     private List<Review> reviews;
 
 
