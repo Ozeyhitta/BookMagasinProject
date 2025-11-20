@@ -448,79 +448,49 @@ export default function CheckoutPage() {
     setPromoError("");
   };
 
-<<<<<<< HEAD
-  // ✅ HÀM ĐẶT HÀNG
-  async function handlePlaceOrder(e) {
-    e.preventDefault();
-
-=======
   function prepareOrderPayload(paymentIdOverride) {
->>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
     if (!user?.fullName || !user?.address || !user?.phoneNumber) {
       throw new Error("Vui lòng điền đầy đủ thông tin giao hàng!");
     }
     if (cartItems.length === 0) {
       throw new Error("Giỏ hàng trống!");
     }
-
-<<<<<<< HEAD
     if (!selectedShipping) {
-      alert("Vui lòng chọn phương thức vận chuyển!");
-      return;
+      throw new Error("Vui lòng chọn phương thức vận chuyển!");
     }
 
     const userIdStr = localStorage.getItem("userId");
     const userId = userIdStr ? parseInt(userIdStr, 10) : null;
-
     if (!userId) {
-      alert("Không tìm thấy thông tin người dùng, hãy đăng nhập lại!");
-      return;
+      throw new Error("Không tìm thấy thông tin người dùng, hãy đăng nhập lại!");
     }
 
-    const serviceId = selectedShipping.id; // mapping sang Service.id ở backend
+    const serviceId = selectedShipping.id;
 
-    // 👉 Chỉ gửi đúng các field có trong OrderDto ở backend
-    const orderPayload = {
-      userId: userId,
-      serviceId: serviceId,
-      paymentId: 1, // trong DB phải có payment id = 1
-=======
-    const userId = localStorage.getItem("userId");
     return {
-      userId: userId ? parseInt(userId) : null,
-      serviceId: 1,
+      userId,
+      serviceId,
       paymentId: paymentIdOverride ?? 1,
->>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
       note: appliedPromotion
         ? `Giao buổi sáng - ${selectedShipping.name} - Áp dụng mã ${appliedPromotion.code}`
         : `Giao buổi sáng - ${selectedShipping.name}`,
       status: "PENDING",
-<<<<<<< HEAD
-      // KHÔNG gửi orderDate, backend tự set ngày hiện tại
-=======
       orderDate: new Date().toISOString(),
->>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
       shippingAddress: user.address,
       phoneNumber: user.phoneNumber,
-      cartItems: cartItems.map((item) => {
+      orderItems: cartItems.map((item) => {
         const discount = discounts[item.book.id];
-        const priceAfterDiscount = calculatePriceAfterDiscount(
-          item.book,
-          discount
-        );
+        const priceAfterDiscount = calculatePriceAfterDiscount(item.book, discount);
         return {
           bookId: item.book.id,
-          orderId: null, // backend không dùng, có thể để null
+          orderId: null,
           quantity: item.quantity,
           price: priceAfterDiscount,
         };
       }),
-<<<<<<< HEAD
-=======
       promotionCode: appliedPromotion?.code || null,
       promotionDiscountAmount: orderLevelDiscount,
       orderTotal: orderTotalAfterPromo || total,
->>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
     };
   }
 
@@ -576,7 +546,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      // ✅ Lưu reference của popup để có thể kiểm tra khi nó đóng
       setVnpayPopup(newWindow);
     } catch (err) {
       console.error("VNPay error:", err);
@@ -587,14 +556,11 @@ export default function CheckoutPage() {
       setVnpayLoading(false);
     }
   }
-
   async function handlePlaceOrder(e) {
     e.preventDefault();
     let orderPayload;
     try {
-      orderPayload = prepareOrderPayload(
-        paymentMethod === "COD" ? 1 : undefined
-      );
+      orderPayload = prepareOrderPayload(paymentMethod === "COD" ? 1 : undefined);
     } catch (err) {
       showModal(err.message, { type: "error" });
       return;
@@ -605,7 +571,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    console.log("👉 Payload gửi lên /api/orders:", orderPayload);
+    console.log("Payload gửi lên /api/orders:", orderPayload);
 
     try {
       const res = await fetch("http://localhost:8080/api/orders", {
@@ -616,46 +582,39 @@ export default function CheckoutPage() {
 
       if (!res.ok) {
         const text = await res.text();
-        console.error("❌ Lỗi tạo đơn hàng (response):", res.status, text);
-        alert(
-          "Đặt hàng thất bại, lỗi từ server: " +
-            (text || "HTTP " + res.status)
-        );
+        console.error("Lỗi tạo đơn hàng (response):", res.status, text);
+        alert("Đặt hàng thất bại, lỗi từ server: " + (text || "HTTP " + res.status));
         return;
       }
 
       const data = await res.json();
-      console.log("✅ Order created:", data);
+      console.log("Đơn hàng đã tạo:", data);
 
-      // Xóa giỏ hàng
       try {
-        await fetch(`http://localhost:8080/api/carts/users/${userId}`, {
-          method: "DELETE",
-        });
+        const userIdStr = localStorage.getItem("userId");
+        if (userIdStr) {
+          await fetch(`http://localhost:8080/api/carts/users/${userIdStr}`, {
+            method: "DELETE",
+          });
+        }
       } catch (err) {
         console.error("Error deleting cart:", err);
       }
 
-<<<<<<< HEAD
-      alert("Đặt hàng thành công!");
-=======
       showModal("Đặt hàng thành công!", {
         type: "success",
         title: "Thành công",
       });
-      // Xóa cart count
->>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
       localStorage.setItem("cartCount", "0");
       window.dispatchEvent(new Event("cart-updated"));
 
       await new Promise((resolve) => setTimeout(resolve, 500));
       window.location.href = "/orderhistory";
     } catch (err) {
-      console.error("❌ Lỗi khi tạo đơn hàng:", err);
+      console.error("Lỗi khi tạo đơn hàng:", err);
       showModal("Đặt hàng thất bại, vui lòng thử lại!", { type: "error" });
     }
   }
-
   if (!user) {
     return (
       <p style={{ padding: 20, textAlign: "center", fontSize: "18px" }}>

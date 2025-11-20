@@ -236,62 +236,13 @@
   padding-top: 10px;
   font-weight: 700;
 }
-<<<<<<< HEAD
-.shipping-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.shipping-option {
-  width: 100%;
-  text-align: left;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.shipping-option:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
-}
-
-.shipping-option.active {
-  border-color: #2563eb;
-  background: #eff6ff;
-}
-
-.shipping-option-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.shipping-option-name {
-  font-weight: 600;
-}
-
-.shipping-option-fee {
-  font-weight: 600;
-  color: #e11d48;
-}
-
-.shipping-option-desc {
-  font-size: 13px;
-  color: #6b7280;
-  margin-top: 4px;
-}
-/* Khung từng lựa chọn vận chuyển */
 .shipping-options {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-/* Nút chọn vận chuyển */
+/* N?t ch?n v?n chuy?n */
 .shipping-option {
   width: 100%;
   text-align: left;
@@ -300,23 +251,29 @@
   padding: 10px 12px;
   background-color: #ffffff;
   cursor: pointer;
-
-  /* ✅ CHỮ MÀU ĐEN */
   color: #111827;
 }
 
-/* Khi đang chọn */
 .shipping-option.active {
   border-color: #2563eb;
   background-color: #eff6ff;
 }
 
-/* Tiêu đề, mô tả, phí đều màu đen */
-.shipping-option-name,
-.shipping-option-desc,
+.shipping-option-name {
+  color: #111827;
+  font-weight: 600;
+}
+
+.shipping-option-desc {
+  color: #4b5563;
+  font-size: 13px;
+  margin: 2px 0 4px;
+}
+
 .shipping-option-fee {
   color: #111827;
-=======
+  font-weight: 600;
+}
 
 /* ===================== MODAL ===================== */
 .modal-overlay {
@@ -391,5 +348,5 @@
     opacity: 1;
     transform: translateY(0);
   }
->>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
 }
+

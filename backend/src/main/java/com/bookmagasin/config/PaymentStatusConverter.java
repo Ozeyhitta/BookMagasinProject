@@ -13,6 +13,7 @@ public class PaymentStatusConverter implements AttributeConverter<EStatusPayment
             return null;
         }
         return switch (attribute) {
+            case UNPAID -> "U";
             case PENDING -> "P";
             case SUCCESS -> "S";
             case FAILED -> "F";
@@ -26,6 +27,7 @@ public class PaymentStatusConverter implements AttributeConverter<EStatusPayment
         }
         String normalized = dbData.trim().toUpperCase();
         return switch (normalized) {
+            case "U", "UNPAID" -> EStatusPayment.UNPAID;
             case "P", "PENDING" -> EStatusPayment.PENDING;
             case "S", "SUCCESS" -> EStatusPayment.SUCCESS;
             case "F", "FAILED" -> EStatusPayment.FAILED;

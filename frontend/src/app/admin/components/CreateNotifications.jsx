@@ -55,7 +55,7 @@ export default function CreateNotifications() {
         body: JSON.stringify({
           title,
           message,
-          type: "STAFF",
+          type: "ADMIN",
           userIds: targetMode === "selected" ? selectedStaff : [],
         }),
       });

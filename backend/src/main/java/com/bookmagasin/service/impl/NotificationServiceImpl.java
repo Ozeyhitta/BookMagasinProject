@@ -59,7 +59,7 @@ public class NotificationServiceImpl implements NotificationService {
         List<User> targetUsers = users.stream()
                 .filter(u -> u.getAccount() != null)
                 .filter(u -> {
-                    if ("STAFF".equals(type)) {
+                    if ("STAFF".equals(type) || "ADMIN".equals(type)) {
                         return u.getAccount().getRole() == ERole.STAFF;
                     }
                     return true;

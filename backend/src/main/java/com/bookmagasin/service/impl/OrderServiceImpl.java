@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -84,23 +85,9 @@ public class OrderServiceImpl implements OrderService {
         order.setPayment(payment);
 
         order.setNote(dto.getNote());
-        if (dto.getStatus() != null) {
-            order.setStatus(dto.getStatus());
-        } else {
-            order.setStatus(EStatusBooking.PENDING);
-        }
-
-        if (dto.getOrderDate() != null) {
-            order.setOrderDate(dto.getOrderDate());
-        } else {
-<<<<<<< HEAD
-            order.setOrderDate(new Date());
-=======
-            // Nếu không có orderDate, set ngày hiện tại
-            order.setOrderDate(LocalDateTime.now());
->>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
-        }
-
+        order.setStatus(dto.getStatus() != null ? dto.getStatus() : EStatusBooking.PENDING);
+        LocalDateTime orderDate = dto.getOrderDate() != null ? dto.getOrderDate() : LocalDateTime.now();
+        order.setOrderDate(orderDate);
         order.setShippingAddress(dto.getShippingAddress());
         order.setPhoneNumber(dto.getPhoneNumber());
 
@@ -115,14 +102,8 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
         orderRepository.flush();
 
-<<<<<<< HEAD
-        if (dto.getCartItems() != null && !dto.getCartItems().isEmpty()) {
-            List<OrderItem> items = dto.getCartItems().stream().map(itemDto -> {
-=======
-        // ✅ Lưu danh sách sản phẩm (OrderItem)
         if (dto.getOrderItems() != null && !dto.getOrderItems().isEmpty()) {
             List<OrderItem> items = dto.getOrderItems().stream().map(itemDto -> {
->>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
                 Book book = bookRepository.findById(itemDto.getBookId())
                         .orElseThrow(() -> new RuntimeException("Book not found"));
 
@@ -138,6 +119,7 @@ public class OrderServiceImpl implements OrderService {
             savedOrder.setBooks(items);
         }
 
+        // create initial status history
         try {
             OrderStatusHistory initialHistory = new OrderStatusHistory();
             EOrderHistory initialStatus = mapStatusToOrderHistory(savedOrder.getStatus());
@@ -146,7 +128,7 @@ public class OrderServiceImpl implements OrderService {
             initialHistory.setOrder(savedOrder);
 
             if (savedOrder.getOrderStatusHistories() == null) {
-                savedOrder.setOrderStatusHistories(new java.util.ArrayList<>());
+                savedOrder.setOrderStatusHistories(new ArrayList<>());
             }
             savedOrder.getOrderStatusHistories().add(initialHistory);
 
@@ -156,6 +138,7 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Failed to create OrderStatusHistory for order: " + savedOrder.getId(), e);
         }
 
+        // notify staff
         try {
             Notification noti = new Notification();
             noti.setTitle("Có đơn hàng mới #" + savedOrder.getId());
@@ -228,7 +211,7 @@ public class OrderServiceImpl implements OrderService {
             newHistory.setOrder(savedOrder);
 
             if (savedOrder.getOrderStatusHistories() == null) {
-                savedOrder.setOrderStatusHistories(new java.util.ArrayList<>());
+                savedOrder.setOrderStatusHistories(new ArrayList<>());
             }
             savedOrder.getOrderStatusHistories().add(newHistory);
 
@@ -238,6 +221,7 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Failed to create OrderStatusHistory for order: " + savedOrder.getId(), e);
         }
 
+        // notify customer
         try {
             if (savedOrder.getUser() != null) {
                 Notification noti = new Notification();
@@ -326,8 +310,8 @@ public class OrderServiceImpl implements OrderService {
                                 b.getTotalPrice() != null ? b.getTotalPrice() : 0
                         );
                     }
-                    Date dateA = a.getOrderDate();
-                    Date dateB = b.getOrderDate();
+                    LocalDateTime dateA = a.getOrderDate();
+                    LocalDateTime dateB = b.getOrderDate();
                     if (dateA == null || dateB == null) return 0;
                     return dateB.compareTo(dateA);
                 })
@@ -345,3 +329,4 @@ public class OrderServiceImpl implements OrderService {
                 .map(OrderMapper::toResponseDto);
     }
 }
+
