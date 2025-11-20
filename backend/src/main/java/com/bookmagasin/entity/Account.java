@@ -1,30 +1,34 @@
 package com.bookmagasin.entity;
 
 import com.bookmagasin.enums.ERole;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name="account")
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-@EqualsAndHashCode(exclude = {"user"})
+@Getter
+@Setter
+
 public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ToString.Include
+    @EqualsAndHashCode.Include
     private int id;
 
     @Column(name = "email", unique = true, nullable = false)
+    @ToString.Include
     private String email;
 
+
+    @JsonIgnore
     @Column(name = "password", nullable = false)
     private String password;
 
@@ -36,10 +40,13 @@ public class Account {
     @Column(name = "is_activated")
     private boolean isActivated;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    @JsonManagedReference
+    @JsonIgnore
     private User user;
+
+
+
 
     @JsonProperty("activated")
     public boolean isActivated() {
@@ -63,19 +70,6 @@ public class Account {
         if (this.role == role) {
             this.role = ERole.CUSTOMER; // Mặc định về CUSTOMER
         }
-    }
-
-    // Đảm bảo setter được gọi khi tạo mới hoặc cập nhật tài khoản
-    @Override
-    public String toString() {
-        return "Account{" +
-                "id=" + id +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                ", role=" + role +
-                ", isActivated=" + isActivated +
-                ", user=" + user +
-                '}';
     }
 }
 

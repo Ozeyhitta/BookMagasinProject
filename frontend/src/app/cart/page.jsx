@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function CartPage() {
   const [cartItems, setCartItems] = useState([]);
   const [discounts, setDiscounts] = useState({}); // { bookId: discount }
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
 
   // Fetch cart function - có thể gọi từ nhiều nơi
@@ -34,28 +35,28 @@ export default function CartPage() {
 
       for (const item of data) {
         try {
-            const discountRes = await fetch(
-              `http://localhost:8080/api/book-discounts/book/${item.book.id}`
-            );
-            if (!discountRes.ok) continue;
-            
-            const discountData = await discountRes.json();
+          const discountRes = await fetch(
+            `http://localhost:8080/api/book-discounts/book/${item.book.id}`
+          );
+          if (!discountRes.ok) continue;
 
-            // Tìm discount active (trong khoảng thời gian) - giống productDetail
-            let activeDiscount = discountData.find((discount) => {
-              const startDate = new Date(discount.startDate);
-              const endDate = new Date(discount.endDate);
-              return now >= startDate && now <= endDate;
-            });
+          const discountData = await discountRes.json();
 
-            // Nếu không có active, lấy discount đầu tiên (để test) - giống productDetail
-            if (!activeDiscount && discountData.length > 0) {
-              activeDiscount = discountData[0];
-            }
+          // Tìm discount active (trong khoảng thời gian) - giống productDetail
+          let activeDiscount = discountData.find((discount) => {
+            const startDate = new Date(discount.startDate);
+            const endDate = new Date(discount.endDate);
+            return now >= startDate && now <= endDate;
+          });
 
-            if (activeDiscount) {
-              discountMap[item.book.id] = activeDiscount;
-            }
+          // Nếu không có active, lấy discount đầu tiên (để test) - giống productDetail
+          if (!activeDiscount && discountData.length > 0) {
+            activeDiscount = discountData[0];
+          }
+
+          if (activeDiscount) {
+            discountMap[item.book.id] = activeDiscount;
+          }
         } catch (err) {
           console.error(
             `Error fetching discount for book ${item.book.id}:`,
@@ -76,10 +77,12 @@ export default function CartPage() {
     console.log("USER ID FROM LOCAL:", userId);
 
     if (!userId) {
-      console.log("No userId found, redirecting to login...");
-      router.push("/login");
+      console.log("No userId found");
+      setIsAuthenticated(false);
+      setCartItems([]);
       return;
     }
+    setIsAuthenticated(true);
 
     // Fetch cart lần đầu
     fetchCart();
@@ -91,7 +94,7 @@ export default function CartPage() {
     };
 
     window.addEventListener("cart-updated", handleCartUpdate);
-    
+
     return () => {
       window.removeEventListener("cart-updated", handleCartUpdate);
     };
@@ -143,7 +146,7 @@ export default function CartPage() {
     if (!item) return;
 
     const newQty = Math.max(1, item.quantity + delta);
-    
+
     // Optimistic update - cập nhật UI ngay lập tức
     setCartItems((prev) => {
       const updated = prev.map((item) => {
@@ -222,6 +225,36 @@ export default function CartPage() {
       console.error("Lỗi khi xóa sản phẩm:", err);
       alert("Không thể kết nối đến server!");
     }
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className={styles.cartPage}>
+        <div className={styles.header}>
+          <h1>Giỏ hàng của bạn</h1>
+          <div className={styles.divider}></div>
+        </div>
+        <div className={styles.content} style={{ minHeight: "300px" }}>
+          <div
+            style={{
+              width: "100%",
+              textAlign: "center",
+              marginTop: "60px",
+            }}
+          >
+            <p style={{ fontSize: "18px", marginBottom: "20px" }}>
+              Vui lòng đăng nhập để xem giỏ hàng.
+            </p>
+            <button
+              className={styles.payBtn}
+              onClick={() => router.push("/login")}
+            >
+              ĐĂNG NHẬP
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

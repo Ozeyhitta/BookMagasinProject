@@ -11,7 +11,9 @@ public class PaymentMapper {
                 payment.getId(),
                 payment.getAmount(),
                 payment.getMethod(),
-                payment.getPaymentStatus()
+                payment.getPaymentStatus(),
+                payment.getErrorMessage(),
+                payment.getVnpTxnRef()
         );
     }
 

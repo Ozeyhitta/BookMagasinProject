@@ -10,6 +10,33 @@ export default function CheckoutPage() {
   const [appliedPromotion, setAppliedPromotion] = useState(null);
   const [promoError, setPromoError] = useState("");
   const [promoApplying, setPromoApplying] = useState(false);
+  const [vnpayLoading, setVnpayLoading] = useState(false);
+  const [paymentResult, setPaymentResult] = useState(null);
+  const [paymentStatusLoading, setPaymentStatusLoading] = useState(false);
+  const [pendingTxnRef, setPendingTxnRef] = useState(() =>
+    typeof window !== "undefined" ? sessionStorage.getItem("vnpayTxnRef") : null
+  );
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [checkingVnpay, setCheckingVnpay] = useState(false);
+  const [vnpayPopup, setVnpayPopup] = useState(null); // Lưu reference của popup window
+  const [feedbackModal, setFeedbackModal] = useState(null);
+
+  const showModal = (message, { title = "Thông báo", type = "info" } = {}) => {
+    setFeedbackModal({ title, message, type });
+  };
+
+  const closeModal = () => setFeedbackModal(null);
+
+  const getModalTheme = (type) => {
+    switch (type) {
+      case "success":
+        return { border: "#16a34a", background: "#ecfdf5", text: "#065f46" };
+      case "error":
+        return { border: "#dc2626", background: "#fef2f2", text: "#991b1b" };
+      default:
+        return { border: "#2563eb", background: "#eff6ff", text: "#1e3a8a" };
+    }
+  };
 
   // 🚚 SHIPPING
   const SHIPPING_METHODS = [
@@ -226,6 +253,159 @@ export default function CheckoutPage() {
     };
   }, []);
 
+  useEffect(() => {
+    function handleMessage(event) {
+      if (!event.data || event.data.type !== "vnpayResult") return;
+
+      // ✅ Tối ưu: Không chờ fetch, chỉ xử lý ngay và redirect
+      if (event.data.status === "SUCCESS") {
+        sessionStorage.removeItem("vnpayTxnRef");
+        setPendingTxnRef(null);
+        setCheckingVnpay(false);
+        setCartItems([]);
+        localStorage.setItem("cartCount", "0");
+        window.dispatchEvent(new Event("cart-updated"));
+
+        // ✅ Xóa giỏ hàng trên backend (không chờ kết quả)
+        const userId = localStorage.getItem("userId");
+        if (userId) {
+          fetch(`http://localhost:8080/api/carts/users/${userId}`, {
+            method: "DELETE",
+          }).catch((err) => {
+            console.error("❌ Lỗi khi xóa giỏ hàng:", err);
+          });
+        }
+
+        // Redirect ngay lập tức
+        window.location.href = `http://localhost:3000/thankyoufororder?status=${event.data.status}&amount=${event.data.amount}&paymentId=${event.data.paymentId}&vnpTxnRef=${event.data.vnpTxnRef}&message=success`;
+      } else if (event.data.status === "FAILED") {
+        // Xử lý khi thanh toán thất bại
+        setCheckingVnpay(false);
+        setPendingTxnRef(null);
+        sessionStorage.removeItem("vnpayTxnRef");
+
+        // Hiển thị thông báo lỗi chi tiết từ VNPay
+        const errorMsg =
+          event.data.errorMessage ||
+          "Thanh toán VNPay không thành công. Vui lòng thử lại.";
+        showModal(errorMsg, {
+          type: "error",
+          title: "Thanh toán thất bại",
+        });
+      }
+    }
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingTxnRef) return;
+
+    let cancelled = false;
+    setCheckingVnpay(true);
+
+    async function fetchPaymentResult() {
+      if (cancelled) return;
+
+      setPaymentStatusLoading(true);
+      try {
+        const res = await fetch("http://localhost:8080/api/payments");
+        if (!res.ok) {
+          throw new Error("Không tìm thấy thông tin thanh toán");
+        }
+        const payments = await res.json();
+        const payment = payments.find((p) => p.vnpTxnRef === pendingTxnRef);
+
+        if (!payment) {
+          // Chưa có payment, tiếp tục chờ
+          return;
+        }
+
+        if (payment.paymentStatus === "SUCCESS") {
+          if (cancelled) return;
+
+          const userId = localStorage.getItem("userId");
+
+          // ✅ Xóa giỏ hàng trên backend (không chờ)
+          if (userId) {
+            fetch(`http://localhost:8080/api/carts/users/${userId}`, {
+              method: "DELETE",
+            }).catch((err) => {
+              console.error("❌ Lỗi khi xóa giỏ hàng:", err);
+            });
+          }
+
+          setPaymentResult(payment);
+          sessionStorage.removeItem("vnpayTxnRef");
+          setPendingTxnRef(null);
+          setCartItems([]);
+          localStorage.setItem("cartCount", "0");
+          window.dispatchEvent(new Event("cart-updated"));
+          window.location.href = `http://localhost:3000/thankyoufororder?status=${payment.paymentStatus}&amount=${payment.amount}&paymentId=${payment.id}&vnpTxnRef=${payment.vnpTxnRef}&message=success`;
+        } else if (payment.paymentStatus === "FAILED") {
+          // Thanh toán thất bại
+          if (cancelled) return;
+          setCheckingVnpay(false);
+          setPendingTxnRef(null);
+          sessionStorage.removeItem("vnpayTxnRef");
+
+          // Hiển thị thông báo lỗi chi tiết từ VNPay
+          const errorMsg =
+            payment.errorMessage ||
+            "Thanh toán VNPay không thành công. Vui lòng thử lại.";
+          showModal(errorMsg, {
+            type: "error",
+            title: "Thanh toán thất bại",
+          });
+        }
+      } catch (err) {
+        console.error("Không thể lấy thông tin thanh toán:", err);
+      } finally {
+        if (!cancelled) setPaymentStatusLoading(false);
+      }
+    }
+
+    fetchPaymentResult();
+    const intervalId = setInterval(fetchPaymentResult, 5000);
+
+    // ✅ Kiểm tra popup có bị đóng không (hủy thanh toán)
+    let popupClosedTime = null; // Lưu bên ngoài để không bị reset
+    const checkPopupClosed = setInterval(() => {
+      if (vnpayPopup && vnpayPopup.closed && !cancelled) {
+        // Ghi nhận thời điểm popup đóng lần đầu
+        if (popupClosedTime === null) {
+          popupClosedTime = Date.now();
+          console.log("⚠️ VNPay popup đã bị đóng, đang chờ kết quả...");
+        }
+
+        // Chờ 3 giây sau khi popup đóng để đảm bảo không có postMessage nào đến
+        // Nếu sau 3 giây vẫn chưa có kết quả, coi như hủy thanh toán
+        if (Date.now() - popupClosedTime > 3000) {
+          console.log(
+            "⚠️ VNPay popup đã bị đóng > 3s - người dùng có thể đã hủy thanh toán"
+          );
+          cancelled = true;
+          clearInterval(intervalId);
+          clearInterval(checkPopupClosed);
+          setCheckingVnpay(false);
+          setPendingTxnRef(null);
+          sessionStorage.removeItem("vnpayTxnRef");
+          // Không hiển thị alert để tránh làm phiền người dùng
+        }
+      } else if (vnpayPopup && !vnpayPopup.closed) {
+        // Popup mở lại, reset thời gian đóng
+        popupClosedTime = null;
+      }
+    }, 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+      clearInterval(checkPopupClosed);
+      setCheckingVnpay(false);
+    };
+  }, [pendingTxnRef, vnpayPopup]);
+
   async function handleApplyPromotion(e) {
     e?.preventDefault();
     if (!promoCode.trim()) {
@@ -268,20 +448,22 @@ export default function CheckoutPage() {
     setPromoError("");
   };
 
+<<<<<<< HEAD
   // ✅ HÀM ĐẶT HÀNG
   async function handlePlaceOrder(e) {
     e.preventDefault();
 
+=======
+  function prepareOrderPayload(paymentIdOverride) {
+>>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
     if (!user?.fullName || !user?.address || !user?.phoneNumber) {
-      alert("Vui lòng điền đầy đủ thông tin giao hàng!");
-      return;
+      throw new Error("Vui lòng điền đầy đủ thông tin giao hàng!");
     }
-
     if (cartItems.length === 0) {
-      alert("Giỏ hàng trống!");
-      return;
+      throw new Error("Giỏ hàng trống!");
     }
 
+<<<<<<< HEAD
     if (!selectedShipping) {
       alert("Vui lòng chọn phương thức vận chuyển!");
       return;
@@ -302,11 +484,22 @@ export default function CheckoutPage() {
       userId: userId,
       serviceId: serviceId,
       paymentId: 1, // trong DB phải có payment id = 1
+=======
+    const userId = localStorage.getItem("userId");
+    return {
+      userId: userId ? parseInt(userId) : null,
+      serviceId: 1,
+      paymentId: paymentIdOverride ?? 1,
+>>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
       note: appliedPromotion
         ? `Giao buổi sáng - ${selectedShipping.name} - Áp dụng mã ${appliedPromotion.code}`
         : `Giao buổi sáng - ${selectedShipping.name}`,
       status: "PENDING",
+<<<<<<< HEAD
       // KHÔNG gửi orderDate, backend tự set ngày hiện tại
+=======
+      orderDate: new Date().toISOString(),
+>>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
       shippingAddress: user.address,
       phoneNumber: user.phoneNumber,
       cartItems: cartItems.map((item) => {
@@ -322,7 +515,95 @@ export default function CheckoutPage() {
           price: priceAfterDiscount,
         };
       }),
+<<<<<<< HEAD
+=======
+      promotionCode: appliedPromotion?.code || null,
+      promotionDiscountAmount: orderLevelDiscount,
+      orderTotal: orderTotalAfterPromo || total,
+>>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
     };
+  }
+
+  async function submitVnpayOrder(orderPayload) {
+    setVnpayLoading(true);
+    try {
+      const amount = orderPayload.orderTotal;
+      const orderInfo = `Checkout ${new Date().toISOString()}`;
+      const response = await fetch(
+        `http://localhost:8080/api/payments/vnpay/create?amount=${amount}&orderInfo=${orderInfo}`
+      );
+      if (!response.ok) {
+        throw new Error("Không tạo được URL thanh toán VNPay");
+      }
+      const data = await response.json();
+      if (!data?.paymentUrl || !data?.paymentId) {
+        throw new Error("VNPay không trả về thông tin cần thiết");
+      }
+
+      const payloadWithPayment = {
+        ...orderPayload,
+        paymentId: data.paymentId,
+      };
+
+      const orderRes = await fetch("http://localhost:8080/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadWithPayment),
+      });
+
+      if (!orderRes.ok) {
+        throw new Error("Không thể tạo đơn hàng trước khi chuyển hướng VNPay");
+      }
+
+      const orderData = await orderRes.json();
+
+      sessionStorage.setItem("lastOrderId", orderData.id);
+      sessionStorage.setItem("vnpayTxnRef", data.vnpTxnRef);
+      setPendingTxnRef(data.vnpTxnRef);
+
+      const newWindow = window.open(
+        data.paymentUrl,
+        "_blank",
+        "width=1080,height=800"
+      );
+
+      if (!newWindow) {
+        console.log("VNPay payment URL:", data.paymentUrl);
+        showModal("Popup bị chặn. Vui lòng cho phép popup và thử lại.", {
+          type: "error",
+        });
+        setVnpayLoading(false);
+        return;
+      }
+
+      // ✅ Lưu reference của popup để có thể kiểm tra khi nó đóng
+      setVnpayPopup(newWindow);
+    } catch (err) {
+      console.error("VNPay error:", err);
+      showModal(err.message || "Không thể tạo URL thanh toán VNPay", {
+        type: "error",
+      });
+    } finally {
+      setVnpayLoading(false);
+    }
+  }
+
+  async function handlePlaceOrder(e) {
+    e.preventDefault();
+    let orderPayload;
+    try {
+      orderPayload = prepareOrderPayload(
+        paymentMethod === "COD" ? 1 : undefined
+      );
+    } catch (err) {
+      showModal(err.message, { type: "error" });
+      return;
+    }
+
+    if (paymentMethod === "VNPAY") {
+      await submitVnpayOrder(orderPayload);
+      return;
+    }
 
     console.log("👉 Payload gửi lên /api/orders:", orderPayload);
 
@@ -355,7 +636,15 @@ export default function CheckoutPage() {
         console.error("Error deleting cart:", err);
       }
 
+<<<<<<< HEAD
       alert("Đặt hàng thành công!");
+=======
+      showModal("Đặt hàng thành công!", {
+        type: "success",
+        title: "Thành công",
+      });
+      // Xóa cart count
+>>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
       localStorage.setItem("cartCount", "0");
       window.dispatchEvent(new Event("cart-updated"));
 
@@ -363,7 +652,7 @@ export default function CheckoutPage() {
       window.location.href = "/orderhistory";
     } catch (err) {
       console.error("❌ Lỗi khi tạo đơn hàng:", err);
-      alert("Đặt hàng thất bại, vui lòng thử lại!");
+      showModal("Đặt hàng thất bại, vui lòng thử lại!", { type: "error" });
     }
   }
 
@@ -415,6 +704,41 @@ export default function CheckoutPage() {
           </form>
 
           <h2 className="section-title">Phương thức vận chuyển</h2>
+          {paymentStatusLoading && (
+            <div
+              style={{
+                padding: "12px 16px",
+                border: "1px solid #d1d5db",
+                borderRadius: 8,
+                marginBottom: 16,
+                backgroundColor: "#f9fafb",
+              }}
+            >
+              Đang kiểm tra kết quả thanh toán từ VNPay...
+            </div>
+          )}
+          {paymentResult && (
+            <div
+              style={{
+                padding: "16px",
+                borderRadius: 8,
+                marginBottom: 16,
+                border: "1px solid #16a34a",
+                backgroundColor: "#dcfce7",
+                color: "#14532d",
+              }}
+            >
+              <h3 style={{ margin: "0 0 8px" }}>
+                Thanh toán VNPay thành công 🎉
+              </h3>
+              <p>
+                Mã tham chiếu: <strong>{paymentResult.vnpTxnRef}</strong>
+              </p>
+              <p>Số tiền: {paymentResult.amount?.toLocaleString("vi-VN")}đ</p>
+              <p>Trạng thái: {paymentResult.paymentStatus}</p>
+            </div>
+          )}
+
           <div className="shipping-method">
             {!user.address?.trim() || cartItems.length === 0 ? (
               <div className="shipping-box">
@@ -467,12 +791,24 @@ export default function CheckoutPage() {
           <h2 className="section-title">Phương thức thanh toán</h2>
           <div className="payment-methods">
             <label className="payment-option">
-              <input type="radio" name="payment" defaultChecked />
+              <input
+                type="radio"
+                name="payment"
+                value="COD"
+                checked={paymentMethod === "COD"}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
               <span>Thanh toán khi giao hàng (COD)</span>
             </label>
             <label className="payment-option">
-              <input type="radio" name="payment" />
-              <span>Chuyển khoản ngân hàng</span>
+              <input
+                type="radio"
+                name="payment"
+                value="VNPAY"
+                checked={paymentMethod === "VNPAY"}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
+              <span>Thanh toán qua VNPay</span>
             </label>
           </div>
 
@@ -480,8 +816,11 @@ export default function CheckoutPage() {
             type="button"
             className="btn-submit"
             onClick={handlePlaceOrder}
+            disabled={paymentMethod === "VNPAY" && vnpayLoading}
           >
-            Hoàn tất đơn hàng
+            {paymentMethod === "VNPAY" && vnpayLoading
+              ? "Đang xử lý VNPay..."
+              : "Hoàn tất đơn hàng"}
           </button>
         </div>
 
@@ -674,6 +1013,48 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      {checkingVnpay && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Đang chờ VNPay xác nhận...</h3>
+            <p>Vui lòng hoàn tất thanh toán trong cửa sổ vừa mở.</p>
+          </div>
+        </div>
+      )}
+      {feedbackModal && (
+        <div className="modal-overlay">
+          {(() => {
+            const theme = getModalTheme(feedbackModal.type);
+            return (
+              <div
+                className="modal-content"
+                style={{
+                  border: `1px solid ${theme.border}`,
+                  backgroundColor: theme.background,
+                  color: theme.text,
+                  maxWidth: 400,
+                }}
+              >
+                <h3 style={{ marginBottom: 8 }}>{feedbackModal.title}</h3>
+                <p style={{ marginBottom: 16 }}>{feedbackModal.message}</p>
+                <button
+                  onClick={closeModal}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: 6,
+                    border: "none",
+                    backgroundColor: theme.border,
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  Đóng
+                </button>
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }

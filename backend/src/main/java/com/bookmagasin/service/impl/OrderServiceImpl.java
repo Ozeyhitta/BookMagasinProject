@@ -27,6 +27,7 @@ import com.bookmagasin.web.mapper.OrderMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -84,7 +85,7 @@ public class OrderServiceImpl implements OrderService {
 
         order.setNote(dto.getNote());
         if (dto.getStatus() != null) {
-            order.setStatus(EStatusBooking.valueOf(dto.getStatus().trim().toUpperCase()));
+            order.setStatus(dto.getStatus());
         } else {
             order.setStatus(EStatusBooking.PENDING);
         }
@@ -92,15 +93,20 @@ public class OrderServiceImpl implements OrderService {
         if (dto.getOrderDate() != null) {
             order.setOrderDate(dto.getOrderDate());
         } else {
+<<<<<<< HEAD
             order.setOrderDate(new Date());
+=======
+            // Nếu không có orderDate, set ngày hiện tại
+            order.setOrderDate(LocalDateTime.now());
+>>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
         }
 
         order.setShippingAddress(dto.getShippingAddress());
         order.setPhoneNumber(dto.getPhoneNumber());
 
         double totalPrice = 0.0;
-        if (dto.getCartItems() != null) {
-            totalPrice = dto.getCartItems().stream()
+        if (dto.getOrderItems() != null) {
+            totalPrice = dto.getOrderItems().stream()
                     .mapToDouble(item -> item.getPrice() * item.getQuantity())
                     .sum();
         }
@@ -109,8 +115,14 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
         orderRepository.flush();
 
+<<<<<<< HEAD
         if (dto.getCartItems() != null && !dto.getCartItems().isEmpty()) {
             List<OrderItem> items = dto.getCartItems().stream().map(itemDto -> {
+=======
+        // ✅ Lưu danh sách sản phẩm (OrderItem)
+        if (dto.getOrderItems() != null && !dto.getOrderItems().isEmpty()) {
+            List<OrderItem> items = dto.getOrderItems().stream().map(itemDto -> {
+>>>>>>> 6387b8c0985854838827ce0915ac4a86deac3978
                 Book book = bookRepository.findById(itemDto.getBookId())
                         .orElseThrow(() -> new RuntimeException("Book not found"));
 

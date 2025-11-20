@@ -3,10 +3,12 @@ package com.bookmagasin.web.dtoResponse;
 import com.bookmagasin.enums.EMethod;
 import com.bookmagasin.enums.EStatusBooking;
 import com.bookmagasin.enums.EStatusPayment;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -24,7 +26,8 @@ public class OrderResponseDto {
 
     private String note;
     private EStatusBooking status;
-    private Date orderDate;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime orderDate;
 
     private String shippingAddress;
     private String phoneNumber;

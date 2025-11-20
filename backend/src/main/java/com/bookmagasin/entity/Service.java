@@ -1,13 +1,14 @@
 package com.bookmagasin.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
 @Table(name = "service")
 @NoArgsConstructor
 public class Service {

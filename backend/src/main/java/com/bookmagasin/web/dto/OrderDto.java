@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -17,10 +18,10 @@ public class OrderDto {
     private Integer serviceId;
     private Integer paymentId;
     private String note;
-    private String status;
+    private EStatusBooking status;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-    private Date orderDate;
+    private LocalDateTime orderDate;
     private String shippingAddress;
     private String phoneNumber;
-    private List<OrderItemDto> cartItems;
+    private List<OrderItemDto> orderItems;
 }
