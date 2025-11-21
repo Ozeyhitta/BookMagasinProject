@@ -8,6 +8,7 @@ import com.bookmagasin.enums.RequestStatus;
 import com.bookmagasin.repository.AccountRepository;
 import com.bookmagasin.repository.StaffRepository;
 import com.bookmagasin.repository.UserRepository;
+import com.bookmagasin.service.RoleService;
 import com.bookmagasin.service.StaffRequestService;
 import com.bookmagasin.web.dto.StaffRegisterDTO;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class StaffRequestServiceImpl implements StaffRequestService {
 
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
+    private final RoleService roleService;
     private final StaffRepository staffRepository;
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -169,8 +171,8 @@ public class StaffRequestServiceImpl implements StaffRequestService {
         staff.setApprovedDate(new Date());
         staffRepository.save(staff);
 
-        // Set role STAFF cho account
-        account.setRole(ERole.STAFF);
+        // Thêm role STAFF cho account
+        account.addRole(roleService.getOrCreateRole(ERole.STAFF));
         accountRepository.save(account);
 
         return "Đã duyệt yêu cầu đăng ký nhân viên!";
@@ -218,11 +220,9 @@ public class StaffRequestServiceImpl implements StaffRequestService {
         Account account = accountRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Account not found for user"));
 
-        // Xóa role STAFF khỏi account
-        if (account.getRole() == ERole.STAFF) {
-            account.setRole(ERole.CUSTOMER);
-            accountRepository.save(account);
-        }
+        // Xóa role STAFF khỏi account nhưng giữ các role khác
+        account.removeRole(ERole.STAFF);
+        accountRepository.save(account);
 
         // Xóa record trong bảng staff
         staffRepository.delete(staff);

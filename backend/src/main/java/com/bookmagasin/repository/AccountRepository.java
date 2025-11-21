@@ -11,12 +11,12 @@ import java.util.Optional;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Integer> {
 
-    @EntityGraph(attributePaths = {"user"})
+    @EntityGraph(attributePaths = {"user", "roles"})
     Optional<Account> findByEmail(String email);
 
     boolean existsByEmail(String email);
 
     // 🆕 tìm account theo user (dựa vào cột user_id trong bảng account)
-    @EntityGraph(attributePaths = {"user"})
+    @EntityGraph(attributePaths = {"user", "roles"})
     Optional<Account> findByUser(User user);
 }

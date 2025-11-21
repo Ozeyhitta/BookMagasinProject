@@ -2,11 +2,12 @@ package com.bookmagasin.entity;
 
 import com.bookmagasin.enums.ERole;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name="account")
@@ -32,9 +33,13 @@ public class Account {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role")
-    private ERole role;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "account_roles",
+            joinColumns = @JoinColumn(name = "account_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
 
     @Column(name = "is_activated")
@@ -57,19 +62,44 @@ public class Account {
         this.isActivated = isActivated;
     }
 
-    // Helper methods để làm việc với role
-    public boolean hasRole(ERole role) {
-        return this.role == role;
+    public Set<Role> getRoles() {
+        if (roles == null) {
+            roles = new HashSet<>();
+        }
+        return roles;
     }
 
-    public void addRole(ERole role) {
-        this.role = role;
+    public boolean hasRole(ERole role) {
+        return getRoles().stream().anyMatch(r -> r.getRole() == role);
+    }
+
+    public void addRole(Role role) {
+        if (role != null) {
+            getRoles().add(role);
+        }
     }
 
     public void removeRole(ERole role) {
-        if (this.role == role) {
-            this.role = ERole.CUSTOMER; // Mặc định về CUSTOMER
+        if (role == null) {
+            return;
         }
+        getRoles().removeIf(r -> r.getRole() == role);
+    }
+
+    public ERole getPrimaryRole() {
+        return getRoles().stream()
+                .map(role -> role.getRole())
+                .sorted((a, b) -> Integer.compare(rolePriority(a), rolePriority(b)))
+                .findFirst()
+                .orElse(ERole.CUSTOMER);
+    }
+
+    private int rolePriority(ERole role) {
+        return switch (role) {
+            case ADMIN -> 0;
+            case STAFF -> 1;
+            default -> 2;
+        };
     }
 }
 

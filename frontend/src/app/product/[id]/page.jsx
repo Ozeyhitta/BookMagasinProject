@@ -4,6 +4,37 @@ import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./productDetail.module.css";
 
+const toNumber = (value) => {
+  if (value === null || value === undefined) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const pickActiveDiscount = (bookData, externalDiscounts = []) => {
+  if (bookData?.bookDiscount) return bookData.bookDiscount;
+  const source =
+    (Array.isArray(bookData?.bookDiscounts) && bookData.bookDiscounts.length
+      ? bookData.bookDiscounts
+      : null) ||
+    (Array.isArray(externalDiscounts) && externalDiscounts.length
+      ? externalDiscounts
+      : null);
+  if (!source) return null;
+
+  const now = Date.now();
+  return (
+    source.find((item) => {
+      const startOk = item.startDate
+        ? new Date(item.startDate).getTime() <= now
+        : true;
+      const endOk = item.endDate
+        ? new Date(item.endDate).getTime() >= now
+        : true;
+      return startOk && endOk;
+    }) || source[0]
+  );
+};
+
 export default function ProductDetail({ params }) {
   // ✅ Next 15+: params là Promise → phải unwrap bằng React.use()
   const resolvedParams = use(params);
@@ -24,9 +55,9 @@ export default function ProductDetail({ params }) {
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return "";
     try {
-      return new Intl.NumberFormat("vi-VN").format(value) + "₫";
+      return new Intl.NumberFormat("vi-VN").format(value) + "đ";
     } catch {
-      return `${value}₫`;
+      return `${value}đ`;
     }
   };
 
@@ -55,16 +86,22 @@ export default function ProductDetail({ params }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [bookRes, reviewsRes] = await Promise.all([
+        const [bookRes, reviewsRes, discountRes] = await Promise.all([
           fetch(`http://localhost:8080/api/books/${id}`),
           fetch(`http://localhost:8080/api/reviews/book/${id}`),
+          fetch(`http://localhost:8080/api/book-discounts/book/${id}`),
         ]);
+
+        let discountList = [];
+        if (discountRes.ok) {
+          discountList = await discountRes.json();
+        }
 
         if (bookRes.ok) {
           const bookData = await bookRes.json();
           setBook(bookData);
           setBookDetail(bookData.bookDetail || {});
-          setDiscount(bookData.bookDiscount || null);
+          setDiscount(pickActiveDiscount(bookData, discountList));
 
           if (typeof bookData.stockQuantity === "number") {
             setQuantity(bookData.stockQuantity > 0 ? 1 : 0);
@@ -204,17 +241,47 @@ export default function ProductDetail({ params }) {
 
   if (!book) return <div>Đang tải...</div>;
 
-  const priceFormatted = book.price ? formatCurrency(book.price) : "";
+  const basePrice =
+    toNumber(book?.sellingPrice) ??
+    toNumber(book?.price) ??
+    toNumber(detail?.sellingPrice) ??
+    toNumber(detail?.price);
 
+  const discountPercent = toNumber(discount?.discountPercent);
+  const discountAmount = toNumber(discount?.discountAmount);
+
+  let finalPrice = basePrice;
+  if (basePrice !== null) {
+    if (discountPercent && discountPercent > 0) {
+      finalPrice = Math.max(0, basePrice * (1 - discountPercent / 100));
+    } else if (discountAmount && discountAmount > 0) {
+      finalPrice = Math.max(0, basePrice - discountAmount);
+    }
+  }
+
+  const hasDiscount =
+    basePrice !== null && finalPrice !== null && finalPrice < basePrice;
+  const priceFormatted =
+    finalPrice !== null
+      ? formatCurrency(Math.round(finalPrice))
+      : "Đang cập nhật";
   const oldPriceFormatted =
-    discount && discount.discountPercent
-      ? formatCurrency(
-          Math.round((book.price * 100) / (100 - discount.discountPercent))
-        )
+    hasDiscount && basePrice !== null
+      ? formatCurrency(Math.round(basePrice))
       : "";
-
-  const hasDiscount = !!discount;
-  const discountText = hasDiscount ? `-${discount.discountPercent}%` : "";
+  const discountText = hasDiscount
+    ? discountPercent && discountPercent > 0
+      ? `-${discountPercent}%`
+      : discountAmount && discountAmount > 0
+      ? `-${formatCurrency(discountAmount)}`
+      : ""
+    : "";
+  const detailDiscountLabel =
+    discountPercent && discountPercent > 0
+      ? `Giảm ${discountPercent}%`
+      : discountAmount && discountAmount > 0
+      ? `Giảm ${formatCurrency(discountAmount)}`
+      : null;
 
   const publicationYear = book.publicationYear || detail.publicationYear;
   const weight = detail.weight ? `${detail.weight} g` : "Đang cập nhật";
@@ -259,9 +326,7 @@ export default function ProductDetail({ params }) {
 
           <div className={styles.quantityContainer}>
             <button
-              className={`${styles.qtyBtn} ${
-                animateQty ? styles.animate : ""
-              }`}
+              className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`}
               onClick={decreaseQty}
             >
               -
@@ -273,9 +338,7 @@ export default function ProductDetail({ params }) {
               className={animateQty ? styles.animate : ""}
             />
             <button
-              className={`${styles.qtyBtn} ${
-                animateQty ? styles.animate : ""
-              }`}
+              className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`}
               onClick={increaseQty}
             >
               +
@@ -356,6 +419,26 @@ export default function ProductDetail({ params }) {
                   <td>Hình thức</td>
                   <td>{detail.cover || "Bìa mềm"}</td>
                 </tr>
+                {basePrice !== null && (
+                  <tr>
+                    <td>Giá gốc</td>
+                    <td>{formatCurrency(Math.round(basePrice))}</td>
+                  </tr>
+                )}
+                <tr>
+                  <td>Giá khuyến mãi</td>
+                  <td>{priceFormatted}</td>
+                </tr>
+                {hasDiscount && (
+                  <tr>
+                    <td>Ưu đãi</td>
+                    <td>
+                      <span className={styles.detailDiscountBadge}>
+                        {detailDiscountLabel || discountText || "Đang áp dụng"}
+                      </span>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

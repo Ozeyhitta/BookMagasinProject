@@ -60,7 +60,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .filter(u -> u.getAccount() != null)
                 .filter(u -> {
                     if ("STAFF".equals(type) || "ADMIN".equals(type)) {
-                        return u.getAccount().getRole() == ERole.STAFF;
+                        return u.getAccount().hasRole(ERole.STAFF);
                     }
                     return true;
                 })

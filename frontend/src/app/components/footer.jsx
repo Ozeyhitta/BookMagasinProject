@@ -110,65 +110,65 @@ export default function Footer() {
 
             {/* Column 4 */}
             <div className="footer-column">
-            <h4 className="footer-title">CHẤP NHẬN THANH TOÁN</h4>
-            <div className="payment-logos">
-              <PartnerLogo
-                href="#"
-                imgSrc="https://duhoc.thanhgiang.com.vn/sites/default/files/field/image/visa.jpg"
-                name="VISA"
-                className="visa"
-              />
-              <PartnerLogo
-                href="#"
-                imgSrc="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1280px-MasterCard_Logo.svg.png"
-                name="Mastercard"
-                className="master"
-              />
-              <PartnerLogo
-                href="#"
-                imgSrc="https://www.paragondepartmentstore.com/wp-content/uploads/2022/06/jcb-logo-png.png"
-                name="JCB"
-                className="jcb"
-              />
-              <PartnerLogo
-                href="#"
-                imgSrc="https://png.pngtree.com/element_our/png/20181112/atm-machine-icon-png_235938.jpg"
-                name="ATM"
-                className="atm"
-              />
-              <PartnerLogo
-                href="#"
-                imgSrc="https://png.pngtree.com/png-vector/20191028/ourlarge/pngtree-cash-in-hand-icon-cartoon-style-png-image_1893442.jpg"
-                name="Tiền mặt"
-                className="cash"
-              />
-              <PartnerLogo
-                href="#"
-                imgSrc="https://cdn.tgdd.vn/2020/06/GameApp/payoo-1-200x200.jpg"
-                name="PayOO"
-                className="payoo"
-              />
-            </div>
+              <h4 className="footer-title">CHẤP NHẬN THANH TOÁN</h4>
+              <div className="payment-logos">
+                <PartnerLogo
+                  href="#"
+                  imgSrc="https://duhoc.thanhgiang.com.vn/sites/default/files/field/image/visa.jpg"
+                  name="VISA"
+                  className="visa"
+                />
+                <PartnerLogo
+                  href="#"
+                  imgSrc="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/1280px-MasterCard_Logo.svg.png"
+                  name="Mastercard"
+                  className="master"
+                />
+                <PartnerLogo
+                  href="#"
+                  imgSrc="https://www.paragondepartmentstore.com/wp-content/uploads/2022/06/jcb-logo-png.png"
+                  name="JCB"
+                  className="jcb"
+                />
+                <PartnerLogo
+                  href="#"
+                  imgSrc="https://png.pngtree.com/element_our/png/20181112/atm-machine-icon-png_235938.jpg"
+                  name="ATM"
+                  className="atm"
+                />
+                <PartnerLogo
+                  href="#"
+                  imgSrc="https://png.pngtree.com/png-vector/20191028/ourlarge/pngtree-cash-in-hand-icon-cartoon-style-png-image_1893442.jpg"
+                  name="Tiền mặt"
+                  className="cash"
+                />
+                <PartnerLogo
+                  href="#"
+                  imgSrc="https://cdn.tgdd.vn/2020/06/GameApp/payoo-1-200x200.jpg"
+                  name="PayOO"
+                  className="payoo"
+                />
+              </div>
 
-            <h4 className="footer-title mt-20">THANH TOÁN AN TOÀN</h4>
-            <div className="secure-logos">
-              <PartnerLogo
-                href="#"
-                imgSrc="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHl2imE7emfBp7Bgt2HcBoLIBVo2kcsOpjPA&s"
-                name="Verified VISA"
-              />
-              <PartnerLogo
-                href="#"
-                imgSrc="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5pAeEc8lsN4wQ8O9moD4U-T-HC8JbhXIUig&s"
-                name="Mastercard Secure"
-              />
-              <PartnerLogo
-                href="#"
-                imgSrc="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTctfygVoR8nCqR7Zj8EEHAyjGIox4QZQcArw&s"
-                name="VNPay"
-              />
+              <h4 className="footer-title mt-20">THANH TOÁN AN TOÀN</h4>
+              <div className="secure-logos">
+                <PartnerLogo
+                  href="#"
+                  imgSrc="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHl2imE7emfBp7Bgt2HcBoLIBVo2kcsOpjPA&s"
+                  name="Verified VISA"
+                />
+                <PartnerLogo
+                  href="#"
+                  imgSrc="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5pAeEc8lsN4wQ8O9moD4U-T-HC8JbhXIUig&s"
+                  name="Mastercard Secure"
+                />
+                <PartnerLogo
+                  href="#"
+                  imgSrc="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTctfygVoR8nCqR7Zj8EEHAyjGIox4QZQcArw&s"
+                  name="VNPay"
+                />
+              </div>
             </div>
-          </div>
 
             {/* Column 5 */}
             <div className="footer-column">

@@ -18,9 +18,36 @@ const formatPrice = (value) => {
   return `${Number(value).toLocaleString("vi-VN")} đ`;
 };
 
+const isOutOfScopeQuery = (content = "") => {
+  const normalized = stripAccent(content);
+  if (!normalized) return true;
+
+  const scopeKeywords = [
+    "sach",
+    "book",
+    "bookmagasin",
+    "don hang",
+    "giao hang",
+    "gio hang",
+    "thanh toan",
+    "tai khoan",
+    "uu dai",
+    "khuyen mai",
+    "ma giam gia",
+    "cua hang",
+    "website",
+  ];
+
+  return !scopeKeywords.some((kw) => normalized.includes(kw));
+};
+
 const parsePriceRange = (text) => {
   const normalized = stripAccent(text);
-  const matches = [...normalized.matchAll(/(\d+(?:[.,]\d+)?)(\s*(k|ngan|nghin|trieu|m|mil|million)?)?/gi)];
+  const matches = [
+    ...normalized.matchAll(
+      /(\d+(?:[.,]\d+)?)(\s*(k|ngan|nghin|trieu|m|mil|million)?)?/gi
+    ),
+  ];
 
   if (!matches.length) return {};
 
@@ -61,7 +88,8 @@ const matchesPrice = (price, range) => {
 };
 
 const describeRange = (range) => {
-  if (range.min && range.max) return `${formatPrice(range.min)} - ${formatPrice(range.max)}`;
+  if (range.min && range.max)
+    return `${formatPrice(range.min)} - ${formatPrice(range.max)}`;
   if (range.min) return `từ ${formatPrice(range.min)}`;
   if (range.max) return `dưới ${formatPrice(range.max)}`;
   return "";
@@ -80,7 +108,9 @@ const selectSuggestions = (query, books) => {
       .filter((t) => t.length > 2)
   );
 
-  const queryCategoryTokens = tokens.filter((t) => datasetCategoryTokens.has(t));
+  const queryCategoryTokens = tokens.filter((t) =>
+    datasetCategoryTokens.has(t)
+  );
   const hasCategoryIntent = queryCategoryTokens.length > 0;
 
   const priceRange = parsePriceRange(query);
@@ -89,8 +119,12 @@ const selectSuggestions = (query, books) => {
   const scored = books.map((book) => {
     const title = stripAccent(book.title || "");
     const author = stripAccent(book.author || "");
-    const categories = (book.categories || []).map((c) => stripAccent(c.name || ""));
-    const categoryTokens = categories.flatMap((c) => c.split(/[^a-z0-9]+/).filter((t) => t.length > 1));
+    const categories = (book.categories || []).map((c) =>
+      stripAccent(c.name || "")
+    );
+    const categoryTokens = categories.flatMap((c) =>
+      c.split(/[^a-z0-9]+/).filter((t) => t.length > 1)
+    );
 
     const price = Number(book.sellingPrice) || 0;
 
@@ -106,14 +140,18 @@ const selectSuggestions = (query, books) => {
       score += 1;
     }
 
-    const proximity = priceRange.target ? Math.abs(price - priceRange.target) : 0;
+    const proximity = priceRange.target
+      ? Math.abs(price - priceRange.target)
+      : 0;
 
     return {
       book,
       score,
       proximity,
       priceOk: matchesPrice(price, priceRange),
-      categoryHit: hasCategoryIntent ? categoryTokens.some((t) => queryCategoryTokens.includes(t)) : true,
+      categoryHit: hasCategoryIntent
+        ? categoryTokens.some((t) => queryCategoryTokens.includes(t))
+        : true,
     };
   });
 
@@ -132,7 +170,9 @@ const selectSuggestions = (query, books) => {
       title: item.book.title,
       author: item.book.author,
       sellingPrice: item.book.sellingPrice,
-      categories: (item.book.categories || []).map((c) => c.name).filter(Boolean),
+      categories: (item.book.categories || [])
+        .map((c) => c.name)
+        .filter(Boolean),
       id: item.book.id,
     })),
     hasTokens: tokens.length > 0,
@@ -215,18 +255,28 @@ export default function ChatbotWindow({ onClose }) {
 
     setTimeout(() => {
       const smallTalk = getSmallTalkReply(content);
+      const outOfScope = isOutOfScopeQuery(content);
       let reply;
       if (smallTalk) {
         reply = { from: "bot", text: smallTalk };
+      } else if (outOfScope) {
+        reply = {
+          from: "bot",
+          text: "Mình chỉ hỗ trợ thông tin liên quan đến BookMagasin như sách, đơn hàng và ưu đãi. Bạn điều chỉnh câu hỏi giúp mình nhé?",
+        };
       } else if (loadingBooks) {
-        reply = { from: "bot", text: "Mình đang tải dữ liệu sách, bạn đợi một chút nhé." };
+        reply = {
+          from: "bot",
+          text: "Mình đang tải dữ liệu sách, bạn đợi một chút nhé.",
+        };
       } else if (!books.length) {
         reply = {
           from: "bot",
           text: "Chưa có dữ liệu sách để gợi ý lúc này. Bạn thử lại sau nhé.",
         };
       } else {
-        const { suggestions, priceRange, hasTokens, hasCategoryIntent } = selectSuggestions(content, books);
+        const { suggestions, priceRange, hasTokens, hasCategoryIntent } =
+          selectSuggestions(content, books);
         if (!suggestions.length) {
           const clarify = hasCategoryIntent
             ? "Mình chưa tìm thấy đúng thể loại bạn cần. Bạn cho biết cụ thể hơn hoặc thử tên sách/tác giả nhé?"
@@ -235,7 +285,8 @@ export default function ChatbotWindow({ onClose }) {
         } else {
           const rangeText = describeRange(priceRange);
           let intro = "Mình nghĩ bạn sẽ thích những lựa chọn sau:";
-          if (rangeText) intro = `Mình lọc theo tầm giá ${rangeText}, bạn xem thử nhé:`;
+          if (rangeText)
+            intro = `Mình lọc theo tầm giá ${rangeText}, bạn xem thử nhé:`;
           else if (hasTokens) intro = "Dựa trên nội dung bạn hỏi, mình gợi ý:";
           reply = {
             from: "bot",
@@ -261,12 +312,19 @@ export default function ChatbotWindow({ onClose }) {
     <div className="chatWindow">
       <div className="chatHeader">
         <div className="chatHeaderLeft">
-          <img src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png" alt="Trợ lý BookMagasin" />
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png"
+            alt="Trợ lý BookMagasin"
+          />
           <div className="chatHeaderText">
             <div className="chatHeading">Hỗ trợ trực tuyến</div>
           </div>
         </div>
-        <button className="chatClose" onClick={onClose} aria-label="Đóng cửa sổ chat">
+        <button
+          className="chatClose"
+          onClick={onClose}
+          aria-label="Đóng cửa sổ chat"
+        >
           ×
         </button>
       </div>
@@ -274,22 +332,43 @@ export default function ChatbotWindow({ onClose }) {
       <div className="chatBody">
         <div className="chatMessages" ref={messagesRef}>
           {messages.map((msg, idx) => (
-            <div key={idx} className={`messageRow ${msg.from === "user" ? "userRow" : "botRow"}`}>
+            <div
+              key={idx}
+              className={`messageRow ${
+                msg.from === "user" ? "userRow" : "botRow"
+              }`}
+            >
               <div className="msgBubble">
                 <div className="msgText">{msg.text}</div>
                 {msg.suggestions && (
                   <div className="suggestionList">
                     {msg.suggestions.map((sug) => (
-                      <div key={`${sug.id}-${sug.title}`} className="suggestionCard">
+                      <button
+                        key={`${sug.id}-${sug.title}`}
+                        type="button"
+                        className="suggestionCard"
+                        onClick={() =>
+                          window.open(`/product/${sug.id}`, "_blank")
+                        }
+                      >
                         <div className="suggestionTitle">{sug.title}</div>
                         <div className="suggestionMeta">
-                          <span className="suggestionPrice">{formatPrice(sug.sellingPrice)}</span>
-                          {sug.author && <span className="suggestionAuthor"> - {sug.author}</span>}
+                          <span className="suggestionPrice">
+                            {formatPrice(sug.sellingPrice)}
+                          </span>
+                          {sug.author && (
+                            <span className="suggestionAuthor">
+                              {" "}
+                              - {sug.author}
+                            </span>
+                          )}
                         </div>
                         {!!sug.categories?.length && (
-                          <div className="suggestionCategories">{sug.categories.join(", ")}</div>
+                          <div className="suggestionCategories">
+                            {sug.categories.join(", ")}
+                          </div>
                         )}
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}

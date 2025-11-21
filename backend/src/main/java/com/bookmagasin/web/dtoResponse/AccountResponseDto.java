@@ -14,6 +14,7 @@ import java.util.Set;
 public class AccountResponseDto {
     private int id;
     private String email;
+    private ERole role;
     private Set<ERole> roles; // Danh sách tất cả roles
     private boolean activated;
     private UserResponseDto user;

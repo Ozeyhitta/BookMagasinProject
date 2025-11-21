@@ -94,6 +94,17 @@
   vertical-align: middle;
 }
 
+.detailDiscountBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(229, 57, 53, 0.12);
+  color: #c62828;
+  font-weight: 600;
+  font-size: 14px;
+}
+
 /* --- Điều chỉnh số lượng --- */
 .quantityContainer {
   display: inline-flex;

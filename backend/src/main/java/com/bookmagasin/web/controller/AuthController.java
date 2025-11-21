@@ -1,14 +1,12 @@
 package com.bookmagasin.web.controller;
 
 import com.bookmagasin.entity.Account;
+import com.bookmagasin.enums.ERole;
 import com.bookmagasin.service.AccountService;
-
-
 import com.bookmagasin.service.AuthService;
 import com.bookmagasin.service.TokenBlacklistService;
 import com.bookmagasin.util.JwtUtil;
 import com.bookmagasin.web.dto.LoginDto;
-
 import com.bookmagasin.web.dto.RegisteredCustomerDto;
 import com.bookmagasin.web.dtoResponse.LoginResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 
@@ -93,15 +93,25 @@ public class AuthController {
         // 🔑 Sinh token đăng nhập
         String token = jwtUtil.generateToken(account.getEmail());
 
-        String redirectUrl = account.getRole().name().equals("ADMIN") ? "/admin" : "/";
+        ERole primaryRole = account.getPrimaryRole();
+        String redirectUrl = switch (primaryRole) {
+            case ADMIN -> "/admin";
+            case STAFF -> "/staff";
+            default -> "/";
+        };
+
+        Set<String> roleNames = account.getRoles().stream()
+                .map(role -> role.getRole().name())
+                .collect(Collectors.toSet());
 
         // 🔄 Trả về thông tin login
         return ResponseEntity.ok(new LoginResponseDto(
                 account.getUser().getId(),   // USER ID
                 account.getEmail(),
-                account.getRole().name(),
+                primaryRole.name(),
                 token,
-                redirectUrl
+                redirectUrl,
+                roleNames
         ));
     }
 

@@ -10,6 +10,7 @@ import com.bookmagasin.repository.StaffRepository;
 import com.bookmagasin.repository.UserRepository;
 import com.bookmagasin.service.StaffService;
 import com.bookmagasin.web.dto.StaffRequestDTO;
+import com.bookmagasin.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ public class StaffServiceImpl implements StaffService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final StaffRepository staffRepository;
+    private final RoleService roleService;
 
     private Date parseDate(String str) {
         if (str == null || str.isEmpty()) {
@@ -94,7 +96,7 @@ public class StaffServiceImpl implements StaffService {
         Account acc = new Account();
         acc.setEmail(dto.getEmail());
         acc.setPassword("123456"); // TODO: mã hoá & cho đổi sau
-        acc.addRole(ERole.STAFF);
+        acc.addRole(roleService.getOrCreateRole(ERole.STAFF));
         acc.setActivated(true);
         acc.setUser(user);
 

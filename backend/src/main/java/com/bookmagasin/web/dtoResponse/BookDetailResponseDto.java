@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,4 +22,6 @@ public class BookDetailResponseDto {
     private String description;
     private String imageUrl; // ✅ Thêm URL hình ảnh
     private BookDto book;
+    private BookDiscountResponseDto discount;
+    private List<BookDiscountResponseDto> discountHistory;
 }
