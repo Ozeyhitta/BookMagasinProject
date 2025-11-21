@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styles from "./mainpage.module.css";
 import ProductCard from "../category/ProductCard"; // ✅ reuse CategoryPage’s ProductCard
 import { ChevronLeft, ChevronRight, BookText } from "lucide-react";
@@ -179,6 +179,9 @@ export default function MainPage() {
   const [apiCategories, setApiCategories] = useState([]);
   // ✅ Dữ liệu discount cho từng book
   const [discounts, setDiscounts] = useState({});
+  const PRODUCTS_PER_BATCH = 12;
+  const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_BATCH);
+  const loadMoreRef = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -285,6 +288,33 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
+    setVisibleCount(PRODUCTS_PER_BATCH);
+  }, [books.length]);
+
+  useEffect(() => {
+    if (!books.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) =>
+            Math.min(prev + PRODUCTS_PER_BATCH, books.length)
+          );
+        }
+      },
+      { rootMargin: "0px 0px 200px 0px" }
+    );
+
+    const current = loadMoreRef.current;
+    if (current) observer.observe(current);
+
+    return () => {
+      if (current) observer.unobserve(current);
+      observer.disconnect();
+    };
+  }, [books.length]);
+
+  useEffect(() => {
     const fetchCategories = async () => {
       try {
         const res = await fetch("http://localhost:8080/api/categories");
@@ -374,6 +404,7 @@ export default function MainPage() {
         "https://product.hstatic.net/200000845405/product/upload_cf64744ac7654215bad45173fa85b1a3_master.jpg",
     },
   ];
+  const displayedBooks = books.slice(0, visibleCount);
 
   return (
     <div className={styles.mainWrapper}>
@@ -487,7 +518,7 @@ export default function MainPage() {
           <div className={styles.productSection}>
             <h3 className={styles.sectionTitle}>Sách mới cập nhật (từ API)</h3>
             <div className={styles.productGrid}>
-              {books.map((book) => {
+              {displayedBooks.map((book) => {
                 const discount = discounts[book.id];
 
                 // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
@@ -536,6 +567,13 @@ export default function MainPage() {
                 );
               })}
             </div>
+            {displayedBooks.length > 0 && (
+              <div ref={loadMoreRef} className={styles.lazyLoader}>
+                {visibleCount < books.length
+                  ? "Đang tải thêm sách..."
+                  : "Đã hiển thị tất cả sách"}
+              </div>
+            )}
           </div>
 
           {/* --- PHẦN SÁCH THEO TỪNG DANH MỤC (từ API /api/categories) --- */}

@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [resetMessage, setResetMessage] = useState(null);
   const [showOtpForm, setShowOtpForm] = useState(false);
   const [otp, setOtp] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   // 🔑 Xử lý đăng nhập
   const handleSubmit = async (e) => {
@@ -68,6 +69,7 @@ export default function LoginPage() {
       return;
     }
 
+    setResetLoading(true);
     try {
       const res = await fetch(
         "http://localhost:8080/api/auth/forgot-password",
@@ -98,6 +100,8 @@ export default function LoginPage() {
       }
     } catch (error) {
       setResetMessage("❌ Lỗi kết nối đến server!");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -221,7 +225,9 @@ export default function LoginPage() {
                     onChange={(e) => setResetEmail(e.target.value)}
                     required
                   />
-                  <button type="submit">Gửi mã OTP</button>
+                  <button type="submit" disabled={resetLoading}>
+                    {resetLoading ? "Đang gửi..." : "Gửi mã OTP"}
+                  </button>
                 </form>
               </>
             )}
@@ -252,6 +258,20 @@ export default function LoginPage() {
                         if (value) {
                           const next = document.getElementById(`otp-${i + 1}`);
                           if (next) next.focus();
+                        }
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pastedData = e.clipboardData.getData("text");
+                        // Lấy 6 số đầu tiên từ dữ liệu paste
+                        const digits = pastedData
+                          .replace(/\D/g, "")
+                          .slice(0, 6);
+                        if (digits.length === 6) {
+                          setOtp(digits);
+                          // Focus vào ô cuối cùng
+                          const lastInput = document.getElementById(`otp-5`);
+                          if (lastInput) lastInput.focus();
                         }
                       }}
                       onKeyDown={(e) => {
