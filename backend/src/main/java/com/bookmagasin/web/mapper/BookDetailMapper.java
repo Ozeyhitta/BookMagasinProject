@@ -41,7 +41,7 @@ public class BookDetailMapper {
         detail.setWeight(dto.getWeight());
         detail.setPages(dto.getPages());
         detail.setDescription(dto.getDescription());
-        detail.setImageUrl(dto.getImageUrl()); // ✅ Thêm dòng này
+        detail.setImageUrl(dto.getImageUrl());
         return detail;
     }
 
@@ -55,6 +55,6 @@ public class BookDetailMapper {
         detail.setWeight(dto.getWeight());
         detail.setPages(dto.getPages());
         detail.setDescription(dto.getDescription());
-        detail.setImageUrl(dto.getImageUrl()); // ✅ Thêm dòng này
+        detail.setImageUrl(dto.getImageUrl());
     }
 }
