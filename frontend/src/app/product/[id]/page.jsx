@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./productDetail.module.css";
 
 export default function ProductDetail({ params }) {
+  // ✅ Next 15+: params là Promise → phải unwrap bằng React.use()
   const resolvedParams = use(params);
   const id = resolvedParams?.id;
 
@@ -23,16 +24,17 @@ export default function ProductDetail({ params }) {
   const formatCurrency = (value) => {
     if (value === null || value === undefined) return "";
     try {
-      return value.toLocaleString("vi-VN") + "đ";
+      return new Intl.NumberFormat("vi-VN").format(value) + "₫";
     } catch {
-      return `${value}đ`;
+      return `${value}₫`;
     }
   };
 
   const calculateSummary = (reviewsList) => {
     if (!reviewsList || reviewsList.length === 0) return null;
     const totalReviews = reviewsList.length;
-    const averageRate = reviewsList.reduce((sum, r) => sum + r.rate, 0) / totalReviews;
+    const averageRate =
+      reviewsList.reduce((sum, r) => sum + r.rate, 0) / totalReviews;
     const starCount = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     reviewsList.forEach((r) => {
       if (r.rate >= 1 && r.rate <= 5) {
@@ -64,18 +66,27 @@ export default function ProductDetail({ params }) {
           setBookDetail(bookData.bookDetail || {});
           setDiscount(bookData.bookDiscount || null);
 
-          // fetch related books by shared category
+          if (typeof bookData.stockQuantity === "number") {
+            setQuantity(bookData.stockQuantity > 0 ? 1 : 0);
+          } else {
+            setQuantity(1);
+          }
+
+          // Sách liên quan
           try {
             const relRes = await fetch("http://localhost:8080/api/books");
             if (relRes.ok) {
               const allBooks = await relRes.json();
-              const currentCategories = (bookData.categories || []).map((c) => c.id);
+              const currentCategories =
+                (bookData.categories || []).map((c) => c.id) || [];
               const filtered = allBooks
                 .filter((b) => b.id !== bookData.id)
                 .filter((b) => {
                   if (!currentCategories.length) return false;
                   const cats = (b.categories || []).map((c) => c.id);
-                  return cats.some((idCat) => currentCategories.includes(idCat));
+                  return cats.some((idCat) =>
+                    currentCategories.includes(idCat)
+                  );
                 })
                 .slice(0, 4);
               setRelated(filtered);
@@ -94,10 +105,18 @@ export default function ProductDetail({ params }) {
         console.error("Error fetching product data:", err);
       }
     };
+
     if (id) fetchData();
   }, [id]);
 
   const increaseQty = () => {
+    if (book?.stockQuantity != null) {
+      if (book.stockQuantity <= 0) return;
+      if (quantity >= book.stockQuantity) {
+        alert(`Chỉ còn ${book.stockQuantity} quyển trong kho.`);
+        return;
+      }
+    }
     setQuantity((prev) => prev + 1);
     setAnimateQty(true);
     setTimeout(() => setAnimateQty(false), 150);
@@ -124,6 +143,24 @@ export default function ProductDetail({ params }) {
       return false;
     }
 
+    if (quantity <= 0) {
+      alert("Vui lòng chọn số lượng hợp lệ.");
+      return false;
+    }
+
+    const stockQty =
+      typeof book?.stockQuantity === "number" ? book.stockQuantity : null;
+    if (stockQty !== null) {
+      if (stockQty <= 0) {
+        alert("Sản phẩm hiện đã hết hàng.");
+        return false;
+      }
+      if (quantity > stockQty) {
+        alert(`Bạn chỉ có thể mua tối đa ${stockQty} quyển.`);
+        return false;
+      }
+    }
+
     const cartItem = {
       userId: parseInt(userId, 10),
       bookId: book.id,
@@ -144,6 +181,7 @@ export default function ProductDetail({ params }) {
         const current = parseInt(localStorage.getItem("cartCount") || "0", 10);
         localStorage.setItem("cartCount", current + 1);
         window.dispatchEvent(new Event("cart-updated"));
+
         if (redirectAfterAdd) {
           router.push("/checkout");
         } else {
@@ -166,11 +204,15 @@ export default function ProductDetail({ params }) {
 
   if (!book) return <div>Đang tải...</div>;
 
-  const priceFormatted = book.price ? book.price.toLocaleString("vi-VN") + "đ" : "";
+  const priceFormatted = book.price ? formatCurrency(book.price) : "";
+
   const oldPriceFormatted =
     discount && discount.discountPercent
-      ? Math.round((book.price * 100) / (100 - discount.discountPercent)).toLocaleString("vi-VN") + "đ"
+      ? formatCurrency(
+          Math.round((book.price * 100) / (100 - discount.discountPercent))
+        )
       : "";
+
   const hasDiscount = !!discount;
   const discountText = hasDiscount ? `-${discount.discountPercent}%` : "";
 
@@ -184,7 +226,11 @@ export default function ProductDetail({ params }) {
         {/* Cột 1: Hình ảnh */}
         <div className={styles.productImage}>
           <img
-            src={book.imageUrl || detail.imageUrl || "https://via.placeholder.com/300x400?text=No+Image"}
+            src={
+              book.imageUrl ||
+              detail.imageUrl ||
+              "https://via.placeholder.com/300x400?text=No+Image"
+            }
             alt={book.title}
           />
         </div>
@@ -195,22 +241,43 @@ export default function ProductDetail({ params }) {
 
           {book.isbn && <p className={styles.isbn}>ISBN: {book.isbn}</p>}
 
-          {detail.publisher && <p className={styles.publisher}>{detail.publisher}</p>}
+          {detail.publisher && (
+            <p className={styles.publisher}>{detail.publisher}</p>
+          )}
 
           <div className={styles.priceBox}>
             <div className={styles.priceRow}>
               <span className={styles.price}>{priceFormatted}</span>
-              {hasDiscount && discountText && <span className={styles.discountBadge}>{discountText}</span>}
+              {hasDiscount && discountText && (
+                <span className={styles.discountBadge}>{discountText}</span>
+              )}
             </div>
-            {oldPriceFormatted && <span className={styles.oldPrice}>{oldPriceFormatted}</span>}
+            {oldPriceFormatted && (
+              <span className={styles.oldPrice}>{oldPriceFormatted}</span>
+            )}
           </div>
 
           <div className={styles.quantityContainer}>
-            <button className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`} onClick={decreaseQty}>
+            <button
+              className={`${styles.qtyBtn} ${
+                animateQty ? styles.animate : ""
+              }`}
+              onClick={decreaseQty}
+            >
               -
             </button>
-            <input type="text" value={quantity} readOnly className={animateQty ? styles.animate : ""} />
-            <button className={`${styles.qtyBtn} ${animateQty ? styles.animate : ""}`} onClick={increaseQty}>
+            <input
+              type="text"
+              value={quantity}
+              readOnly
+              className={animateQty ? styles.animate : ""}
+            />
+            <button
+              className={`${styles.qtyBtn} ${
+                animateQty ? styles.animate : ""
+              }`}
+              onClick={increaseQty}
+            >
               +
             </button>
           </div>
@@ -231,7 +298,7 @@ export default function ProductDetail({ params }) {
           <ul>
             <li>Sản phẩm 100% chính hãng</li>
             <li>Tư vấn mua sách trong giờ hành chính</li>
-            <li>Miễn phí vận chuyển cho đơn từ 250.000đ</li>
+            <li>Miễn phí vận chuyển cho đơn từ 250.000₫</li>
             <li>Hotline: 1900 6401</li>
           </ul>
         </div>
@@ -240,7 +307,9 @@ export default function ProductDetail({ params }) {
         <div className={styles.bottomInfo}>
           <div className={styles.bookDescription}>
             <h2>GIỚI THIỆU SÁCH</h2>
-            <p>{detail.description || "Chưa có phần mô tả cho sản phẩm này."}</p>
+            <p>
+              {detail.description || "Chưa có phần mô tả cho sản phẩm này."}
+            </p>
           </div>
 
           <div className={styles.detailInfo}>
@@ -299,7 +368,9 @@ export default function ProductDetail({ params }) {
 
         <div className={styles.ratingTop}>
           <div className={styles.ratingScore}>
-            <span className={styles.ratingNumber}>{ratingSummary ? ratingSummary.averageRate.toFixed(1) : "0"}</span>
+            <span className={styles.ratingNumber}>
+              {ratingSummary ? ratingSummary.averageRate.toFixed(1) : "0"}
+            </span>
             <span className={styles.ratingMax}>/5</span>
             <div className={styles.ratingStars}>
               {[1, 2, 3, 4, 5].map((star) => (
@@ -308,7 +379,9 @@ export default function ProductDetail({ params }) {
                 </span>
               ))}
             </div>
-            <span className={styles.ratingTotal}>{ratingSummary ? ratingSummary.totalReviews : 0} đánh giá</span>
+            <span className={styles.ratingTotal}>
+              {ratingSummary ? ratingSummary.totalReviews : 0} đánh giá
+            </span>
           </div>
 
           <div className={styles.ratingBars}>
@@ -318,7 +391,10 @@ export default function ProductDetail({ params }) {
                   <div className={styles.ratingBarRow} key={star}>
                     <span>{star} sao</span>
                     <div className={styles.ratingBarOuter}>
-                      <div className={styles.ratingBarInner} style={{ width: "0%" }} />
+                      <div
+                        className={styles.ratingBarInner}
+                        style={{ width: "0%" }}
+                      />
                     </div>
                     <span>0%</span>
                   </div>
@@ -333,13 +409,18 @@ export default function ProductDetail({ params }) {
                 1: ratingSummary.star1,
               };
               const count = counts[star] || 0;
-              const percent = Math.round((count / ratingSummary.totalReviews) * 100);
+              const percent = Math.round(
+                (count / ratingSummary.totalReviews) * 100
+              );
 
               return (
                 <div className={styles.ratingBarRow} key={star}>
                   <span>{star} sao</span>
                   <div className={styles.ratingBarOuter}>
-                    <div className={styles.ratingBarInner} style={{ width: `${percent}%` }} />
+                    <div
+                      className={styles.ratingBarInner}
+                      style={{ width: `${percent}%` }}
+                    />
                   </div>
                   <span>{percent}%</span>
                 </div>
@@ -348,7 +429,7 @@ export default function ProductDetail({ params }) {
           </div>
         </div>
 
-        {/* Danh sach danh gia */}
+        {/* Danh sách đánh giá */}
         <div className={styles.reviewList}>
           {reviews.length === 0 ? (
             <p>Chưa có đánh giá nào.</p>
@@ -357,11 +438,18 @@ export default function ProductDetail({ params }) {
               <div key={rev.id} className={styles.reviewItem}>
                 <div className={styles.reviewerMeta}>
                   <strong>{rev.createBy?.fullName || "Khách hàng"}</strong>
-                  <span className={styles.reviewerId}>Tài khoản: #{rev.createBy?.id ?? "-"}</span>
+                  <span className={styles.reviewerId}>
+                    Tài khoản: #{rev.createBy?.id ?? "-"}
+                  </span>
                 </div>
                 <div className={styles.reviewStars}>
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <span key={star} className={star <= rev.rate ? styles.starFilled : styles.starEmpty}>
+                    <span
+                      key={star}
+                      className={
+                        star <= rev.rate ? styles.starFilled : styles.starEmpty
+                      }
+                    >
                       ★
                     </span>
                   ))}
@@ -381,10 +469,19 @@ export default function ProductDetail({ params }) {
         ) : (
           <div className={styles.relatedGrid}>
             {related.map((item) => {
-              const cover = item.imageUrl || item.bookDetail?.imageUrl || "https://via.placeholder.com/240x320?text=No+Image";
-              const price = formatCurrency(item.price ?? item.sellingPrice ?? 0);
+              const cover =
+                item.imageUrl ||
+                item.bookDetail?.imageUrl ||
+                "https://via.placeholder.com/240x320?text=No+Image";
+              const price = formatCurrency(
+                item.price ?? item.sellingPrice ?? 0
+              );
               return (
-                <div key={item.id} className={styles.relatedCard} onClick={() => router.push(`/product/${item.id}`)}>
+                <div
+                  key={item.id}
+                  className={styles.relatedCard}
+                  onClick={() => router.push(`/product/${item.id}`)}
+                >
                   <img src={cover} alt={item.title} />
                   <h3>{item.title}</h3>
                   <div className={styles.priceBox}>

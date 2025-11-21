@@ -2,7 +2,6 @@ package com.bookmagasin.service.impl;
 
 import com.bookmagasin.entity.Book;
 import com.bookmagasin.entity.Category;
-
 import com.bookmagasin.repository.BookRepository;
 import com.bookmagasin.repository.CategoryRepository;
 import com.bookmagasin.service.CategoryService;
@@ -31,8 +30,12 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponseDto createCategory(CategoryDto dto) {
         Category category = new Category();
         category.setName(dto.getName());
+        if (dto.getParentId() != null) {
+            Category parent = categoryRepository.findById(dto.getParentId())
+                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
+            category.setParent(parent);
+        }
 
-        // Lưu category để lấy ID
         Category savedCategory = categoryRepository.save(category);
 
         if (dto.getBookIds() != null && !dto.getBookIds().isEmpty()) {
@@ -73,6 +76,13 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
         category.setName(dto.getName());
+        if (dto.getParentId() != null) {
+            Category parent = categoryRepository.findById(dto.getParentId())
+                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
+            category.setParent(parent);
+        } else {
+            category.setParent(null);
+        }
 
         if (dto.getBookIds() != null && !dto.getBookIds().isEmpty()) {
             List<Book> books = bookRepository.findAllById(dto.getBookIds());
@@ -97,6 +107,10 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategory(int id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+            throw new RuntimeException("Cannot delete a category that has sub-categories");
+        }
 
         if (category.getBooks() != null && !category.getBooks().isEmpty()) {
             for (Book book : category.getBooks()) {

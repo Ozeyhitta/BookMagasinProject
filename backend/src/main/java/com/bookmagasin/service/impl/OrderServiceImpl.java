@@ -22,6 +22,7 @@ import com.bookmagasin.repository.UserNotificationRepository;
 import com.bookmagasin.repository.UserRepository;
 import com.bookmagasin.service.OrderService;
 import com.bookmagasin.web.dto.OrderDto;
+import com.bookmagasin.web.dto.OrderItemDto;
 import com.bookmagasin.web.dtoResponse.OrderResponseDto;
 import com.bookmagasin.web.mapper.OrderMapper;
 import org.springframework.stereotype.Service;
@@ -91,32 +92,47 @@ public class OrderServiceImpl implements OrderService {
         order.setShippingAddress(dto.getShippingAddress());
         order.setPhoneNumber(dto.getPhoneNumber());
 
+        List<OrderItem> pendingItems = new ArrayList<>();
         double totalPrice = 0.0;
-        if (dto.getOrderItems() != null) {
-            totalPrice = dto.getOrderItems().stream()
-                    .mapToDouble(item -> item.getPrice() * item.getQuantity())
-                    .sum();
+
+        if (dto.getOrderItems() != null && !dto.getOrderItems().isEmpty()) {
+            for (OrderItemDto itemDto : dto.getOrderItems()) {
+                Book book = bookRepository.findById(itemDto.getBookId())
+                        .orElseThrow(() -> new RuntimeException("Book not found with id " + itemDto.getBookId()));
+
+                int requestedQty = itemDto.getQuantity();
+                if (requestedQty <= 0) {
+                    throw new RuntimeException("Quantity must be greater than 0 for " + book.getTitle());
+                }
+
+                int currentStock = book.getStockQuantity() != null ? book.getStockQuantity() : 0;
+                if (currentStock < requestedQty) {
+                    throw new RuntimeException("Sách \"" + book.getTitle() + "\" chỉ còn " + currentStock + " quyển.");
+                }
+
+                book.setStockQuantity(currentStock - requestedQty);
+                bookRepository.save(book);
+
+                double unitPrice = itemDto.getPrice() > 0 ? itemDto.getPrice() : book.getSellingPrice();
+                totalPrice += unitPrice * requestedQty;
+
+                OrderItem oi = new OrderItem();
+                oi.setBook(book);
+                oi.setQuantity(requestedQty);
+                oi.setPrice(unitPrice);
+                pendingItems.add(oi);
+            }
         }
+
         order.setTotalPrice(totalPrice);
 
         Order savedOrder = orderRepository.save(order);
         orderRepository.flush();
 
-        if (dto.getOrderItems() != null && !dto.getOrderItems().isEmpty()) {
-            List<OrderItem> items = dto.getOrderItems().stream().map(itemDto -> {
-                Book book = bookRepository.findById(itemDto.getBookId())
-                        .orElseThrow(() -> new RuntimeException("Book not found"));
-
-                OrderItem oi = new OrderItem();
-                oi.setBook(book);
-                oi.setOrder(savedOrder);
-                oi.setQuantity(itemDto.getQuantity());
-                oi.setPrice(itemDto.getPrice());
-                return oi;
-            }).collect(Collectors.toList());
-
-            orderItemRepository.saveAll(items);
-            savedOrder.setBooks(items);
+        if (!pendingItems.isEmpty()) {
+            pendingItems.forEach(oi -> oi.setOrder(savedOrder));
+            orderItemRepository.saveAll(pendingItems);
+            savedOrder.setBooks(pendingItems);
         }
 
         // create initial status history
@@ -329,4 +345,3 @@ public class OrderServiceImpl implements OrderService {
                 .map(OrderMapper::toResponseDto);
     }
 }
-
