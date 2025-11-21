@@ -61,6 +61,30 @@ export default function ProcessOrders() {
     return <span className={map[status] || "pill"}>{status}</span>;
   };
 
+  const normalizeOrderItems = (data = {}) => {
+    const raw =
+      data.items ||
+      data.orderItems ||
+      data.orderDetails ||
+      data.orderItemResponses ||
+      [];
+
+    return raw.map((it, idx) => {
+      const quantity = Number(it.quantity || 0);
+      const unitPrice = Number(
+        it.price ?? it.unitPrice ?? it.sellingPrice ?? it.bookPrice ?? 0
+      );
+      return {
+        id: it.id || idx,
+        bookId: it.bookId,
+        bookCode: it.bookCode,
+        bookTitle: it.bookTitle || it.title || "Sản phẩm",
+        quantity,
+        price: unitPrice,
+      };
+    });
+  };
+
   const mapOrders = (list) =>
     list.map((o) => ({
       id: o.id,
@@ -94,7 +118,7 @@ export default function ProcessOrders() {
       }
     } catch (err) {
       console.error("Fetch orders failed", err);
-      setError("Không tải được dữ liệu đơn hàng. Hiển thị dữ liệu mẫu.");
+      setError("Không tải được dữ liệu đơn hàng. Hiện hiển thị dữ liệu mẫu.");
       setOrders(MOCK_ORDERS);
     } finally {
       setLoading(false);
@@ -172,15 +196,23 @@ export default function ProcessOrders() {
     setDetailLoading(true);
     try {
       const res = await axiosClient.get(`/orders/${order.id}/detail`);
-      if (res.data) {
-        setDetailData(res.data);
-      } else {
-        throw new Error("Empty detail");
-      }
+      const payload =
+        res?.data?.data ||
+        res?.data?.order ||
+        res?.data?.result ||
+        res?.data ||
+        null;
+      if (!payload) throw new Error("Empty detail");
+      setDetailData({
+        ...payload,
+        id: order.displayId || payload.id,
+        displayId: order.displayId || payload.id,
+      });
     } catch (err) {
       console.error("Fetch detail failed", err);
       setDetailData({
         id: order.displayId || order.id,
+        displayId: order.displayId || order.id,
         userFullName: order.customer || "",
         status: order.status,
         paymentMethod: order.payment,
@@ -204,8 +236,7 @@ export default function ProcessOrders() {
         <div>
           <h1>Process Orders</h1>
           <p>
-            Điều phối đơn hàng theo trạng thái, phương thức thanh toán và tốc
-            độ giao vận.
+            Điều phối đơn hàng theo trạng thái, phương thức thanh toán và tốc độ giao vận.
           </p>
         </div>
         <div className="tagline">Live operations • Staff workspace</div>
@@ -229,9 +260,7 @@ export default function ProcessOrders() {
         </div>
         <div className="metric-card">
           <div className="metric-label">Hoàn tất</div>
-          <div className="metric-value accent-green">
-            {metrics.completed}
-          </div>
+          <div className="metric-value accent-green">{metrics.completed}</div>
           <div className="metric-sub">Giao thành công</div>
         </div>
       </div>
@@ -239,10 +268,7 @@ export default function ProcessOrders() {
       <div className="process-filters">
         <div className="filter-group">
           <label>Trạng thái</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             {statusOptions.map((s) => (
               <option key={s} value={s}>
                 {s === "ALL" ? "Tất cả" : s}
@@ -253,10 +279,7 @@ export default function ProcessOrders() {
 
         <div className="filter-group">
           <label>Thanh toán</label>
-          <select
-            value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value)}
-          >
+          <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)}>
             {paymentOptions.map((s) => (
               <option key={s} value={s}>
                 {s === "ALL" ? "Tất cả" : s}
@@ -302,9 +325,7 @@ export default function ProcessOrders() {
             <span className="muted">{paymentLabel(order.payment)}</span>
             <span className="muted">{order.service}</span>
             <span>{statusBadge(order.status)}</span>
-            <span className="amount">
-              {order.total.toLocaleString("vi-VN")}đ
-            </span>
+            <span className="amount">{order.total.toLocaleString("vi-VN")} ₫</span>
             <span className="muted">{order.createdAt}</span>
             <span className="align-right action-group">
               <button className="ghost" onClick={() => openDetail(order)}>
@@ -324,34 +345,70 @@ export default function ProcessOrders() {
 
       {updateModal && selectedOrder && (
         <div className="modal-backdrop">
-          <div className="modal-card">
-            <h3>Cập nhật trạng thái {selectedOrder.displayId}</h3>
-            <select
-              value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-            >
-              {statusOptions
-                .filter((s) => s !== "ALL")
-                .map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-            </select>
-            <div className="modal-actions">
+          <div className="modal-card status-modal">
+            <div className="status-modal__header">
+              <div>
+                <p className="status-eyebrow">Cập nhật trạng thái</p>
+                <h3>{selectedOrder.displayId}</h3>
+                <p className="status-subtext">
+                  Chọn trạng thái tiếp theo cho đơn hàng. Hệ thống sẽ lưu ngay khi bạn xác nhận.
+                </p>
+              </div>
               <button
-                className="ghost"
+                className="icon-button"
                 onClick={() => setUpdateModal(false)}
                 disabled={actionLoading}
+                aria-label="Dong"
               >
-                Huỷ
+                &times;
               </button>
-              <button
-                className="primary"
-                onClick={handleUpdate}
-                disabled={actionLoading}
-              >
-                {actionLoading ? "Đang lưu..." : "Lưu"}
+            </div>
+
+            <div className="status-summary">
+              <div className="status-summary__item">
+                <span className="label">Trạng thái hiện tại</span>
+                <div>{statusBadge(selectedOrder.status)}</div>
+              </div>
+              <div className="status-summary__item status-summary__meta">
+                <span className="label">Giá trị đơn</span>
+                <strong className="amount">
+                  {selectedOrder.total.toLocaleString("vi-VN")} đ
+                </strong>
+              </div>
+              <div className="status-summary__item status-summary__item--full">
+                <span className="label">Thanh toán</span>
+                <strong>{paymentLabel(selectedOrder.payment)}</strong>
+              </div>
+            </div>
+
+            <div className="field-group">
+              <p className="field-label">Trạng thái mới</p>
+              <div className="select-shell">
+                <select
+                  className="status-select"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                >
+                  {statusOptions
+                    .filter((s) => s !== "ALL")
+                    .map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <p className="helper-text">
+                Ưu tiên xác nhận ngay khi đã chốt thông tin với khách. Chỉ chọn CANCELLED khi có yêu cầu rõ ràng.
+              </p>
+            </div>
+
+            <div className="modal-actions">
+              <button className="ghost" onClick={() => setUpdateModal(false)} disabled={actionLoading}>
+                Bỏ qua
+              </button>
+              <button className="primary" onClick={handleUpdate} disabled={actionLoading}>
+                {actionLoading ? "Đang lưu..." : "Lưu cập nhật"}
               </button>
             </div>
           </div>
@@ -360,53 +417,117 @@ export default function ProcessOrders() {
 
       {detailModal && (
         <div className="modal-backdrop">
-          <div className="modal-card">
-            <h3>Chi tiết đơn hàng</h3>
+          <div className="modal-card detail-modal-card">
             {detailLoading && <div>Đang tải...</div>}
             {!detailLoading && detailData && (
-              <div className="detail-grid">
-                <div>
-                  <strong>Mã đơn:</strong> {detailData.id}
-                </div>
-                <div>
-                  <strong>Khách:</strong> {detailData.userFullName}
-                </div>
-                <div>
-                  <strong>Trạng thái:</strong> {detailData.status}
-                </div>
-                <div>
-                  <strong>Thanh toán:</strong> {detailData.paymentMethod}
-                </div>
-                <div>
-                  <strong>Vận chuyển:</strong> {detailData.serviceName}
-                </div>
-                <div>
-                  <strong>Tổng:</strong>{" "}
-                  {(detailData.totalPrice || 0).toLocaleString("vi-VN")}đ
-                </div>
-                <div>
-                  <strong>Thời gian:</strong>{" "}
-                  {detailData.orderDate
-                    ? new Date(detailData.orderDate).toLocaleString("vi-VN")
-                    : "-"}
-                </div>
-                <div>
-                  <strong>Ghi chú:</strong> {detailData.note || "-"}
-                </div>
-                {detailData.items && detailData.items.length > 0 && (
-                  <div className="detail-items">
-                    <strong>Sản phẩm:</strong>
-                    <ul>
-                      {detailData.items.map((it) => (
-                        <li key={it.id}>
-                          {it.bookTitle} x {it.quantity} –{" "}
-                          {(it.price || 0).toLocaleString("vi-VN")}đ
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+              (() => {
+                const items = normalizeOrderItems(detailData);
+                const subtotal = items.reduce(
+                  (sum, it) => sum + (it.quantity || 0) * (it.price || 0),
+                  0
+                );
+                const shipping = Math.max((detailData.totalPrice || 0) - subtotal, 0);
+                const total =
+                  detailData.totalPrice != null ? detailData.totalPrice : subtotal + shipping;
+                const orderDate = detailData.orderDate
+                  ? new Date(detailData.orderDate).toLocaleString("vi-VN")
+                  : "-";
+
+                return (
+                  <>
+                    <div className="detail-header">
+                      <div>
+                        <p className="detail-eyebrow">Chi tiết đơn hàng</p>
+                        <h3>{detailData.displayId || detailData.id}</h3>
+                        <p className="detail-datetime">{orderDate}</p>
+                      </div>
+                      <div className="detail-header__pill">{statusBadge(detailData.status)}</div>
+                    </div>
+
+                    <div className="detail-meta">
+                      <div>
+                        <span className="label">Khách</span>
+                        <strong>{detailData.userFullName || "-"}</strong>
+                      </div>
+                      <div>
+                        <span className="label">Thanh toán</span>
+                        <strong>{paymentLabel(detailData.paymentMethod)}</strong>
+                      </div>
+                      <div>
+                        <span className="label">Vận chuyển</span>
+                        <strong>{detailData.serviceName || "-"}</strong>
+                      </div>
+                      <div>
+                        <span className="label">Ghi chú</span>
+                        <strong>{detailData.note || "-"}</strong>
+                      </div>
+                    </div>
+
+                    <div className="detail-items">
+                      <div className="detail-items__header">
+                        <strong>Sản phẩm đã đặt</strong>
+                        <div className="item-stats">
+                          <span className="badge">{items.length} đầu sách</span>
+                          <span className="badge badge--accent">
+                            {items.reduce((sum, it) => sum + (it.quantity || 0), 0)} quyển
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="detail-card-list">
+                        {items.length === 0 && (
+                          <div className="detail-empty">Chưa có sản phẩm.</div>
+                        )}
+                        {items.map((it) => {
+                          const qty = it.quantity || 0;
+                          const unit = it.price || 0;
+                          const lineTotal = qty * unit;
+                          const shortTitle = (it.bookTitle || "Sách")
+                            .slice(0, 2)
+                            .toUpperCase();
+                          return (
+                            <div className="detail-card" key={it.id}>
+                              <div className="detail-thumb">
+                                <span>{shortTitle}</span>
+                              </div>
+                              <div className="detail-card__content">
+                                <div className="detail-card__top">
+                                  <div>
+                                    <p className="detail-card__title">{it.bookTitle}</p>
+                                    <p className="detail-card__meta">Mã: {it.bookCode || it.bookId || "-"}</p>
+                                  </div>
+                                  <div className="detail-card__price">{unit.toLocaleString("vi-VN")} ₫</div>
+                                </div>
+                                <div className="detail-card__bottom">
+                                  <span className="pill muted">SL: {qty}</span>
+                                  <span className="detail-card__line-total">
+                                    {lineTotal.toLocaleString("vi-VN")} ₫
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="detail-summary">
+                        <div className="detail-summary__row">
+                          <span>Tạm tính</span>
+                          <span className="amount">{subtotal.toLocaleString("vi-VN")} ₫</span>
+                        </div>
+                        <div className="detail-summary__row">
+                          <span>Phí vận chuyển</span>
+                          <span className="amount">{shipping.toLocaleString("vi-VN")} ₫</span>
+                        </div>
+                        <div className="detail-summary__row detail-summary__row--total">
+                          <span>Tổng cộng</span>
+                          <span className="amount">{total.toLocaleString("vi-VN")} ₫</span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()
             )}
             <div className="modal-actions">
               <button className="primary" onClick={() => setDetailModal(false)}>
