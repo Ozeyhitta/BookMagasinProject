@@ -212,43 +212,65 @@ export default function OrderHistory() {
                   <div className={styles.itemsList}>
                     {selectedOrder.items.map((item, idx) => (
                       <div key={idx} className={styles.itemRow}>
-                        <div className={styles.itemInfo}>
-                          <div className={styles.itemTitle}>{item.bookTitle || `Sản phẩm #${item.bookId || idx + 1}`}</div>
+                        <div className={styles.itemTop}>
+                          <div className={styles.itemTitleLine}>
+                            <div className={styles.itemTitle}>{item.bookTitle || `Sản phẩm #${item.bookId || idx + 1}`}</div>
+                            <div className={styles.itemTotal}>
+                              {(item.quantity * (item.price || 0)).toLocaleString("vi-VN")}đ
+                            </div>
+                          </div>
                           <div className={styles.itemMeta}>Số lượng: {item.quantity} × {item.price?.toLocaleString("vi-VN") || "0"}đ</div>
                         </div>
-                        <div className={styles.itemTotal}>
-                          {(item.quantity * (item.price || 0)).toLocaleString("vi-VN")}đ
-                        </div>
+
                         {canReviewStatus(selectedOrder.status) && (
                           <div className={styles.reviewBox}>
                             {reviewForm.bookId === item.bookId ? (
-                              <div className={styles.reviewForm}>
-                                <div className={styles.starSelector}>
-                                  {[1,2,3,4,5].map((star) => (
-                                    <span
-                                      key={star}
-                                      className={reviewForm.rating >= star ? styles.starFilled : styles.starEmpty}
-                                      onClick={() => setReviewForm((f) => ({ ...f, rating: star }))}
-                                    >★</span>
-                                  ))}
+                              <div className={styles.reviewCard}>
+                                <div className={styles.reviewHeader}>
+                                  <div className={styles.reviewHeader__labels}>
+                                    <p className={styles.reviewEyebrow}>Đánh giá sản phẩm</p>
+                                    <p className={styles.reviewTitle}>{item.bookTitle}</p>
+                                  </div>
+                                  <div className={styles.starSelector}>
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <button
+                                        key={star}
+                                        type="button"
+                                        className={`${styles.starButton} ${reviewForm.rating >= star ? styles.starButtonActive : ""}`}
+                                        onClick={() => setReviewForm((f) => ({ ...f, rating: star }))}
+                                      >
+                                        ★
+                                      </button>
+                                    ))}
+                                  </div>
                                 </div>
-                                <textarea
-                                  className={styles.reviewTextarea}
-                                  placeholder="Chia sẻ cảm nhận về sản phẩm"
-                                  value={reviewForm.comment}
-                                  onChange={(e) => setReviewForm((f) => ({ ...f, comment: e.target.value }))}
-                                />
-                                <div className={styles.reviewActions}>
-                                  <button
-                                    className={styles.btnCancel}
-                                    onClick={() => setReviewForm({ bookId: null, rating: 0, comment: "", submitting: false })}
-                                    disabled={reviewForm.submitting}
-                                  >Hủy</button>
-                                  <button
-                                    className={styles.btnSubmit}
-                                    onClick={() => submitReview(item.bookId)}
-                                    disabled={reviewForm.submitting}
-                                  >{reviewForm.submitting ? "Đang gửi..." : "Gửi đánh giá"}</button>
+
+                                <div className={styles.reviewBody}>
+                                  <textarea
+                                    className={styles.reviewTextarea}
+                                    placeholder="Chia sẻ cảm nhận ngắn gọn (chất lượng, gói hàng, thời gian giao)..."
+                                    value={reviewForm.comment}
+                                    onChange={(e) => setReviewForm((f) => ({ ...f, comment: e.target.value }))}
+                                  />
+                                  <div className={styles.reviewFooter}>
+                                    <span className={styles.reviewHint}>Lời nhận xét lịch sự giúp shop cải thiện tốt hơn.</span>
+                                    <div className={styles.reviewActions}>
+                                      <button
+                                        className={styles.btnGhost}
+                                        onClick={() => setReviewForm({ bookId: null, rating: 0, comment: "", submitting: false })}
+                                        disabled={reviewForm.submitting}
+                                      >
+                                        Hủy
+                                      </button>
+                                      <button
+                                        className={styles.btnSubmit}
+                                        onClick={() => submitReview(item.bookId)}
+                                        disabled={reviewForm.submitting}
+                                      >
+                                        {reviewForm.submitting ? "Đang gửi..." : "Gửi đánh giá"}
+                                      </button>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             ) : (
