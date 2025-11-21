@@ -13,5 +13,7 @@ public interface OrderService {
     void deleteOrderById(Integer id);
     List<OrderResponseDto> findByUserId(Integer userId);
     OrderResponseDto updateOrderStatus(Integer orderId, String newStatus);
+    List<OrderResponseDto> searchOrders(String status, String paymentMethod, String query, String sortBy);
+    Optional<OrderResponseDto> getDetailedOrder(Integer id);
 }
 

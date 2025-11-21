@@ -51,6 +51,23 @@ public class OrderController {
         return ResponseEntity.ok(orderService.findByUserId(userId));
     }
 
+    @GetMapping("/manage")
+    public ResponseEntity<List<OrderResponseDto>> searchOrders(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, name = "payment") String paymentMethod,
+            @RequestParam(required = false, name = "q") String query,
+            @RequestParam(required = false, defaultValue = "latest") String sort) {
+        List<OrderResponseDto> result = orderService.searchOrders(status, paymentMethod, query, sort);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<OrderResponseDto> getOrderDetail(@PathVariable Integer id) {
+        return orderService.getDetailedOrder(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     // UPDATE ORDER STATUS (dùng cho thanh toán)
     @PutMapping("/{id}/status")
     public ResponseEntity<OrderResponseDto> updateOrderStatus(

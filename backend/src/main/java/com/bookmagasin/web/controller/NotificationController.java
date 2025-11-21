@@ -81,6 +81,11 @@ public class NotificationController {
         }
     }
 
+    @GetMapping("/user/{userId}/unread-count")
+    public ResponseEntity<Long> getUnreadCount(@PathVariable Integer userId) {
+        return ResponseEntity.ok(service.countUnreadByUser(userId));
+    }
+
     // ⭐⭐ API STAFF VIEW — DÙNG CHO TRANG FE CỦA BẠN ⭐⭐
     @GetMapping("/staff-view")
     public ResponseEntity<Object> getStaffViewNotifications() {

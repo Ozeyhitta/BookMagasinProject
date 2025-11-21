@@ -7,7 +7,8 @@ import "../components/header.css";
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [cartCount, setCartCount] = useState(0);
-  const [searchTerm, setSearchTerm] = useState(""); // ✅ STATE CHO SEARCH
+  const [notifCount, setNotifCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function Header() {
 
     if (userId) {
       fetchCartCount(userId);
+      fetchUnreadCount(userId);
     }
   }, []);
 
@@ -51,6 +53,20 @@ export default function Header() {
     }
   };
 
+  const fetchUnreadCount = async (userId) => {
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/notifications/user/${userId}/unread-count`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setNotifCount(Number(data) || 0);
+      }
+    } catch (err) {
+      console.error("Lỗi khi lấy số thông báo chưa đọc:", err);
+    }
+  };
+
   useEffect(() => {
     const savedCount = localStorage.getItem("cartCount");
     if (savedCount) setCartCount(parseInt(savedCount));
@@ -58,6 +74,16 @@ export default function Header() {
     const handleStorageChange = (event) => {
       if (event.key === "cartCount") {
         setCartCount(parseInt(event.newValue || "0"));
+      }
+      if (event.key === "userId") {
+        const uid = event.newValue;
+        if (uid) {
+          fetchCartCount(uid);
+          fetchUnreadCount(uid);
+        } else {
+          setNotifCount(0);
+          setCartCount(0);
+        }
       }
     };
 
@@ -69,6 +95,24 @@ export default function Header() {
   const goToNotifications = () => router.push("/notifications");
   const goToMainPage = () => router.push("/mainpage");
   const goToCart = () => router.push("/cart");
+
+  // Refresh unread count when tab gains focus (simple live update)
+  useEffect(() => {
+    const onFocus = () => {
+      const userId = localStorage.getItem("userId");
+      if (userId) fetchUnreadCount(userId);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
+  // Optional polling every 30s to catch new notifications
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+    const timer = setInterval(() => fetchUnreadCount(userId), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleLogout = async () => {
     const token = localStorage.getItem("token");
@@ -97,19 +141,16 @@ export default function Header() {
       }
     } catch (error) {
       console.error("Logout error:", error);
-      alert("Không thể kết nối đến server!");
+      alert("Không thể kết nối tới server!");
     }
   };
 
-  // ✅ HÀM XỬ LÝ SEARCH
   const handleSearch = () => {
     const keyword = searchTerm.trim();
-    if (!keyword) return; // không tìm nếu rỗng
-
+    if (!keyword) return;
     router.push(`/search?keyword=${encodeURIComponent(keyword)}`);
   };
 
-  // ✅ NHẤN ENTER TRONG Ô INPUT
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       handleSearch();
@@ -118,11 +159,10 @@ export default function Header() {
 
   return (
     <header className="header">
-      {/* --- Top Bar --- */}
       <div className="header-top">
         <div className="contact-info">
-          <span>📞 028.73008182</span>
-          <span>✉️ hotro@vinabook.com</span>
+          <span>☎ 028.73008182</span>
+          <span>✉ hotro@vinabook.com</span>
           <span>📍 1 Võ Văn Ngân, Phường Thủ Đức, TP Hồ Chí Minh</span>
         </div>
 
@@ -143,9 +183,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* --- Main Header --- */}
       <div className="header-main">
-        {/* Logo */}
         <div
           className="logo"
           onClick={goToMainPage}
@@ -156,7 +194,6 @@ export default function Header() {
           <span className="green">.com</span>
         </div>
 
-        {/* ✅ Search Bar hoạt động */}
         <div className="search-bar">
           <input
             type="text"
@@ -168,7 +205,6 @@ export default function Header() {
           <button onClick={handleSearch}>Tìm kiếm</button>
         </div>
 
-        {/* Right Group */}
         <div className="right-section">
           <div className="header-icons">
             <div className="icon-item" onClick={goToOrderHistory}>
@@ -176,8 +212,15 @@ export default function Header() {
               <p>Lịch sử đơn hàng</p>
             </div>
 
-            <div className="icon-item" onClick={goToNotifications}>
+            <div
+              className="icon-item"
+              onClick={goToNotifications}
+              style={{ position: "relative" }}
+            >
               <Bell className="icon" />
+              {notifCount > 0 && (
+                <span className="badge-dot">{notifCount}</span>
+              )}
               <p>Thông Báo</p>
             </div>
 
@@ -188,20 +231,7 @@ export default function Header() {
             >
               <ShoppingCart className="icon" />
               {cartCount > 0 && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: "-5px",
-                    right: "-5px",
-                    background: "red",
-                    color: "white",
-                    borderRadius: "50%",
-                    padding: "2px 6px",
-                    fontSize: "12px",
-                  }}
-                >
-                  {cartCount}
-                </span>
+                <span className="badge-dot">{cartCount}</span>
               )}
               <p>Giỏ Hàng</p>
             </div>

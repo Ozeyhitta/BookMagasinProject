@@ -176,6 +176,24 @@
   transform: translateY(-2px);
 }
 
+.badge-dot {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background: #e11d48;
+  color: #fff;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.3);
+}
+
 /* ------------------------ */
 /* Phần tư vấn bán hàng */
 /* ------------------------ */

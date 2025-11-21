@@ -525,3 +525,52 @@
     align-self: flex-end;
   }
 }
+.reviewBox {
+  margin-left: auto;
+}
+
+.reviewForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+}
+
+.starSelector {
+  display: flex;
+  gap: 4px;
+  font-size: 18px;
+}
+
+.starFilled { color: #f59e0b; cursor: pointer; }
+.starEmpty { color: #d1d5db; cursor: pointer; }
+
+.reviewTextarea {
+  width: 100%;
+  min-height: 70px;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.reviewActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btnSubmit {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

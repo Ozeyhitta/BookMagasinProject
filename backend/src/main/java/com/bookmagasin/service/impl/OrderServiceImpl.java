@@ -1,18 +1,34 @@
 package com.bookmagasin.service.impl;
 
-import com.bookmagasin.entity.*;
+import com.bookmagasin.entity.Book;
+import com.bookmagasin.entity.Notification;
+import com.bookmagasin.entity.Order;
+import com.bookmagasin.entity.OrderItem;
+import com.bookmagasin.entity.OrderStatusHistory;
+import com.bookmagasin.entity.Payment;
+import com.bookmagasin.entity.User;
+import com.bookmagasin.entity.UserNotification;
+import com.bookmagasin.entity.UserNotificationId;
 import com.bookmagasin.enums.EOrderHistory;
 import com.bookmagasin.enums.EStatusBooking;
-import com.bookmagasin.repository.*;
+import com.bookmagasin.repository.BookRepository;
+import com.bookmagasin.repository.NotificationRepository;
+import com.bookmagasin.repository.OrderItemRepository;
+import com.bookmagasin.repository.OrderRepository;
+import com.bookmagasin.repository.OrderStatusHistoryRepository;
+import com.bookmagasin.repository.PaymentRepository;
+import com.bookmagasin.repository.ServiceRepository;
+import com.bookmagasin.repository.UserNotificationRepository;
+import com.bookmagasin.repository.UserRepository;
 import com.bookmagasin.service.OrderService;
 import com.bookmagasin.web.dto.OrderDto;
 import com.bookmagasin.web.dtoResponse.OrderResponseDto;
 import com.bookmagasin.web.mapper.OrderMapper;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -25,11 +41,21 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final ServiceRepository serviceRepository;
     private final PaymentRepository paymentRepository;
-    private BookRepository bookRepository;
-    private OrderItemRepository orderItemRepository;
-    private OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private final BookRepository bookRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private final NotificationRepository notificationRepository;
+    private final UserNotificationRepository userNotificationRepository;
 
-    public OrderServiceImpl(OrderRepository orderRepository, UserRepository userRepository, ServiceRepository serviceRepository, PaymentRepository paymentRepository, BookRepository bookRepository, OrderItemRepository orderItemRepository, OrderStatusHistoryRepository orderStatusHistoryRepository) {
+    public OrderServiceImpl(OrderRepository orderRepository,
+                            UserRepository userRepository,
+                            ServiceRepository serviceRepository,
+                            PaymentRepository paymentRepository,
+                            BookRepository bookRepository,
+                            OrderItemRepository orderItemRepository,
+                            OrderStatusHistoryRepository orderStatusHistoryRepository,
+                            NotificationRepository notificationRepository,
+                            UserNotificationRepository userNotificationRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.serviceRepository = serviceRepository;
@@ -37,8 +63,9 @@ public class OrderServiceImpl implements OrderService {
         this.bookRepository = bookRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderStatusHistoryRepository = orderStatusHistoryRepository;
+        this.notificationRepository = notificationRepository;
+        this.userNotificationRepository = userNotificationRepository;
     }
-
 
     @Override
     @Transactional
@@ -58,26 +85,12 @@ public class OrderServiceImpl implements OrderService {
         order.setPayment(payment);
 
         order.setNote(dto.getNote());
-
-        // ✅ Chuyển String → Enum
-        if (dto.getStatus() != null) {
-            order.setStatus(dto.getStatus());
-        } else {
-            order.setStatus(EStatusBooking.PENDING);
-        }
-
-
-        // Parse orderDate từ String hoặc Date
-        if (dto.getOrderDate() != null) {
-            order.setOrderDate(dto.getOrderDate());
-        } else {
-            // Nếu không có orderDate, set ngày hiện tại
-            order.setOrderDate(LocalDateTime.now());
-        }
+        order.setStatus(dto.getStatus() != null ? dto.getStatus() : EStatusBooking.PENDING);
+        LocalDateTime orderDate = dto.getOrderDate() != null ? dto.getOrderDate() : LocalDateTime.now();
+        order.setOrderDate(orderDate);
         order.setShippingAddress(dto.getShippingAddress());
         order.setPhoneNumber(dto.getPhoneNumber());
 
-        // ✅ Tính tổng tiền từ giỏ hàng
         double totalPrice = 0.0;
         if (dto.getOrderItems() != null) {
             totalPrice = dto.getOrderItems().stream()
@@ -86,62 +99,65 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setTotalPrice(totalPrice);
 
-        // ✅ Lưu order chính
         Order savedOrder = orderRepository.save(order);
-        // Flush để đảm bảo order có ID trước khi tạo OrderStatusHistory
         orderRepository.flush();
 
-        // ✅ Lưu danh sách sản phẩm (OrderItem)
         if (dto.getOrderItems() != null && !dto.getOrderItems().isEmpty()) {
             List<OrderItem> items = dto.getOrderItems().stream().map(itemDto -> {
                 Book book = bookRepository.findById(itemDto.getBookId())
                         .orElseThrow(() -> new RuntimeException("Book not found"));
 
-                OrderItem orderItem = new OrderItem();
-                orderItem.setBook(book);
-                orderItem.setOrder(savedOrder);
-                orderItem.setQuantity(itemDto.getQuantity());
-                orderItem.setPrice(itemDto.getPrice());
-
-                return orderItem;
+                OrderItem oi = new OrderItem();
+                oi.setBook(book);
+                oi.setOrder(savedOrder);
+                oi.setQuantity(itemDto.getQuantity());
+                oi.setPrice(itemDto.getPrice());
+                return oi;
             }).collect(Collectors.toList());
 
             orderItemRepository.saveAll(items);
-            savedOrder.setBooks(items); // gán ngược lại để mapper có thể lấy danh sách
+            savedOrder.setBooks(items);
         }
 
-        // ✅ Tạo OrderStatusHistory đầu tiên khi tạo order mới
+        // create initial status history
         try {
             OrderStatusHistory initialHistory = new OrderStatusHistory();
-            // Map EStatusBooking sang EOrderHistory
             EOrderHistory initialStatus = mapStatusToOrderHistory(savedOrder.getStatus());
             initialHistory.setEOrderHistory(initialStatus);
             initialHistory.setStatusChangeDate(new Date());
             initialHistory.setOrder(savedOrder);
-            
-            // Đảm bảo Order có danh sách orderStatusHistories được khởi tạo
+
             if (savedOrder.getOrderStatusHistories() == null) {
-                savedOrder.setOrderStatusHistories(new java.util.ArrayList<>());
+                savedOrder.setOrderStatusHistories(new ArrayList<>());
             }
             savedOrder.getOrderStatusHistories().add(initialHistory);
-            
-            // Lưu OrderStatusHistory
-            OrderStatusHistory savedHistory = orderStatusHistoryRepository.save(initialHistory);
-            orderStatusHistoryRepository.flush(); // Flush để đảm bảo lưu vào DB
-            System.out.println("✅ OrderStatusHistory created: ID=" + savedHistory.getId() + 
-                             ", OrderID=" + savedOrder.getId() + 
-                             ", Status=" + savedHistory.getEOrderHistory());
+
+            orderStatusHistoryRepository.save(initialHistory);
+            orderStatusHistoryRepository.flush();
         } catch (Exception e) {
-            System.err.println("❌ Error creating OrderStatusHistory: " + e.getMessage());
-            e.printStackTrace();
             throw new RuntimeException("Failed to create OrderStatusHistory for order: " + savedOrder.getId(), e);
         }
 
-        // ✅ Trả về response
+        // notify staff
+        try {
+            Notification noti = new Notification();
+            noti.setTitle("Có đơn hàng mới #" + savedOrder.getId());
+            String customerName = (savedOrder.getUser() != null)
+                    ? savedOrder.getUser().getFullName()
+                    : "Khách hàng";
+            String msg = customerName +
+                    " vừa tạo đơn hàng #" + savedOrder.getId() +
+                    " với tổng tiền " + savedOrder.getTotalPrice() + "đ.";
+            noti.setMessage(msg);
+            noti.setType("STAFF");
+            noti.setSendDate(new Date());
+
+            notificationRepository.save(noti);
+        } catch (Exception ignored) {
+        }
+
         return OrderMapper.toResponseDto(savedOrder);
     }
-
-
 
     @Override
     public List<OrderResponseDto> getAllOrders() {
@@ -166,11 +182,9 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public List<OrderResponseDto> findByUserId(Integer userId) {
         List<Order> orders = orderRepository.findByUserIdOrderByOrderDateDesc(userId);
-        // Trigger lazy loading của orderStatusHistories trong cùng transaction
-        // @BatchSize sẽ tự động fetch tất cả orderStatusHistories trong batch
         orders.forEach(order -> {
             if (order.getOrderStatusHistories() != null) {
-                order.getOrderStatusHistories().size(); // Trigger lazy load
+                order.getOrderStatusHistories().size();
             }
         });
         return orders.stream()
@@ -184,47 +198,59 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
 
-        // Cập nhật trạng thái đơn hàng
         EStatusBooking status = EStatusBooking.valueOf(newStatus.trim().toUpperCase());
         order.setStatus(status);
         Order savedOrder = orderRepository.save(order);
-        orderRepository.flush(); // Flush để đảm bảo order được lưu
+        orderRepository.flush();
 
-        // ✅ Tạo OrderStatusHistory mới khi cập nhật trạng thái
         try {
             OrderStatusHistory newHistory = new OrderStatusHistory();
             EOrderHistory orderHistoryStatus = mapStatusToOrderHistory(status);
             newHistory.setEOrderHistory(orderHistoryStatus);
             newHistory.setStatusChangeDate(new Date());
             newHistory.setOrder(savedOrder);
-            
-            // Đảm bảo Order có danh sách orderStatusHistories được khởi tạo
+
             if (savedOrder.getOrderStatusHistories() == null) {
-                savedOrder.setOrderStatusHistories(new java.util.ArrayList<>());
+                savedOrder.setOrderStatusHistories(new ArrayList<>());
             }
             savedOrder.getOrderStatusHistories().add(newHistory);
-            
-            // Lưu OrderStatusHistory
-            OrderStatusHistory savedHistory = orderStatusHistoryRepository.save(newHistory);
-            orderStatusHistoryRepository.flush(); // Flush để đảm bảo lưu vào DB
-            System.out.println("✅ OrderStatusHistory updated: ID=" + savedHistory.getId() + 
-                             ", OrderID=" + savedOrder.getId() + 
-                             ", Status=" + orderHistoryStatus);
+
+            orderStatusHistoryRepository.save(newHistory);
+            orderStatusHistoryRepository.flush();
         } catch (Exception e) {
-            System.err.println("❌ Error creating OrderStatusHistory: " + e.getMessage());
-            e.printStackTrace();
             throw new RuntimeException("Failed to create OrderStatusHistory for order: " + savedOrder.getId(), e);
+        }
+
+        // notify customer
+        try {
+            if (savedOrder.getUser() != null) {
+                Notification noti = new Notification();
+                noti.setTitle("Đơn hàng #" + savedOrder.getId() + " đã được cập nhật");
+                noti.setMessage("Trạng thái mới: " + status.name());
+                noti.setType("CUSTOMER");
+                noti.setSendDate(new Date());
+                Notification savedNoti = notificationRepository.save(noti);
+
+                UserNotification un = new UserNotification();
+                un.setId(new UserNotificationId(savedOrder.getUser().getId(), savedNoti.getId()));
+                un.setUser(savedOrder.getUser());
+                un.setNotification(savedNoti);
+                un.setRead(false);
+                un.setReadAt(null);
+                userNotificationRepository.save(un);
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: failed to create customer notification: " + e.getMessage());
         }
 
         return OrderMapper.toResponseDto(savedOrder);
     }
 
-    // ✅ Helper method để map EStatusBooking sang EOrderHistory
     private EOrderHistory mapStatusToOrderHistory(EStatusBooking status) {
         if (status == null) {
             return EOrderHistory.PENDING;
         }
-        
+
         switch (status) {
             case PENDING:
                 return EOrderHistory.PENDING;
@@ -239,4 +265,68 @@ public class OrderServiceImpl implements OrderService {
                 return EOrderHistory.PENDING;
         }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderResponseDto> searchOrders(String status, String paymentMethod, String query, String sortBy) {
+        EStatusBooking statusEnum = null;
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            statusEnum = EStatusBooking.valueOf(status.trim().toUpperCase());
+        }
+
+        com.bookmagasin.enums.EMethod paymentEnum = null;
+        if (paymentMethod != null && !paymentMethod.isBlank() && !"ALL".equalsIgnoreCase(paymentMethod)) {
+            paymentEnum = com.bookmagasin.enums.EMethod.valueOf(paymentMethod.trim().toUpperCase());
+        }
+
+        String keyword = (query == null || query.isBlank()) ? null : query.trim().toLowerCase();
+
+        final EStatusBooking statusFilter = statusEnum;
+        final com.bookmagasin.enums.EMethod paymentFilter = paymentEnum;
+        final String keywordFilter = keyword;
+        final String sortKey = sortBy;
+
+        List<Order> orders = orderRepository.findAllLightweight();
+
+        List<Order> filtered = orders.stream()
+                .filter(o -> statusFilter == null || o.getStatus() == statusFilter)
+                .filter(o -> paymentFilter == null || (o.getPayment() != null && paymentFilter.equals(o.getPayment().getMethod())))
+                .filter(o -> {
+                    if (keywordFilter == null) return true;
+                    String idString = String.valueOf(o.getId());
+                    String customer = o.getUser() != null ? o.getUser().getFullName() : "";
+                    return idString.contains(keywordFilter) || customer.toLowerCase().contains(keywordFilter);
+                })
+                .sorted((a, b) -> {
+                    if ("amount-desc".equalsIgnoreCase(sortKey)) {
+                        return Double.compare(
+                                b.getTotalPrice() != null ? b.getTotalPrice() : 0,
+                                a.getTotalPrice() != null ? a.getTotalPrice() : 0
+                        );
+                    }
+                    if ("amount-asc".equalsIgnoreCase(sortKey)) {
+                        return Double.compare(
+                                a.getTotalPrice() != null ? a.getTotalPrice() : 0,
+                                b.getTotalPrice() != null ? b.getTotalPrice() : 0
+                        );
+                    }
+                    LocalDateTime dateA = a.getOrderDate();
+                    LocalDateTime dateB = b.getOrderDate();
+                    if (dateA == null || dateB == null) return 0;
+                    return dateB.compareTo(dateA);
+                })
+                .toList();
+
+        return filtered.stream()
+                .map(OrderMapper::toResponseDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<OrderResponseDto> getDetailedOrder(Integer id) {
+        return orderRepository.findByIdWithDetails(id)
+                .map(OrderMapper::toResponseDto);
+    }
 }
+

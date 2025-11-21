@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.List;
 
 @Repository
@@ -17,4 +18,19 @@ public interface OrderRepository extends JpaRepository<Order,Integer> {
     @EntityGraph(attributePaths = {"user", "service", "payment", "books", "books.book"})
     @Query("SELECT o FROM Order o WHERE o.user.id = :userId ORDER BY o.orderDate DESC")
     List<Order> findByUserIdOrderByOrderDateDesc(@Param("userId") int userId);
+
+    @EntityGraph(attributePaths = {"user", "service", "payment"})
+    @Query("SELECT o FROM Order o")
+    List<Order> findAllLightweight();
+
+    @EntityGraph(attributePaths = {
+            "user",
+            "service",
+            "payment",
+            "books",
+            "books.book",
+            "orderStatusHistories"
+    })
+    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdWithDetails(@Param("id") Integer id);
 }
