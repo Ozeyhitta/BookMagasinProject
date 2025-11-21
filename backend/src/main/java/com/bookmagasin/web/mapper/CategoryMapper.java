@@ -20,6 +20,7 @@ public class CategoryMapper {
         CategoryResponseDto dto = new CategoryResponseDto();
         dto.setId(category.getId());
         dto.setName(category.getName());
+        dto.setParentId(category.getParent() != null ? category.getParent().getId() : null);
 
         if (category.getBooks() != null && !category.getBooks().isEmpty()) {
             List<Integer> bookIds = category.getBooks()
@@ -40,8 +41,12 @@ public class CategoryMapper {
 
         Category category = new Category();
         category.setName(dto.getName());
+        if (dto.getParentId() != null) {
+            Category parent = new Category();
+            parent.setId(dto.getParentId());
+            category.setParent(parent);
+        }
         category.setBooks(books);
         return category;
     }
 }
-

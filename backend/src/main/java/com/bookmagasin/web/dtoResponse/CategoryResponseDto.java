@@ -12,5 +12,6 @@ import java.util.List;
 public class CategoryResponseDto {
     private int id;
     private String name;
+    private Integer parentId;
     private List<Integer> bookIds; // chỉ trả id các book
 }

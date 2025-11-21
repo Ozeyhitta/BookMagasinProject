@@ -11,7 +11,9 @@ public class BookMapper {
         BookDto dto = new BookDto();
         dto.setId(book.getId());
         dto.setTitle(book.getTitle());
+        dto.setCode(book.getCode());
         dto.setSellingPrice(book.getSellingPrice());
+        dto.setStockQuantity(book.getStockQuantity());
         dto.setPublicationDate(book.getPublicationDate());
         dto.setEdition(book.getEdition());
         dto.setAuthor(book.getAuthor());
@@ -26,7 +28,9 @@ public class BookMapper {
         Book book = new Book();
         book.setId(dto.getId());
         book.setTitle(dto.getTitle());
+        book.setCode(dto.getCode());
         book.setSellingPrice(dto.getSellingPrice());
+        book.setStockQuantity(dto.getStockQuantity());
         book.setPublicationDate(dto.getPublicationDate());
         book.setEdition(dto.getEdition());
         book.setAuthor(dto.getAuthor());

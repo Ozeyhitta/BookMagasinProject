@@ -12,6 +12,7 @@ import java.util.List;
 public class CategoryDto {
 
     private String name;
+    private Integer parentId;
     List<Integer> bookIds;
 
 }

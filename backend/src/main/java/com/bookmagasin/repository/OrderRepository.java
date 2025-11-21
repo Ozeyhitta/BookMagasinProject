@@ -33,4 +33,14 @@ public interface OrderRepository extends JpaRepository<Order,Integer> {
     })
     @Query("SELECT o FROM Order o WHERE o.id = :id")
     Optional<Order> findByIdWithDetails(@Param("id") Integer id);
+
+    @EntityGraph(attributePaths = {
+            "user",
+            "books",
+            "books.book",
+            "books.book.categories"
+    })
+    @Query("SELECT DISTINCT o FROM Order o WHERE (:start IS NULL OR o.orderDate >= :start) AND (:end IS NULL OR o.orderDate <= :end)")
+    List<Order> findWithItemsByDateRange(@Param("start") java.time.LocalDateTime start,
+                                         @Param("end") java.time.LocalDateTime end);
 }

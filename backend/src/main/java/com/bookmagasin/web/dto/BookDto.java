@@ -13,7 +13,9 @@ import java.util.List;
 public class BookDto {
     private int id;
     private String title;
+    private String code;
     private double sellingPrice;
+    private Integer stockQuantity;
     private Date publicationDate;
     private int edition;
     private String author;       // chỉ map id thay vì cả Author entity

@@ -1,85 +1,89 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./manage-books.module.css";
-import {
-  Plus,
-  Search,
-  X,
-  Edit2,
-  Trash2,
-  Eye,
-  BadgePercent,
-} from "lucide-react";
+import { Plus, Search, X, Edit2, Trash2, Eye, BadgePercent } from "lucide-react";
+
+const MAIN_CATEGORY_NAMES = [
+  "Sách Kinh Tế",
+  "Sách Văn Học Trong Nước",
+  "Sách Văn Học Nước Ngoài",
+  "Sách Thường Thức Đời Sống",
+  "Sách Thiếu Nhi",
+  "Sách Phát Triển Bản Thân",
+  "Sách Tin Học - Ngoại Ngữ",
+  "Sách Chuyên Ngành",
+  "Sách Giáo Khoa - Giáo Trình",
+  "Sách Phát Hành 2024",
+  "Sách Mới 2025",
+  "Review Sách",
+];
+
+const normalize = (str) => str?.trim().toLowerCase();
+
+const createEmptyBook = () => ({
+  title: "",
+  code: "",
+  sellingPrice: "",
+  publicationDate: "",
+  edition: "",
+  author: "",
+  stockQuantity: "",
+  categoryIds: [],
+  imageUrl: "",
+  bookDetail: {
+    id: 0,
+    publisher: "",
+    supplier: "",
+    pages: "",
+    description: "",
+    imageUrl: "",
+    length: "",
+    width: "",
+    height: "",
+    weight: "",
+  },
+});
 
 export default function ManageBooks() {
   const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+
   const [showModal, setShowModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
+
   const [editingId, setEditingId] = useState(null);
-  const [isViewing, setIsViewing] = useState(false);
-  const [search, setSearch] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [categoryName, setCategoryName] = useState("");
-  const [categoryLoading, setCategoryLoading] = useState(false);
   const [bookPendingDelete, setBookPendingDelete] = useState(null);
   const [discountBook, setDiscountBook] = useState(null);
+  const [isViewing, setIsViewing] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [bookForm, setBookForm] = useState(createEmptyBook());
+
   const [discounts, setDiscounts] = useState([]);
   const [discountSubmitting, setDiscountSubmitting] = useState(false);
   const [discountMethod, setDiscountMethod] = useState("percent");
-
-  const createEmptyBook = () => ({
-    title: "",
-    sellingPrice: "",
-    publicationDate: "",
-    edition: "",
-    author: "",
-    bookDetailId: "",
-    categoryIds: [],
-    imageUrl: "",
-    bookDetail: {
-      id: "",
-      publisher: "",
-      supplier: "",
-      pages: "",
-      description: "",
-      imageUrl: "",
-      length: "",
-      width: "",
-      height: "",
-      weight: "",
-    },
-  });
-
-  const [bookForm, setBookForm] = useState(createEmptyBook());
-  const initialDiscountForm = {
+  const [discountForm, setDiscountForm] = useState({
     discountPercent: "",
     discountAmount: "",
     startDate: "",
     endDate: "",
-  };
-  const [discountForm, setDiscountForm] = useState(initialDiscountForm);
+  });
 
-  // ===================== LOAD BOOKS =====================
   useEffect(() => {
     loadBooks();
     loadCategories();
   }, []);
 
   useEffect(() => {
-    if (
-      showModal ||
-      showCategoryModal ||
-      showDeleteModal ||
-      showDiscountModal
-    ) {
+    if (showModal || showCategoryModal || showDeleteModal || showDiscountModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
     }
-
     return () => {
       document.body.style.overflow = "auto";
     };
@@ -89,23 +93,115 @@ export default function ManageBooks() {
     fetch("http://localhost:8080/api/books")
       .then((res) => res.json())
       .then((data) => {
-        const mapped = data.map((b) => ({
+        const mapped = (data || []).map((b) => ({
           id: b.id,
           title: b.title,
+          code: b.code || "",
           sellingPrice: b.sellingPrice,
-          publicationDate: b.publicationDate?.split("T")[0],
+          publicationDate: b.publicationDate?.split("T")[0] || "",
           edition: b.edition,
           author: b.author,
-          categoryNames: b.categories?.map((c) => c.name).join(", ") || "",
+          stockQuantity: b.stockQuantity ?? "",
           categoryIds: b.categories?.map((c) => c.id) || [],
+          categoryNames: b.categories?.map((c) => c.name).join(", ") || "",
+          categories: b.categories || [],
           bookDetail: b.bookDetail || null,
+          imageUrl: b.imageUrl || "",
         }));
         setBooks(mapped);
-      });
+      })
+      .catch(() => setBooks([]));
   };
 
-  // ===================== HANDLE INPUT =====================
-  const handleChange = (e) => {
+  const fetchCategories = () => fetch("http://localhost:8080/api/categories").then((res) => res.json());
+
+  const ensureMainCategories = async (list) => {
+    const existing = new Set(list.map((c) => normalize(c.name)));
+    let created = false;
+    for (const main of MAIN_CATEGORY_NAMES) {
+      if (!existing.has(normalize(main))) {
+        created = true;
+        await fetch("http://localhost:8080/api/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: main, parentId: null, bookIds: [] }),
+        });
+      }
+    }
+    return created;
+  };
+
+  const loadCategories = () => {
+    setCategoryLoading(true);
+    fetchCategories()
+      .then(async (data) => {
+        const created = await ensureMainCategories(data || []);
+        const finalData = created ? await fetchCategories() : data;
+        setCategories(finalData || []);
+      })
+      .catch(() => setCategories([]))
+      .finally(() => setCategoryLoading(false));
+  };
+
+  const mainCategories = useMemo(
+    () =>
+      categories
+        .filter((c) => c.parentId === null || c.parentId === undefined)
+        .sort((a, b) => MAIN_CATEGORY_NAMES.indexOf(a.name) - MAIN_CATEGORY_NAMES.indexOf(b.name)),
+    [categories]
+  );
+
+  const subCategoriesByParent = useMemo(() => {
+    const map = {};
+    categories.forEach((c) => {
+      if (c.parentId) {
+        if (!map[c.parentId]) map[c.parentId] = [];
+        map[c.parentId].push(c);
+      }
+    });
+    Object.keys(map).forEach((k) => {
+      map[k].sort((a, b) => a.name.localeCompare(b.name));
+    });
+    return map;
+  }, [categories]);
+
+  const filteredBooks = useMemo(() => {
+    const term = normalize(search);
+    if (!term) return books;
+    return books.filter(
+      (b) =>
+        normalize(b.title || "").includes(term) ||
+        normalize(b.code || "").includes(term) ||
+        normalize(b.author || "").includes(term) ||
+        normalize(b.categoryNames || "").includes(term)
+    );
+  }, [books, search]);
+
+  const mapBookToForm = (book) => ({
+    title: book?.title || "",
+    code: book?.code || "",
+    sellingPrice: book?.sellingPrice ?? "",
+    stockQuantity: book?.stockQuantity ?? "",
+    publicationDate: book?.publicationDate || "",
+    edition: book?.edition ?? "",
+    author: book?.author || "",
+    categoryIds: book?.categoryIds || [],
+    imageUrl: book?.imageUrl || "",
+    bookDetail: {
+      id: book?.bookDetail?.id || 0,
+      publisher: book?.bookDetail?.publisher || "",
+      supplier: book?.bookDetail?.supplier || "",
+      pages: book?.bookDetail?.pages ?? "",
+      description: book?.bookDetail?.description || "",
+      imageUrl: book?.bookDetail?.imageUrl || "",
+      length: book?.bookDetail?.length ?? "",
+      width: book?.bookDetail?.width ?? "",
+      height: book?.bookDetail?.height ?? "",
+      weight: book?.bookDetail?.weight ?? "",
+    },
+  });
+
+  const handleBookChange = (e) => {
     const { name, value } = e.target;
     setBookForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -114,89 +210,65 @@ export default function ManageBooks() {
     const { name, value } = e.target;
     setBookForm((prev) => ({
       ...prev,
-      bookDetail: {
-        ...prev.bookDetail,
-        [name]: value,
-      },
+      bookDetail: { ...prev.bookDetail, [name]: value },
     }));
   };
 
-  const toggleCategory = (categoryId) => {
+  const toggleCategory = (id) => {
     setBookForm((prev) => {
-      const exists = prev.categoryIds?.includes(categoryId);
-      const categoryIds = exists
-        ? prev.categoryIds.filter((id) => id !== categoryId)
-        : [...(prev.categoryIds || []), categoryId];
-      return { ...prev, categoryIds };
+      const exists = prev.categoryIds.includes(id);
+      return {
+        ...prev,
+        categoryIds: exists ? prev.categoryIds.filter((c) => c !== id) : [...prev.categoryIds, id],
+      };
     });
   };
 
-  const handleDiscountChange = (e) => {
-    const { name, value } = e.target;
-    setDiscountForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const formatDateTime = (value) => {
-    if (!value) return null;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return null;
-    return date.toISOString().slice(0, 19);
-  };
-
-  const loadDiscountsByBook = (bookId) => {
-    fetch(`http://localhost:8080/api/book-discounts/book/${bookId}`)
-      .then((res) => res.json())
-      .then((data) => setDiscounts(data))
-      .catch(() => setDiscounts([]));
-  };
-
-  const openDiscountModal = (book) => {
-    setDiscountBook(book);
-    setDiscountForm(initialDiscountForm);
-    setDiscountMethod("percent");
-    loadDiscountsByBook(book.id);
-    setShowDiscountModal(true);
-  };
-
-  const handleDiscountSubmit = (e) => {
-    e.preventDefault();
-    if (!discountBook) return;
-
+  const handleSubmit = () => {
     const payload = {
-      bookId: discountBook.id,
-      discountPercent:
-        discountMethod === "percent" && discountForm.discountPercent
-          ? Number(discountForm.discountPercent)
-          : null,
-      discountAmount:
-        discountMethod === "amount" && discountForm.discountAmount
-          ? Number(discountForm.discountAmount)
-          : null,
-      startDate: formatDateTime(discountForm.startDate),
-      endDate: formatDateTime(discountForm.endDate),
+      id: editingId || 0,
+      title: bookForm.title,
+      code: bookForm.code,
+      sellingPrice: Number(bookForm.sellingPrice) || 0,
+      stockQuantity: bookForm.stockQuantity !== "" ? Number(bookForm.stockQuantity) : null,
+      publicationDate: bookForm.publicationDate ? new Date(bookForm.publicationDate + "T00:00:00") : null,
+      edition: parseInt(bookForm.edition || 0, 10),
+      author: bookForm.author,
+      imageUrl: bookForm.imageUrl,
+      categoryIds: (bookForm.categoryIds || []).map((c) => Number(c)),
+      bookDetailId: bookForm.bookDetail?.id ? Number(bookForm.bookDetail.id) : 0,
+      bookDetail: {
+        id: bookForm.bookDetail?.id ? Number(bookForm.bookDetail.id) : 0,
+        publisher: bookForm.bookDetail?.publisher || "",
+        supplier: bookForm.bookDetail?.supplier || "",
+        pages: parseInt(bookForm.bookDetail?.pages || 0, 10),
+        description: bookForm.bookDetail?.description || "",
+        imageUrl: bookForm.bookDetail?.imageUrl || "",
+        length: parseFloat(bookForm.bookDetail?.length || 0),
+        width: parseFloat(bookForm.bookDetail?.width || 0),
+        height: parseFloat(bookForm.bookDetail?.height || 0),
+        weight: parseFloat(bookForm.bookDetail?.weight || 0),
+      },
     };
 
-    setDiscountSubmitting(true);
-    fetch("http://localhost:8080/api/book-discounts", {
-      method: "POST",
+    const method = editingId ? "PUT" : "POST";
+    const url = editingId ? `http://localhost:8080/api/books/${editingId}` : "http://localhost:8080/api/books";
+
+    fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
       .then(() => {
-        loadDiscountsByBook(discountBook.id);
-        setDiscountForm(initialDiscountForm);
+        setShowModal(false);
+        setEditingId(null);
+        setIsViewing(false);
+        setBookForm(createEmptyBook());
+        loadBooks();
       })
-      .finally(() => setDiscountSubmitting(false));
+      .catch(() => {});
   };
 
-  const handleDeleteDiscount = (discountId) => {
-    if (!discountBook) return;
-    fetch(`http://localhost:8080/api/book-discounts/${discountId}`, {
-      method: "DELETE",
-    }).then(() => loadDiscountsByBook(discountBook.id));
-  };
-
-  // ===================== OPEN ADD MODAL =====================
   const openAdd = () => {
     setEditingId(null);
     setIsViewing(false);
@@ -204,799 +276,574 @@ export default function ManageBooks() {
     setShowModal(true);
   };
 
-  // ===================== SUBMIT FORM =====================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      // Xử lý bookDetail: khi tạo mới không gửi id (hoặc gửi id = 0 nếu không có bookDetail cũ)
-      const detailPayload = bookForm.bookDetail
-        ? {
-            publisher: bookForm.bookDetail.publisher || "",
-            supplier: bookForm.bookDetail.supplier || "",
-            pages: Number(bookForm.bookDetail.pages) || 0,
-            length: Number(bookForm.bookDetail.length) || 0,
-            width: Number(bookForm.bookDetail.width) || 0,
-            height: Number(bookForm.bookDetail.height) || 0,
-            weight: Number(bookForm.bookDetail.weight) || 0,
-            description: bookForm.bookDetail.description || "",
-            imageUrl: bookForm.bookDetail.imageUrl || "",
-            // Chỉ gửi id nếu đang edit và id > 0
-            ...(editingId &&
-            bookForm.bookDetail.id &&
-            Number(bookForm.bookDetail.id) > 0
-              ? { id: Number(bookForm.bookDetail.id) }
-              : {}),
-          }
-        : null;
-
-      // Xử lý publicationDate: convert string (yyyy-MM-dd) thành Date object hoặc null
-      let publicationDate = null;
-      if (bookForm.publicationDate) {
-        const date = new Date(bookForm.publicationDate + "T00:00:00");
-        if (!isNaN(date.getTime())) {
-          publicationDate = date.toISOString();
-        }
-      }
-
-      const body = {
-        title: bookForm.title || "",
-        sellingPrice: Number(bookForm.sellingPrice) || 0,
-        edition: Number(bookForm.edition) || 1,
-        author: bookForm.author || "",
-        publicationDate: publicationDate,
-        categoryIds: bookForm.categoryIds || [],
-        bookDetail: detailPayload,
-      };
-
-      const url = editingId
-        ? `http://localhost:8080/api/books/${editingId}`
-        : "http://localhost:8080/api/books";
-
-      const method = editingId ? "PUT" : "POST";
-
-      console.log("Submitting book:", body);
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Error response:", errorText);
-        throw new Error(errorText || `Lỗi ${res.status}: ${res.statusText}`);
-      }
-
-      const result = await res.json();
-      console.log("Book saved successfully:", result);
-
-      loadBooks();
-      setShowModal(false);
-      alert(editingId ? "Cập nhật sách thành công!" : "Thêm sách thành công!");
-    } catch (err) {
-      console.error("Error saving book:", err);
-      alert("Lỗi: " + (err.message || "Không thể lưu sách. Vui lòng thử lại."));
-    }
-  };
-
-  // ===================== VIEW =====================
-  const viewBook = (id) => {
-    const b = books.find((x) => x.id === id);
-    if (!b) return;
-
-    setEditingId(null);
+  const openView = (book) => {
+    setEditingId(book.id);
     setIsViewing(true);
-    setBookForm({
-      title: b.title,
-      sellingPrice: b.sellingPrice,
-      publicationDate: b.publicationDate,
-      edition: b.edition,
-      author: b.author,
-      bookDetailId: "",
-      categoryIds: b.categoryIds || [],
-      imageUrl: "",
-      bookDetail: {
-        id: b.bookDetail?.id || "",
-        publisher: b.bookDetail?.publisher || "",
-        supplier: b.bookDetail?.supplier || "",
-        pages: b.bookDetail?.pages || "",
-        description: b.bookDetail?.description || "",
-        imageUrl: b.bookDetail?.imageUrl || "",
-        length: b.bookDetail?.length || "",
-        width: b.bookDetail?.width || "",
-        height: b.bookDetail?.height || "",
-        weight: b.bookDetail?.weight || "",
-      },
-    });
+    setBookForm(mapBookToForm(book));
     setShowModal(true);
   };
 
-  // ===================== EDIT =====================
-  const handleEdit = (id) => {
-    const b = books.find((x) => x.id === id);
-    setEditingId(id);
+  const openEdit = (book) => {
+    setEditingId(book.id);
     setIsViewing(false);
-
-    setBookForm({
-      title: b.title,
-      sellingPrice: b.sellingPrice,
-      publicationDate: b.publicationDate,
-      edition: b.edition,
-      author: b.author,
-      bookDetailId: "",
-      categoryIds: b.categoryIds || [],
-      imageUrl: "",
-      bookDetail: {
-        id: b.bookDetail?.id || "",
-        publisher: b.bookDetail?.publisher || "",
-        supplier: b.bookDetail?.supplier || "",
-        pages: b.bookDetail?.pages || "",
-        description: b.bookDetail?.description || "",
-        imageUrl: b.bookDetail?.imageUrl || "",
-        length: b.bookDetail?.length || "",
-        width: b.bookDetail?.width || "",
-        height: b.bookDetail?.height || "",
-        weight: b.bookDetail?.weight || "",
-      },
-    });
-
+    setBookForm(mapBookToForm(book));
     setShowModal(true);
   };
 
-  // ===================== DELETE =====================
-  const handleDelete = () => {
+  const openDelete = (book) => {
+    setBookPendingDelete(book);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
     if (!bookPendingDelete) return;
+    fetch(`http://localhost:8080/api/books/${bookPendingDelete.id}`, { method: "DELETE" })
+      .then(() => {
+        setShowDeleteModal(false);
+        setBookPendingDelete(null);
+        loadBooks();
+      })
+      .catch(() => {});
+  };
 
-    fetch(`http://localhost:8080/api/books/${bookPendingDelete.id}`, {
-      method: "DELETE",
-    }).then(() => {
-      loadBooks();
-      setShowDeleteModal(false);
-      setBookPendingDelete(null);
+  const addSubCategory = async (parentId) => {
+    const name = window.prompt("Nhap ten danh muc nho");
+    if (!name || !name.trim()) return;
+    await fetch("http://localhost:8080/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), parentId, bookIds: [] }),
     });
-  };
-
-  // ===================== CATEGORY MANAGEMENT =====================
-  const loadCategories = () => {
-    fetch("http://localhost:8080/api/categories")
-      .then((res) => res.json())
-      .then((data) => setCategories(data))
-      .catch(() => setCategories([]));
-  };
-
-  const openCategoryManager = () => {
-    setShowCategoryModal(true);
     loadCategories();
   };
 
-  const handleCreateCategory = (e) => {
-    e.preventDefault();
-    if (!categoryName.trim()) return;
+  const deleteCategory = async (categoryId) => {
+    await fetch(`http://localhost:8080/api/categories/${categoryId}`, { method: "DELETE" });
+    loadCategories();
+  };
 
-    setCategoryLoading(true);
-    fetch("http://localhost:8080/api/categories", {
+  const openDiscount = (book) => {
+    setDiscountBook(book);
+    setDiscountForm({
+      discountPercent: "",
+      discountAmount: "",
+      startDate: "",
+      endDate: "",
+    });
+    setDiscountMethod("percent");
+    setShowDiscountModal(true);
+    loadDiscounts(book.id);
+  };
+
+  const loadDiscounts = (bookId) => {
+    fetch(`http://localhost:8080/api/book-discounts/book/${bookId}`)
+      .then((res) => res.json())
+      .then((data) => setDiscounts(data || []))
+      .catch(() => setDiscounts([]));
+  };
+
+  const handleDiscountSubmit = () => {
+    if (!discountBook) return;
+    setDiscountSubmitting(true);
+    const payload = {
+      discountPercent: discountMethod === "percent" ? Number(discountForm.discountPercent) || 0 : null,
+      discountAmount: discountMethod === "amount" ? Number(discountForm.discountAmount) || 0 : null,
+      startDate: discountForm.startDate ? `${discountForm.startDate}T00:00:00` : null,
+      endDate: discountForm.endDate ? `${discountForm.endDate}T00:00:00` : null,
+      bookId: discountBook.id,
+    };
+    fetch("http://localhost:8080/api/book-discounts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: categoryName.trim(), bookIds: [] }),
+      body: JSON.stringify(payload),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to create category");
-        return res.json();
-      })
       .then(() => {
-        setCategoryName("");
-        loadCategories();
+        setDiscountSubmitting(false);
+        loadDiscounts(discountBook.id);
       })
-      .finally(() => setCategoryLoading(false));
+      .catch(() => setDiscountSubmitting(false));
   };
 
-  const handleDeleteCategory = (id) => {
-    if (!confirm("Xóa danh mục này?")) return;
-
-    fetch(`http://localhost:8080/api/categories/${id}`, {
-      method: "DELETE",
-    }).then(() => loadCategories());
+  const deleteDiscount = (id) => {
+    fetch(`http://localhost:8080/api/book-discounts/${id}`, { method: "DELETE" }).then(() => {
+      if (discountBook) loadDiscounts(discountBook.id);
+    });
   };
 
-  // ===================== FILTER =====================
-  const filtered = books.filter(
-    (b) =>
-      b.title.toLowerCase().includes(search.toLowerCase()) ||
-      b.author.toLowerCase().includes(search.toLowerCase())
-  );
-
-  // ===================== UI =====================
-  return (
-    <div className={styles.container}>
-      <div className={styles.headerRow}>
-        <div className={styles.actionGroup}>
-          <button className={styles.addButton} onClick={openAdd}>
-            <Plus size={16} /> Thêm sách
-          </button>
-          <button
-            className={styles.secondaryButton}
-            onClick={openCategoryManager}
-          >
-            <Plus size={16} /> Quản lý danh mục
+  const renderCategoryModal = () => (
+    <div className={styles.modalOverlay}>
+      <div className={`${styles.modal} ${styles.categoryModal}`}>
+        <div className={styles.modalHeader}>
+          <h3>Quản lý danh mục</h3>
+          <button className={styles.closeBtn} onClick={() => setShowCategoryModal(false)}>
+            <X size={18} />
           </button>
         </div>
-
-        <div className={styles.searchBox}>
-          <Search size={16} className={styles.searchIcon} />
-          <input
-            placeholder="Tìm tên sách, tác giả..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* MODAL */}
-      {showModal && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setShowModal(false)}
-        >
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>
-                {isViewing
-                  ? "Xem chi tiết sách"
-                  : editingId
-                  ? "Chỉnh sửa sách"
-                  : "Thêm sách mới"}
-              </h3>
-              <button
-                className={styles.closeBtn}
-                onClick={() => setShowModal(false)}
-              >
-                <X />
-              </button>
-            </div>
-
-            <form className={styles.modalForm} onSubmit={handleSubmit}>
-              <label>Tên sách:</label>
-              <input
-                name="title"
-                value={bookForm.title}
-                onChange={handleChange}
-                required
-                disabled={isViewing}
-              />
-
-              <label>Giá (VND):</label>
-              <input
-                name="sellingPrice"
-                type="number"
-                value={bookForm.sellingPrice}
-                onChange={handleChange}
-                required
-                disabled={isViewing}
-              />
-
-              <label>Tác giả:</label>
-              <input
-                name="author"
-                value={bookForm.author}
-                onChange={handleChange}
-                required
-                disabled={isViewing}
-              />
-
-              <label>Ngày xuất bản:</label>
-              <input
-                name="publicationDate"
-                type="date"
-                value={bookForm.publicationDate}
-                onChange={handleChange}
-                disabled={isViewing}
-              />
-
-              <label>Lần xuất bản:</label>
-              <input
-                name="edition"
-                type="number"
-                value={bookForm.edition}
-                onChange={handleChange}
-                disabled={isViewing}
-              />
-
-              <div className={styles.categorySection}>
-                <label>Danh mục:</label>
-                <div className={styles.categoryCheckboxList}>
-                  {categories.map((cat) => (
-                    <label key={cat.id} className={styles.categoryCheckbox}>
-                      <input
-                        type="checkbox"
-                        checked={bookForm.categoryIds?.includes(cat.id)}
-                        onChange={() => toggleCategory(cat.id)}
-                        disabled={isViewing}
-                      />
-                      <span>{cat.name}</span>
-                    </label>
-                  ))}
-                  {categories.length === 0 && (
-                    <p className={styles.emptyText}>
-                      Chưa có danh mục. Nhấn "Quản lý danh mục" để thêm mới.
-                    </p>
+        <p className={styles.helperText}>
+          Có sẵn 11 danh mục lớn. Bạn có thể thêm danh mục nhỏ bên trong từng danh mục lớn.
+        </p>
+        {categoryLoading ? (
+          <p className={styles.helperText}>Đang tải danh mục...</p>
+        ) : (
+          <div className={styles.categoryList}>
+            {mainCategories.map((main) => (
+              <div key={main.id} className={styles.categoryItemRow}>
+                <div className={styles.mainCategoryHeader}>
+                  <span className={styles.mainCategoryName}>{main.name}</span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className={styles.secondaryButtonSmall} onClick={() => addSubCategory(main.id)}>
+                      + Them danh muc nho
+                    </button>
+                    <button className={styles.categoryDeleteBtn} onClick={() => deleteCategory(main.id)}>
+                      Xoa
+                    </button>
+                  </div>
+                </div>
+                <div className={styles.subCategoryList}>
+                  {subCategoriesByParent[main.id]?.length ? (
+                    subCategoriesByParent[main.id].map((sub) => (
+                      <div key={sub.id} className={styles.subCategoryRow}>
+                        <span>{sub.name}</span>
+                        <button className={styles.categoryDeleteBtn} onClick={() => deleteCategory(sub.id)}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <span className={styles.emptyText}>Chua co danh muc nho</span>
                   )}
                 </div>
               </div>
-
-              <div className={styles.detailSection}>
-                <h4>Thông tin chi tiết sách</h4>
-                <div className={styles.detailGrid}>
-                  <div className={styles.detailField}>
-                    <label>Nhà xuất bản:</label>
-                    <input
-                      name="publisher"
-                      value={bookForm.bookDetail?.publisher || ""}
-                      onChange={handleDetailChange}
-                      disabled={isViewing}
-                    />
-                  </div>
-                  <div className={styles.detailField}>
-                    <label>Nhà cung cấp:</label>
-                    <input
-                      name="supplier"
-                      value={bookForm.bookDetail?.supplier || ""}
-                      onChange={handleDetailChange}
-                      disabled={isViewing}
-                    />
-                  </div>
-                  <div className={styles.detailField}>
-                    <label>Số trang:</label>
-                    <input
-                      name="pages"
-                      type="number"
-                      value={bookForm.bookDetail?.pages || ""}
-                      onChange={handleDetailChange}
-                      disabled={isViewing}
-                    />
-                  </div>
-                  <div className={styles.detailField}>
-                    <label>Trọng lượng (gram):</label>
-                    <input
-                      name="weight"
-                      type="number"
-                      value={bookForm.bookDetail?.weight || ""}
-                      onChange={handleDetailChange}
-                      disabled={isViewing}
-                    />
-                  </div>
-                  <div className={styles.detailField}>
-                    <label>Chiều dài (cm):</label>
-                    <input
-                      name="length"
-                      type="number"
-                      value={bookForm.bookDetail?.length || ""}
-                      onChange={handleDetailChange}
-                      disabled={isViewing}
-                    />
-                  </div>
-                  <div className={styles.detailField}>
-                    <label>Chiều rộng (cm):</label>
-                    <input
-                      name="width"
-                      type="number"
-                      value={bookForm.bookDetail?.width || ""}
-                      onChange={handleDetailChange}
-                      disabled={isViewing}
-                    />
-                  </div>
-                  <div className={styles.detailField}>
-                    <label>Chiều cao (cm):</label>
-                    <input
-                      name="height"
-                      type="number"
-                      value={bookForm.bookDetail?.height || ""}
-                      onChange={handleDetailChange}
-                      disabled={isViewing}
-                    />
-                  </div>
-                  <div
-                    className={`${styles.detailField} ${styles.fullWidthField}`}
-                  >
-                    <label>Ảnh bìa (URL):</label>
-                    <input
-                      name="imageUrl"
-                      value={bookForm.bookDetail?.imageUrl || ""}
-                      onChange={handleDetailChange}
-                      disabled={isViewing}
-                    />
-                  </div>
-                  <div
-                    className={`${styles.detailField} ${styles.fullWidthField}`}
-                  >
-                    <label>Mô tả:</label>
-                    <textarea
-                      name="description"
-                      value={bookForm.bookDetail?.description || ""}
-                      onChange={handleDetailChange}
-                      rows={3}
-                      disabled={isViewing}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  className={styles.cancelBtn}
-                  onClick={() => setShowModal(false)}
-                >
-                  {isViewing ? "Đóng" : "Hủy"}
-                </button>
-                {!isViewing && (
-                  <button type="submit" className={styles.saveBtn}>
-                    {editingId ? "Lưu" : "Thêm mới"}
-                  </button>
-                )}
-              </div>
-            </form>
+            ))}
           </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderBookModal = () => (
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <h3>{isViewing ? "Xem sách" : editingId ? "Sửa sách" : "Thêm sách"}</h3>
+          <button className={styles.closeBtn} onClick={() => setShowModal(false)}>
+            <X size={18} />
+          </button>
         </div>
-      )}
+        <div className={styles.modalForm}>
+          <label>
+            Tiêu đề
+            <input
+              name="title"
+              value={bookForm.title}
+              onChange={handleBookChange}
+              disabled={isViewing}
+              placeholder="Nhap tieu de"
+            />
+          </label>
+          <label>
+            Mã sách
+            <input
+              name="code"
+              value={bookForm.code}
+              onChange={handleBookChange}
+              disabled={isViewing}
+              placeholder="VD: BK-001"
+            />
+          </label>
+          <label>
+            Giá bán
+            <input
+              name="sellingPrice"
+              value={bookForm.sellingPrice}
+              onChange={handleBookChange}
+              disabled={isViewing}
+              placeholder="VD: 120000"
+            />
+          </label>
+          <label>
+            Số lượng tồn
+            <input
+              name="stockQuantity"
+              value={bookForm.stockQuantity}
+              onChange={handleBookChange}
+              disabled={isViewing}
+              placeholder="VD: 20"
+            />
+          </label>
+          <label>
+            Ngày xuất bản
+            <input
+              type="date"
+              name="publicationDate"
+              value={bookForm.publicationDate}
+              onChange={handleBookChange}
+              disabled={isViewing}
+            />
+          </label>
+          <label>
+            Lần tái bản
+            <input
+              name="edition"
+              value={bookForm.edition}
+              onChange={handleBookChange}
+              disabled={isViewing}
+              placeholder="VD: 1"
+            />
+          </label>
+          <label>
+            Tác giả
+            <input
+              name="author"
+              value={bookForm.author}
+              onChange={handleBookChange}
+              disabled={isViewing}
+              placeholder="Nhap ten tac gia"
+            />
+          </label>
+          <label>
+            Ảnh sách (URL)
+            <input
+              name="imageUrl"
+              value={bookForm.imageUrl}
+              onChange={handleBookChange}
+              disabled={isViewing}
+              placeholder="https://..."
+            />
+          </label>
 
-      {/* CATEGORY MODAL */}
-      {showCategoryModal && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setShowCategoryModal(false)}
-        >
-          <div
-            className={`${styles.modal} ${styles.categoryModal}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.modalHeader}>
-              <h3>Quản lý danh mục</h3>
-              <button
-                className={styles.closeBtn}
-                onClick={() => setShowCategoryModal(false)}
-              >
-                <X />
-              </button>
-            </div>
-
-            <form
-              className={styles.categoryForm}
-              onSubmit={handleCreateCategory}
-            >
-              <label>Tên danh mục mới:</label>
-              <div className={styles.categoryInputRow}>
-                <input
-                  value={categoryName}
-                  onChange={(e) => setCategoryName(e.target.value)}
-                  placeholder="VD: Sách Văn học"
-                  required
-                />
-                <button
-                  type="submit"
-                  className={styles.saveBtn}
-                  disabled={categoryLoading}
-                >
-                  {categoryLoading ? "Đang thêm..." : "Thêm"}
-                </button>
-              </div>
-            </form>
-
-            <div className={styles.categoryList}>
-              {categories.length === 0 && (
-                <p className={styles.emptyText}>Chưa có danh mục nào.</p>
-              )}
-
-              {categories.map((cat) => (
-                <div key={cat.id} className={styles.categoryItemRow}>
-                  <span>{cat.name}</span>
-                  <button
-                    className={styles.categoryDeleteBtn}
-                    onClick={() => handleDeleteCategory(cat.id)}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+          <div className={styles.categorySection}>
+            <label>Danh mục</label>
+            <div className={styles.categoryCheckboxList}>
+              {categories.map((c) => (
+                <label key={c.id} className={styles.categoryCheckbox}>
+                  <input
+                    type="checkbox"
+                    checked={bookForm.categoryIds.includes(c.id)}
+                    onChange={() => toggleCategory(c.id)}
+                    disabled={isViewing}
+                  />
+                  {c.name}
+                  {c.parentId ? <span className={styles.subBadge}>Nho</span> : null}
+                </label>
               ))}
             </div>
           </div>
-        </div>
-      )}
 
-      {/* DISCOUNT MODAL */}
-      {showDiscountModal && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => {
-            setShowDiscountModal(false);
-            setDiscountBook(null);
-            setDiscounts([]);
-            setDiscountForm(initialDiscountForm);
-            setDiscountMethod("percent");
-          }}
-        >
-          <div
-            className={`${styles.modal} ${styles.discountModal}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.modalHeader}>
-              <h3>Giảm giá cho: {discountBook?.title}</h3>
-              <button
-                className={styles.closeBtn}
-                onClick={() => {
-                  setShowDiscountModal(false);
-                  setDiscountBook(null);
-                  setDiscounts([]);
-                  setDiscountForm(initialDiscountForm);
-                  setDiscountMethod("percent");
-                }}
-              >
-                <X />
-              </button>
-            </div>
-
-            <form
-              className={styles.discountForm}
-              onSubmit={handleDiscountSubmit}
-            >
-              <div className={styles.discountMethodRow}>
-                <label className={styles.radioOption}>
-                  <input
-                    type="radio"
-                    name="discountMethod"
-                    value="percent"
-                    checked={discountMethod === "percent"}
-                    onChange={() => {
-                      setDiscountMethod("percent");
-                      setDiscountForm((prev) => ({
-                        ...prev,
-                        discountAmount: "",
-                      }));
-                    }}
-                  />
-                  Giảm theo %
-                </label>
-                <label className={styles.radioOption}>
-                  <input
-                    type="radio"
-                    name="discountMethod"
-                    value="amount"
-                    checked={discountMethod === "amount"}
-                    onChange={() => {
-                      setDiscountMethod("amount");
-                      setDiscountForm((prev) => ({
-                        ...prev,
-                        discountPercent: "",
-                      }));
-                    }}
-                  />
-                  Giảm theo số tiền
-                </label>
+          <div className={styles.detailSection}>
+            <h4>Thông tin chi tiết</h4>
+            <div className={styles.detailGrid}>
+              <div className={styles.detailField}>
+                <label>Nhà phát hành</label>
+                <input
+                  name="publisher"
+                  value={bookForm.bookDetail.publisher}
+                  onChange={handleDetailChange}
+                  disabled={isViewing}
+                />
               </div>
-              <div className={styles.discountGrid}>
-                <label
-                  className={
-                    discountMethod === "percent"
-                      ? styles.discountField
-                      : styles.discountFieldHidden
-                  }
-                >
-                  % Giảm giá:
-                  <input
-                    type="number"
-                    step="0.1"
-                    name="discountPercent"
-                    value={discountForm.discountPercent}
-                    onChange={handleDiscountChange}
-                    disabled={discountMethod !== "percent"}
-                    required={discountMethod === "percent"}
-                  />
-                </label>
-                <label
-                  className={
-                    discountMethod === "amount"
-                      ? styles.discountField
-                      : styles.discountFieldHidden
-                  }
-                >
-                  Số tiền giảm (VND):
-                  <input
-                    type="number"
-                    name="discountAmount"
-                    value={discountForm.discountAmount}
-                    onChange={handleDiscountChange}
-                    disabled={discountMethod !== "amount"}
-                    required={discountMethod === "amount"}
-                  />
-                </label>
-                <label>
-                  Ngày bắt đầu:
-                  <input
-                    type="datetime-local"
-                    name="startDate"
-                    value={discountForm.startDate}
-                    onChange={handleDiscountChange}
-                    required
-                  />
-                </label>
-                <label>
-                  Ngày kết thúc:
-                  <input
-                    type="datetime-local"
-                    name="endDate"
-                    value={discountForm.endDate}
-                    onChange={handleDiscountChange}
-                    required
-                  />
-                </label>
+              <div className={styles.detailField}>
+                <label>Nhà cung cấp</label>
+                <input
+                  name="supplier"
+                  value={bookForm.bookDetail.supplier}
+                  onChange={handleDetailChange}
+                  disabled={isViewing}
+                />
               </div>
-              <button
-                type="submit"
-                className={styles.saveBtn}
-                disabled={discountSubmitting}
-              >
-                {discountSubmitting ? "Đang lưu..." : "Thêm giảm giá"}
-              </button>
-            </form>
-
-            <div className={styles.discountList}>
-              {discounts.length === 0 ? (
-                <p className={styles.emptyText}>
-                  Chưa có giảm giá nào cho sách này.
-                </p>
-              ) : (
-                discounts.map((discount) => (
-                  <div key={discount.id} className={styles.discountItem}>
-                    <div>
-                      <p className={styles.discountTitle}>
-                        {discount.discountPercent
-                          ? `-${discount.discountPercent}%`
-                          : ""}
-                        {discount.discountAmount
-                          ? ` ${
-                              discount.discountPercent ? " | " : ""
-                            }-${discount.discountAmount.toLocaleString(
-                              "vi-VN"
-                            )}đ`
-                          : ""}
-                      </p>
-                      <p className={styles.discountMeta}>
-                        {discount.startDate
-                          ? new Date(discount.startDate).toLocaleString("vi-VN")
-                          : "N/A"}{" "}
-                        →{" "}
-                        {discount.endDate
-                          ? new Date(discount.endDate).toLocaleString("vi-VN")
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <button
-                      className={styles.categoryDeleteBtn}
-                      onClick={() => handleDeleteDiscount(discount.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))
-              )}
+              <div className={styles.detailField}>
+                <label>Số trang</label>
+                <input
+                  name="pages"
+                  value={bookForm.bookDetail.pages}
+                  onChange={handleDetailChange}
+                  disabled={isViewing}
+                />
+              </div>
+              <div className={styles.detailField}>
+                <label>Chiều dài</label>
+                <input
+                  name="length"
+                  value={bookForm.bookDetail.length}
+                  onChange={handleDetailChange}
+                  disabled={isViewing}
+                />
+              </div>
+              <div className={styles.detailField}>
+                <label>Chiều rộng</label>
+                <input
+                  name="width"
+                  value={bookForm.bookDetail.width}
+                  onChange={handleDetailChange}
+                  disabled={isViewing}
+                />
+              </div>
+              <div className={styles.detailField}>
+                <label>Chiều cao</label>
+                <input
+                  name="height"
+                  value={bookForm.bookDetail.height}
+                  onChange={handleDetailChange}
+                  disabled={isViewing}
+                />
+              </div>
+              <div className={styles.detailField}>
+                <label>Trọng lượng</label>
+                <input
+                  name="weight"
+                  value={bookForm.bookDetail.weight}
+                  onChange={handleDetailChange}
+                  disabled={isViewing}
+                />
+              </div>
+              <div className={`${styles.detailField} ${styles.fullWidthField}`}>
+                <label>Mô tả</label>
+                <textarea
+                  name="description"
+                  value={bookForm.bookDetail.description}
+                  onChange={handleDetailChange}
+                  disabled={isViewing}
+                />
+              </div>
+              <div className={styles.detailField}>
+                <label>Ảnh chi tiết (URL)</label>
+                <input
+                  name="imageUrl"
+                  value={bookForm.bookDetail.imageUrl}
+                  onChange={handleDetailChange}
+                  disabled={isViewing}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* DELETE CONFIRM MODAL */}
-      {showDeleteModal && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => {
-            setShowDeleteModal(false);
-            setBookPendingDelete(null);
-          }}
-        >
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Xóa sách</h3>
-              <button
-                className={styles.closeBtn}
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setBookPendingDelete(null);
-                }}
-              >
-                <X />
-              </button>
-            </div>
-            <p>
-              Bạn có chắc chắn muốn xóa{" "}
-              <strong>{bookPendingDelete?.title}</strong>? Hành động này không
-              thể hoàn tác.
-            </p>
+          {!isViewing && (
             <div className={styles.modalActions}>
-              <button
-                type="button"
-                className={styles.cancelBtn}
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setBookPendingDelete(null);
-                }}
-              >
+              <button className={styles.cancelBtn} onClick={() => setShowModal(false)}>
                 Hủy
               </button>
-              <button
-                type="button"
-                className={styles.deleteConfirmBtn}
-                onClick={handleDelete}
-              >
-                Xóa
+              <button className={styles.saveBtn} onClick={handleSubmit}>
+                Lưu
               </button>
             </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDeleteModal = () => (
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <h3>Xóa sách</h3>
+          <button className={styles.closeBtn} onClick={() => setShowDeleteModal(false)}>
+            <X size={18} />
+          </button>
+        </div>
+        <p className={styles.helperText}>Bạn có chắc muốn xóa sách "{bookPendingDelete?.title}" không?</p>
+        <div className={styles.modalActions}>
+          <button className={styles.cancelBtn} onClick={() => setShowDeleteModal(false)}>
+            Hủy
+          </button>
+          <button className={styles.deleteConfirmBtn} onClick={confirmDelete}>
+            Xóa
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDiscountModal = () => (
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <h3>Giảm giá: {discountBook?.title}</h3>
+          <button className={styles.closeBtn} onClick={() => setShowDiscountModal(false)}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className={styles.discountForm}>
+          <div className={styles.discountMethodRow}>
+            <label className={styles.radioOption}>
+              <input
+                type="radio"
+                value="percent"
+                checked={discountMethod === "percent"}
+                onChange={() => setDiscountMethod("percent")}
+              />
+              Phần trăm
+            </label>
+            <label className={styles.radioOption}>
+              <input
+                type="radio"
+                value="amount"
+                checked={discountMethod === "amount"}
+                onChange={() => setDiscountMethod("amount")}
+              />
+              Số tiền
+            </label>
+          </div>
+          <div className={styles.discountGrid}>
+            <label>
+              % giảm
+              <input
+                className={discountMethod === "percent" ? "" : styles.discountFieldHidden}
+                disabled={discountMethod !== "percent"}
+                value={discountForm.discountPercent}
+                onChange={(e) => setDiscountForm({ ...discountForm, discountPercent: e.target.value })}
+              />
+            </label>
+            <label>
+              Số tiền giảm
+              <input
+                className={discountMethod === "amount" ? "" : styles.discountFieldHidden}
+                disabled={discountMethod !== "amount"}
+                value={discountForm.discountAmount}
+                onChange={(e) => setDiscountForm({ ...discountForm, discountAmount: e.target.value })}
+              />
+            </label>
+            <label>
+              Bắt đầu
+              <input
+                type="date"
+                value={discountForm.startDate}
+                onChange={(e) => setDiscountForm({ ...discountForm, startDate: e.target.value })}
+              />
+            </label>
+            <label>
+              Kết thúc
+              <input
+                type="date"
+                value={discountForm.endDate}
+                onChange={(e) => setDiscountForm({ ...discountForm, endDate: e.target.value })}
+              />
+            </label>
+          </div>
+          <div className={styles.modalActions}>
+            <button className={styles.saveBtn} onClick={handleDiscountSubmit} disabled={discountSubmitting}>
+              {discountSubmitting ? "Đang lưu..." : "Lưu giảm giá"}
+            </button>
           </div>
         </div>
-      )}
-
-      {/* TABLE */}
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Tên sách</th>
-              <th>Tác giả</th>
-              <th>Giá bán</th>
-              <th>Ngày xuất bản</th>
-              <th>Lần Xuất bản</th>
-              <th>Danh mục</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filtered.map((b) => (
-              <tr key={b.id}>
-                <td>{b.title}</td>
-                <td>{b.author}</td>
-                <td>{b.sellingPrice} VND</td>
-                <td>{b.publicationDate}</td>
-                <td>{b.edition}</td>
-                <td>{b.categoryNames}</td>
-
-                <td className={styles.actions}>
-                  <button
-                    className={styles.btnView}
-                    onClick={() => viewBook(b.id)}
-                  >
-                    <Eye size={16} />
-                  </button>
-
-                  <button
-                    className={styles.btnEdit}
-                    onClick={() => handleEdit(b.id)}
-                  >
-                    <Edit2 size={16} />
-                  </button>
-
-                  <button
-                    className={styles.btnDiscount}
-                    onClick={() => openDiscountModal(b)}
-                  >
-                    <BadgePercent size={16} />
-                  </button>
-
-                  <button
-                    className={styles.btnDelete}
-                    onClick={() => {
-                      setBookPendingDelete(b);
-                      setShowDeleteModal(true);
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={styles.discountList}>
+          {discounts.length ? (
+            discounts.map((d) => (
+              <div key={d.id} className={styles.discountItem}>
+                <div>
+                  <p className={styles.discountTitle}>
+                    {d.discountPercent
+                      ? `${d.discountPercent}%`
+                      : d.discountAmount
+                      ? `${d.discountAmount} VND`
+                      : "Giam gia"}
+                  </p>
+                  <p className={styles.discountMeta}>
+                    {d.startDate?.split("T")[0]} - {d.endDate?.split("T")[0]}
+                  </p>
+                </div>
+                <button className={styles.categoryDeleteBtn} onClick={() => deleteDiscount(d.id)}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))
+          ) : (
+            <span className={styles.emptyText}>Chưa có giảm giá</span>
+          )}
+        </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <div className={styles.headerRow}>
+          <div className={styles.titleBox}>
+            <h2>Quản lý sách</h2>
+            <span>Quản lý sách, danh mục và giảm giá</span>
+          </div>
+          <div className={styles.actionGroup}>
+            <div className={styles.searchBox}>
+              <Search size={16} />
+              <input
+                placeholder="Tìm theo tên, tác giả, danh mục..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <button className={`${styles.pillButton} ${styles.secondary}`} onClick={() => setShowCategoryModal(true)}>
+              <Plus size={16} /> Danh mục
+            </button>
+            <button className={styles.pillButton} onClick={openAdd}>
+              <Plus size={16} /> Thêm sách
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Tiêu đề</th>
+                <th>Mã sách</th>
+                <th>Tác giả</th>
+                <th>Giá bán</th>
+                <th>Số lượng</th>
+                <th>Ngày XB</th>
+                <th>Danh mục</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBooks.map((b) => (
+                <tr key={b.id}>
+                  <td>{b.title}</td>
+                  <td>{b.code}</td>
+                  <td>{b.author}</td>
+                  <td>{b.sellingPrice?.toLocaleString?.() || b.sellingPrice}</td>
+                  <td>{b.stockQuantity ?? "-"}</td>
+                  <td>{b.publicationDate}</td>
+                  <td>
+                    {b.categories?.map((c) => (
+                      <span key={c.id}>
+                        {c.name}
+                        {c.parentId ? <span className={styles.subBadge}>Nho</span> : null}{" "}
+                      </span>
+                    ))}
+                  </td>
+                  <td>
+                    <div className={styles.actions}>
+                      <button className={styles.btnView} onClick={() => openView(b)} title="Xem">
+                        <Eye size={16} />
+                      </button>
+                      <button className={styles.btnEdit} onClick={() => openEdit(b)} title="Sửa">
+                        <Edit2 size={16} />
+                      </button>
+                      <button className={styles.btnDiscount} onClick={() => openDiscount(b)} title="Giảm giá">
+                        <BadgePercent size={16} />
+                      </button>
+                      <button className={styles.btnDelete} onClick={() => openDelete(b)} title="Xóa">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!filteredBooks.length && (
+                <tr>
+                  <td colSpan={6}>Không có sách phù hợp</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showModal && renderBookModal()}
+      {showCategoryModal && renderCategoryModal()}
+      {showDeleteModal && renderDeleteModal()}
+      {showDiscountModal && renderDiscountModal()}
     </div>
   );
 }

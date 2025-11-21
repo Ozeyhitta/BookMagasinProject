@@ -14,7 +14,9 @@ import java.util.List;
 public class BookResponseDto {
     private int id;
     private String title;
+    private String code;
     private double sellingPrice;
+    private Integer stockQuantity;
     private Date publicationDate;
     private int edition;
     private String author;

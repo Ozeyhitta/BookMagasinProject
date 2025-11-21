@@ -73,7 +73,9 @@ public class BookServiceImpl implements BookService {
         BookDto dto = new BookDto();
         dto.setId(book.getId());
         dto.setTitle(book.getTitle());
+        dto.setCode(book.getCode());
         dto.setSellingPrice(book.getSellingPrice());
+        dto.setStockQuantity(book.getStockQuantity());
         dto.setPublicationDate(book.getPublicationDate());
         dto.setEdition(book.getEdition());
         dto.setAuthor(book.getAuthor());
@@ -93,7 +95,9 @@ public class BookServiceImpl implements BookService {
 
     private void mapToEntity(BookDto dto, Book book) {
         book.setTitle(dto.getTitle());
+        book.setCode(dto.getCode());
         book.setSellingPrice(dto.getSellingPrice());
+        book.setStockQuantity(dto.getStockQuantity());
         book.setPublicationDate(dto.getPublicationDate());
         book.setEdition(dto.getEdition());
         book.setAuthor(dto.getAuthor());
@@ -227,7 +231,9 @@ public class BookServiceImpl implements BookService {
         BookResponseDto dto = new BookResponseDto();
         dto.setId(book.getId());
         dto.setTitle(book.getTitle());
+        dto.setCode(book.getCode());
         dto.setSellingPrice(book.getSellingPrice());
+        dto.setStockQuantity(book.getStockQuantity());
         dto.setPublicationDate(book.getPublicationDate());
         dto.setEdition(book.getEdition());
         dto.setAuthor(book.getAuthor());

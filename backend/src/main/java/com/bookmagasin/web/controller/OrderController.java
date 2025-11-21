@@ -20,9 +20,13 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<OrderResponseDto> createOrder(@RequestBody OrderDto dto){
-        OrderResponseDto created=orderService.createOrder(dto);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    public ResponseEntity<?> createOrder(@RequestBody OrderDto dto){
+        try {
+            OrderResponseDto created=orderService.createOrder(dto);
+            return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
     }
     // READ ALL
     @GetMapping

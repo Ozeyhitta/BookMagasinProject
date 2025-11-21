@@ -25,8 +25,14 @@ public class Book {
     @Column(name = "title")
     private String title;
 
+    @Column(name = "code")
+    private String code;
+
     @Column(name = "selling_price")
     private double sellingPrice;
+
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity;
 
     @Temporal(TemporalType.DATE)
     private Date publicationDate;
