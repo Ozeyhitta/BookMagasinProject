@@ -70,7 +70,7 @@
 }
 
 .editButton {
-  background-color: #4a90e2;
+  background-color: #0074f8;
   color: white;
   border: none;
   padding: 10px 24px;
@@ -81,22 +81,47 @@
   transition: background-color 0.2s ease;
 }
 
-.editButton:hover {
-  background-color: #357abd;
-}
-.saveButton {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  margin-left: 10px;
-  height: 40px;
+.editButton:hover:not(:disabled) {
+  background-color: #35bd5b;
 }
 
-.saveButton:hover {
-  background-color: #1f7e36;
+.editButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saveButton {
+  position: relative;
+  background: linear-gradient(135deg, #34c759, #28a745);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  margin-left: 10px;
+  height: 44px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 10px 20px rgba(52, 199, 89, 0.3);
+}
+
+.saveButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(52, 199, 89, 0.35);
+  filter: brightness(1.05);
+}
+
+.saveButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(52, 199, 89, 0.3);
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* Phần biểu mẫu thông tin */
@@ -334,6 +359,71 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+}
+
+.editButton,
+.saveButton {
+  width: 180px;
+  padding: 12px 0;
+  border-radius: 999px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.editButton:hover:not(:disabled),
+.saveButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(69, 123, 231, 0.35);
+  filter: brightness(1.05);
+}
+
+.editButton:active:not(:disabled),
+.saveButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 8px 18px rgba(69, 123, 231, 0.2);
+}
+
+.editButton:disabled,
+.saveButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  box-shadow: none;
+  background: linear-gradient(135deg, #b8c7e6, #a2b4d9);
+}
+
+.editButton {
+  background: linear-gradient(135deg, #5370ff, #0026ff);
+  box-shadow: 0 10px 25px rgba(124, 128, 151, 0.25);
+}
+
+.editButton:hover:not(:disabled) {
+  box-shadow: 0 14px 32px rgba(124, 128, 151, 0.35);
+  filter: brightness(1.05);
+}
+
+.saveButton {
+  background: linear-gradient(135deg, #5370ff, #0026ff);
+  box-shadow: 0 10px 25px rgba(69, 123, 231, 0.25);
+}
+
+.saveButton:hover:not(:disabled) {
+  box-shadow: 0 14px 32px rgba(69, 123, 231, 0.35);
+}
+
+.staffButton {
+  margin-top: 12px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 12px 28px rgba(245, 158, 11, 0.35);
+}
+
+.staffButton:hover:not(:disabled) {
+  box-shadow: 0 16px 32px rgba(245, 158, 11, 0.45);
+  filter: brightness(1.08);
 }
 
 /* ============================================

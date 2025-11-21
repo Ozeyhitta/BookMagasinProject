@@ -272,6 +272,7 @@ export default function AccountPage() {
               className={styles.editButton}
               onClick={() => setIsEditing(true)}
               disabled={isEditing}
+              type="button"
             >
               Chỉnh sửa
             </button>
@@ -280,6 +281,7 @@ export default function AccountPage() {
               className={styles.saveButton}
               onClick={handleSave}
               disabled={!isEditing}
+              type="button"
             >
               Lưu thay đổi
             </button>
@@ -297,14 +299,14 @@ export default function AccountPage() {
               </button>
             ) : (
               <button
-                className={styles.saveButton}
-                style={{ marginTop: 8, backgroundColor: "#f59e0b" }}
+                className={`${styles.saveButton} ${styles.staffButton}`}
                 onClick={() => {
                   setShowStaffForm(true);
                   setStaffMessage("");
                   setPosition("");
                   setJoinDate("");
                 }}
+                type="button"
               >
                 Đăng kí nhân viên
               </button>
