@@ -1,6 +1,7 @@
 package com.bookmagasin.service.impl;
 
 import com.bookmagasin.entity.Account;
+import com.bookmagasin.entity.Role;
 import com.bookmagasin.entity.Staff;
 import com.bookmagasin.entity.User;
 import com.bookmagasin.enums.ERole;
@@ -10,7 +11,7 @@ import com.bookmagasin.repository.StaffRepository;
 import com.bookmagasin.repository.UserRepository;
 import com.bookmagasin.service.RoleService;
 import com.bookmagasin.service.StaffRequestService;
-import com.bookmagasin.web.dto.StaffRegisterDTO;
+import com.bookmagasin.web.dto.StaffRegisterDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +33,7 @@ public class StaffRequestServiceImpl implements StaffRequestService {
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
     @Override
-    public String registerStaff(StaffRegisterDTO dto) {
+    public String registerStaff(StaffRegisterDto dto) {
         // Tìm user theo userId
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -64,6 +65,10 @@ public class StaffRequestServiceImpl implements StaffRequestService {
         staff.setStatus(RequestStatus.PENDING);
         staff.setRequestDate(new Date()); // Ngày gửi yêu cầu
         staffRepository.save(staff);
+
+        Role staffRole=roleService.getOrCreateRole(ERole.STAFF);
+        account.addRole(staffRole);
+        accountRepository.save(account);
 
         return "Gửi yêu cầu đăng ký làm nhân viên thành công! Vui lòng chờ admin duyệt.";
     }
@@ -183,11 +188,21 @@ public class StaffRequestServiceImpl implements StaffRequestService {
         Staff staff = staffRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Staff request not found"));
 
-        // Cập nhật status thành REJECTED thay vì xóa record
+        User user=staff.getUser();
+
+        Account account=accountRepository.findByUser(user)
+                .orElseThrow(()->new RuntimeException("Account not found for user"));
+
         staff.setStatus(RequestStatus.REJECTED);
         staffRepository.save(staff);
 
-        return "Đã từ chối yêu cầu đăng ký nhân viên!";
+        if(account.hasRole(ERole.STAFF)){
+            account.removeRole(ERole.STAFF);
+            accountRepository.save(account);
+        }
+        staffRepository.delete(staff);
+
+        return "Đã từ chối yêu cầu và gỡ role STAFF khỏi tài khoản!";
     }
 
     @Override
@@ -217,15 +232,28 @@ public class StaffRequestServiceImpl implements StaffRequestService {
                 .orElseThrow(() -> new RuntimeException("Staff not found"));
 
         User user = staff.getUser();
+        if (user == null) {
+            throw new RuntimeException("User not found for staff");
+        }
+
         Account account = accountRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Account not found for user"));
+        if(account.hasRole(ERole.ADMIN)){
+            throw new RuntimeException("Không thể xóa nhân viên là ADMIN!");
 
-        // Xóa role STAFF khỏi account nhưng giữ các role khác
-        account.removeRole(ERole.STAFF);
-        accountRepository.save(account);
+        }
 
+        if(account.hasRole(ERole.STAFF)){
+            account.removeRole(ERole.STAFF);
+            accountRepository.save(account);
+        }
         // Xóa record trong bảng staff
         staffRepository.delete(staff);
+
+        //set trang thai account true
+        account.setActivated(true);
+        accountRepository.save(account);
+
 
         return "Đã xóa nhân viên thành công!";
     }

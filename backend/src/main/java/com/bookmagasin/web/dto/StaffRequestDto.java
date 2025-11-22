@@ -3,7 +3,7 @@ package com.bookmagasin.web.dto;
 import lombok.Data;
 
 @Data
-public class StaffRequestDTO {
+public class StaffRequestDto {
     private String fullName;
     private String email;
     private String phoneNumber;
@@ -12,4 +12,5 @@ public class StaffRequestDTO {
 
     private String address;
     private String avatarUrl;
+    private String position;
 }

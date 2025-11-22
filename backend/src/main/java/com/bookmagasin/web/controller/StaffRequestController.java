@@ -1,7 +1,7 @@
 package com.bookmagasin.web.controller;
 
 import com.bookmagasin.service.StaffRequestService;
-import com.bookmagasin.web.dto.StaffRegisterDTO;
+import com.bookmagasin.web.dto.StaffRegisterDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +18,7 @@ public class StaffRequestController {
 
     // User tự đăng ký làm nhân viên
     @PostMapping("/staff-requests")
-    public ResponseEntity<?> registerStaff(@RequestBody StaffRegisterDTO dto) {
+    public ResponseEntity<?> registerStaff(@RequestBody StaffRegisterDto dto) {
         try {
             String result = staffRequestService.registerStaff(dto);
             return ResponseEntity.ok(result);

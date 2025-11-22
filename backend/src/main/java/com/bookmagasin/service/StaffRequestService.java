@@ -1,14 +1,12 @@
 package com.bookmagasin.service;
 
-import com.bookmagasin.entity.Account;
-import com.bookmagasin.entity.Staff;
-import com.bookmagasin.web.dto.StaffRegisterDTO;
+import com.bookmagasin.web.dto.StaffRegisterDto;
 
 import java.util.List;
 import java.util.Map;
 
 public interface StaffRequestService {
-    String registerStaff(StaffRegisterDTO dto);
+    String registerStaff(StaffRegisterDto dto);
     Map<String, Object> getStaffStatusByUserId(Integer userId);
     List<Map<String, Object>> getStaffRequests(String status);
     String approveStaffRequest(Integer id);
