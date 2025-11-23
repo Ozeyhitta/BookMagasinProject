@@ -115,27 +115,26 @@ export default function ManageBooks() {
 
   const fetchCategories = () => fetch("http://localhost:8080/api/categories").then((res) => res.json());
 
-  const ensureMainCategories = async (list) => {
-    const existing = new Set(list.map((c) => normalize(c.name)));
-    let created = false;
-    for (const main of MAIN_CATEGORY_NAMES) {
-      if (!existing.has(normalize(main))) {
-        created = true;
-        await fetch("http://localhost:8080/api/categories", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: main, parentId: null, bookIds: [] }),
-        });
-      }
-    }
-    return created;
-  };
+const seedMainCategoriesIfEmpty = async (list) => {
+  if (Array.isArray(list) && list.length > 0) {
+    return false;
+  }
+
+  for (const main of MAIN_CATEGORY_NAMES) {
+    await fetch("http://localhost:8080/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: main, parentId: null, bookIds: [] }),
+    });
+  }
+  return true;
+};
 
   const loadCategories = () => {
     setCategoryLoading(true);
     fetchCategories()
       .then(async (data) => {
-        const created = await ensureMainCategories(data || []);
+        const created = await seedMainCategoriesIfEmpty(data || []);
         const finalData = created ? await fetchCategories() : data;
         setCategories(finalData || []);
       })
