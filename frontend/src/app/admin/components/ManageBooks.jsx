@@ -2,15 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import styles from "./manage-books.module.css";
-import {
-  Plus,
-  Search,
-  X,
-  Edit2,
-  Trash2,
-  Eye,
-  BadgePercent,
-} from "lucide-react";
+import { Plus, Search, X, Edit2, Trash2, Eye, BadgePercent } from "lucide-react";
 
 const MAIN_CATEGORY_NAMES = [
   "Sách Kinh Tế",
@@ -87,12 +79,7 @@ export default function ManageBooks() {
   }, []);
 
   useEffect(() => {
-    if (
-      showModal ||
-      showCategoryModal ||
-      showDeleteModal ||
-      showDiscountModal
-    ) {
+    if (showModal || showCategoryModal || showDeleteModal || showDiscountModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
@@ -126,26 +113,19 @@ export default function ManageBooks() {
       .catch(() => setBooks([]));
   };
 
-  const fetchCategories = () =>
-    fetch("http://localhost:8080/api/categories").then((res) => res.json());
+  const fetchCategories = () => fetch("http://localhost:8080/api/categories").then((res) => res.json());
 
   const ensureMainCategories = async (list) => {
     const existing = new Set(list.map((c) => normalize(c.name)));
     let created = false;
     for (const main of MAIN_CATEGORY_NAMES) {
       if (!existing.has(normalize(main))) {
-        try {
-          const res = await fetch("http://localhost:8080/api/categories", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: main, parentId: null, bookIds: null }),
-          });
-          if (res.ok) {
-            created = true;
-          }
-        } catch (error) {
-          console.error(`Lỗi khi tạo danh mục ${main}:`, error);
-        }
+        created = true;
+        await fetch("http://localhost:8080/api/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: main, parentId: null, bookIds: [] }),
+        });
       }
     }
     return created;
@@ -167,26 +147,9 @@ export default function ManageBooks() {
     () =>
       categories
         .filter((c) => c.parentId === null || c.parentId === undefined)
-        .sort(
-          (a, b) =>
-            MAIN_CATEGORY_NAMES.indexOf(a.name) -
-            MAIN_CATEGORY_NAMES.indexOf(b.name)
-        ),
+        .sort((a, b) => MAIN_CATEGORY_NAMES.indexOf(a.name) - MAIN_CATEGORY_NAMES.indexOf(b.name)),
     [categories]
   );
-
-  const subCategoriesByParent = useMemo(() => {
-    const map = {};
-    categories
-      .filter((c) => c.parentId !== null && c.parentId !== undefined)
-      .forEach((sub) => {
-        if (!map[sub.parentId]) {
-          map[sub.parentId] = [];
-        }
-        map[sub.parentId].push(sub);
-      });
-    return map;
-  }, [categories]);
 
   const filteredBooks = useMemo(() => {
     const term = normalize(search);
@@ -242,9 +205,7 @@ export default function ManageBooks() {
       const exists = prev.categoryIds.includes(id);
       return {
         ...prev,
-        categoryIds: exists
-          ? prev.categoryIds.filter((c) => c !== id)
-          : [...prev.categoryIds, id],
+        categoryIds: exists ? prev.categoryIds.filter((c) => c !== id) : [...prev.categoryIds, id],
       };
     });
   };
@@ -255,18 +216,13 @@ export default function ManageBooks() {
       title: bookForm.title,
       code: bookForm.code,
       sellingPrice: Number(bookForm.sellingPrice) || 0,
-      stockQuantity:
-        bookForm.stockQuantity !== "" ? Number(bookForm.stockQuantity) : null,
-      publicationDate: bookForm.publicationDate
-        ? new Date(bookForm.publicationDate + "T00:00:00")
-        : null,
+      stockQuantity: bookForm.stockQuantity !== "" ? Number(bookForm.stockQuantity) : null,
+      publicationDate: bookForm.publicationDate ? new Date(bookForm.publicationDate + "T00:00:00") : null,
       edition: parseInt(bookForm.edition || 0, 10),
       author: bookForm.author,
       imageUrl: bookForm.imageUrl,
       categoryIds: (bookForm.categoryIds || []).map((c) => Number(c)),
-      bookDetailId: bookForm.bookDetail?.id
-        ? Number(bookForm.bookDetail.id)
-        : 0,
+      bookDetailId: bookForm.bookDetail?.id ? Number(bookForm.bookDetail.id) : 0,
       bookDetail: {
         id: bookForm.bookDetail?.id ? Number(bookForm.bookDetail.id) : 0,
         publisher: bookForm.bookDetail?.publisher || "",
@@ -282,9 +238,7 @@ export default function ManageBooks() {
     };
 
     const method = editingId ? "PUT" : "POST";
-    const url = editingId
-      ? `http://localhost:8080/api/books/${editingId}`
-      : "http://localhost:8080/api/books";
+    const url = editingId ? `http://localhost:8080/api/books/${editingId}` : "http://localhost:8080/api/books";
 
     fetch(url, {
       method,
@@ -329,9 +283,7 @@ export default function ManageBooks() {
 
   const confirmDelete = () => {
     if (!bookPendingDelete) return;
-    fetch(`http://localhost:8080/api/books/${bookPendingDelete.id}`, {
-      method: "DELETE",
-    })
+    fetch(`http://localhost:8080/api/books/${bookPendingDelete.id}`, { method: "DELETE" })
       .then(() => {
         setShowDeleteModal(false);
         setBookPendingDelete(null);
@@ -340,80 +292,22 @@ export default function ManageBooks() {
       .catch(() => {});
   };
 
-  const addSubCategory = async (parentId) => {
-    const name = window.prompt("Nhập tên danh mục nhỏ");
-    if (!name || !name.trim()) return;
-
-    try {
-      const res = await fetch("http://localhost:8080/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          parentId: parentId || null,
-          bookIds: null,
-        }),
-      });
-
-      if (res.ok) {
-        loadCategories();
-      } else {
-        const errorText = await res.text();
-        alert(`Lỗi: ${errorText || "Không thể thêm danh mục"}`);
-      }
-    } catch (error) {
-      alert(`Lỗi kết nối: ${error.message}`);
-    }
+  const deleteCategory = async (categoryId) => {
+    await fetch(`http://localhost:8080/api/categories/${categoryId}`, { method: "DELETE" });
+    loadCategories();
   };
 
   const addMainCategory = async () => {
-    const name = window.prompt("Nhập tên danh mục lớn");
+    const name = window.prompt("Nhap ten danh muc");
     if (!name || !name.trim()) return;
-
-    try {
-      const res = await fetch("http://localhost:8080/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          parentId: null,
-          bookIds: null,
-        }),
-      });
-
-      if (res.ok) {
-        loadCategories();
-      } else {
-        const errorText = await res.text();
-        alert(`Lỗi: ${errorText || "Không thể thêm danh mục"}`);
-      }
-    } catch (error) {
-      alert(`Lỗi kết nối: ${error.message}`);
-    }
+    await fetch("http://localhost:8080/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), parentId: null, bookIds: [] }),
+    });
+    loadCategories();
   };
 
-  const deleteCategory = async (categoryId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa danh mục này không?"))
-      return;
-
-    try {
-      const res = await fetch(
-        `http://localhost:8080/api/categories/${categoryId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (res.ok || res.status === 204) {
-        loadCategories();
-      } else {
-        const errorText = await res.text();
-        alert(`Lỗi: ${errorText || "Không thể xóa danh mục"}`);
-      }
-    } catch (error) {
-      alert(`Lỗi kết nối: ${error.message}`);
-    }
-  };
   const openDiscount = (book) => {
     setDiscountBook(book);
     setDiscountForm({
@@ -438,17 +332,9 @@ export default function ManageBooks() {
     if (!discountBook) return;
     setDiscountSubmitting(true);
     const payload = {
-      discountPercent:
-        discountMethod === "percent"
-          ? Number(discountForm.discountPercent) || 0
-          : null,
-      discountAmount:
-        discountMethod === "amount"
-          ? Number(discountForm.discountAmount) || 0
-          : null,
-      startDate: discountForm.startDate
-        ? `${discountForm.startDate}T00:00:00`
-        : null,
+      discountPercent: discountMethod === "percent" ? Number(discountForm.discountPercent) || 0 : null,
+      discountAmount: discountMethod === "amount" ? Number(discountForm.discountAmount) || 0 : null,
+      startDate: discountForm.startDate ? `${discountForm.startDate}T00:00:00` : null,
       endDate: discountForm.endDate ? `${discountForm.endDate}T00:00:00` : null,
       bookId: discountBook.id,
     };
@@ -465,9 +351,7 @@ export default function ManageBooks() {
   };
 
   const deleteDiscount = (id) => {
-    fetch(`http://localhost:8080/api/book-discounts/${id}`, {
-      method: "DELETE",
-    }).then(() => {
+    fetch(`http://localhost:8080/api/book-discounts/${id}`, { method: "DELETE" }).then(() => {
       if (discountBook) loadDiscounts(discountBook.id);
     });
   };
@@ -476,88 +360,42 @@ export default function ManageBooks() {
     <div className={styles.modalOverlay}>
       <div className={`${styles.modal} ${styles.categoryModal}`}>
         <div className={styles.modalHeader}>
-          <h3>Quản lý danh mục</h3>
-          <button
-            className={styles.closeBtn}
-            onClick={() => setShowCategoryModal(false)}
-          >
+          <h3>Quan ly danh muc</h3>
+          <button className={styles.closeBtn} onClick={() => setShowCategoryModal(false)}>
             <X size={18} />
           </button>
         </div>
-        <p className={styles.helperText}>
-          Có sẵn 11 danh mục lớn. Bạn có thể thêm danh mục nhỏ bên trong từng
-          danh mục lớn.
-        </p>
+        <div className={styles.modalToolbar}>
+          <p className={styles.helperText}>Co san 11 danh muc lon. Ban co the doi ten hoac xoa neu can.</p>
+          <button className={styles.secondaryButtonSmall} onClick={addMainCategory}>
+            + Them danh muc
+          </button>
+        </div>
         {categoryLoading ? (
           <p className={styles.helperText}>Dang tai danh muc...</p>
         ) : (
-          <>
-            <div style={{ marginBottom: 16 }}>
-              <button
-                className={styles.secondaryButtonSmall}
-                onClick={addMainCategory}
-              >
-                <Plus size={16} /> Thêm danh mục lớn
-              </button>
-            </div>
-            <div className={styles.categoryList}>
-              {mainCategories.map((main) => (
-                <div key={main.id} className={styles.categoryItemRow}>
-                  <div className={styles.mainCategoryHeader}>
-                    <span className={styles.mainCategoryName}>{main.name}</span>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        className={styles.secondaryButtonSmall}
-                        onClick={() => addSubCategory(main.id)}
-                      >
-                        <Plus size={14} /> Thêm danh mục nhỏ
-                      </button>
-                      <button
-                        className={styles.categoryDeleteBtn}
-                        onClick={() => deleteCategory(main.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className={styles.subCategoryList}>
-                    {subCategoriesByParent[main.id]?.length ? (
-                      subCategoriesByParent[main.id].map((sub) => (
-                        <div key={sub.id} className={styles.subCategoryRow}>
-                          <span>{sub.name}</span>
-                          <button
-                            className={styles.categoryDeleteBtn}
-                            onClick={() => deleteCategory(sub.id)}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <span className={styles.emptyText}>
-                        Chua co danh muc nho
-                      </span>
-                    )}
-                  </div>
+          <div className={styles.categoryList}>
+            {mainCategories.map((main) => (
+              <div key={main.id} className={styles.categoryItemRow}>
+                <div className={styles.mainCategoryHeader}>
+                  <span className={styles.mainCategoryName}>{main.name}</span>
+                  <button className={styles.categoryDeleteBtn} onClick={() => deleteCategory(main.id)}>
+                    Xoa
+                  </button>
                 </div>
-              ))}
-            </div>
-          </>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
   );
-  const renderBookModal = () => (
+const renderBookModal = () => (
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
-          <h3>
-            {isViewing ? "Xem sách" : editingId ? "Sửa sách" : "Thêm sách"}
-          </h3>
-          <button
-            className={styles.closeBtn}
-            onClick={() => setShowModal(false)}
-          >
+          <h3>{isViewing ? "Xem sách" : editingId ? "Sửa sách" : "Thêm sách"}</h3>
+          <button className={styles.closeBtn} onClick={() => setShowModal(false)}>
             <X size={18} />
           </button>
         </div>
@@ -655,9 +493,7 @@ export default function ManageBooks() {
                     disabled={isViewing}
                   />
                   {c.name}
-                  {c.parentId ? (
-                    <span className={styles.subBadge}>Nho</span>
-                  ) : null}
+                  {c.parentId ? <span className={styles.subBadge}>Nho</span> : null}
                 </label>
               ))}
             </div>
@@ -752,10 +588,7 @@ export default function ManageBooks() {
 
           {!isViewing && (
             <div className={styles.modalActions}>
-              <button
-                className={styles.cancelBtn}
-                onClick={() => setShowModal(false)}
-              >
+              <button className={styles.cancelBtn} onClick={() => setShowModal(false)}>
                 Hủy
               </button>
               <button className={styles.saveBtn} onClick={handleSubmit}>
@@ -773,21 +606,13 @@ export default function ManageBooks() {
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h3>Xóa sách</h3>
-          <button
-            className={styles.closeBtn}
-            onClick={() => setShowDeleteModal(false)}
-          >
+          <button className={styles.closeBtn} onClick={() => setShowDeleteModal(false)}>
             <X size={18} />
           </button>
         </div>
-        <p className={styles.helperText}>
-          Bạn có chắc muốn xóa sách "{bookPendingDelete?.title}" không?
-        </p>
+        <p className={styles.helperText}>Bạn có chắc muốn xóa sách "{bookPendingDelete?.title}" không?</p>
         <div className={styles.modalActions}>
-          <button
-            className={styles.cancelBtn}
-            onClick={() => setShowDeleteModal(false)}
-          >
+          <button className={styles.cancelBtn} onClick={() => setShowDeleteModal(false)}>
             Hủy
           </button>
           <button className={styles.deleteConfirmBtn} onClick={confirmDelete}>
@@ -803,10 +628,7 @@ export default function ManageBooks() {
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h3>Giảm giá: {discountBook?.title}</h3>
-          <button
-            className={styles.closeBtn}
-            onClick={() => setShowDiscountModal(false)}
-          >
+          <button className={styles.closeBtn} onClick={() => setShowDiscountModal(false)}>
             <X size={18} />
           </button>
         </div>
@@ -835,33 +657,19 @@ export default function ManageBooks() {
             <label>
               % giảm
               <input
-                className={
-                  discountMethod === "percent" ? "" : styles.discountFieldHidden
-                }
+                className={discountMethod === "percent" ? "" : styles.discountFieldHidden}
                 disabled={discountMethod !== "percent"}
                 value={discountForm.discountPercent}
-                onChange={(e) =>
-                  setDiscountForm({
-                    ...discountForm,
-                    discountPercent: e.target.value,
-                  })
-                }
+                onChange={(e) => setDiscountForm({ ...discountForm, discountPercent: e.target.value })}
               />
             </label>
             <label>
               Số tiền giảm
               <input
-                className={
-                  discountMethod === "amount" ? "" : styles.discountFieldHidden
-                }
+                className={discountMethod === "amount" ? "" : styles.discountFieldHidden}
                 disabled={discountMethod !== "amount"}
                 value={discountForm.discountAmount}
-                onChange={(e) =>
-                  setDiscountForm({
-                    ...discountForm,
-                    discountAmount: e.target.value,
-                  })
-                }
+                onChange={(e) => setDiscountForm({ ...discountForm, discountAmount: e.target.value })}
               />
             </label>
             <label>
@@ -869,12 +677,7 @@ export default function ManageBooks() {
               <input
                 type="date"
                 value={discountForm.startDate}
-                onChange={(e) =>
-                  setDiscountForm({
-                    ...discountForm,
-                    startDate: e.target.value,
-                  })
-                }
+                onChange={(e) => setDiscountForm({ ...discountForm, startDate: e.target.value })}
               />
             </label>
             <label>
@@ -882,18 +685,12 @@ export default function ManageBooks() {
               <input
                 type="date"
                 value={discountForm.endDate}
-                onChange={(e) =>
-                  setDiscountForm({ ...discountForm, endDate: e.target.value })
-                }
+                onChange={(e) => setDiscountForm({ ...discountForm, endDate: e.target.value })}
               />
             </label>
           </div>
           <div className={styles.modalActions}>
-            <button
-              className={styles.saveBtn}
-              onClick={handleDiscountSubmit}
-              disabled={discountSubmitting}
-            >
+            <button className={styles.saveBtn} onClick={handleDiscountSubmit} disabled={discountSubmitting}>
               {discountSubmitting ? "Đang lưu..." : "Lưu giảm giá"}
             </button>
           </div>
@@ -914,10 +711,7 @@ export default function ManageBooks() {
                     {d.startDate?.split("T")[0]} - {d.endDate?.split("T")[0]}
                   </p>
                 </div>
-                <button
-                  className={styles.categoryDeleteBtn}
-                  onClick={() => deleteDiscount(d.id)}
-                >
+                <button className={styles.categoryDeleteBtn} onClick={() => deleteDiscount(d.id)}>
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -947,10 +741,7 @@ export default function ManageBooks() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button
-              className={`${styles.pillButton} ${styles.secondary}`}
-              onClick={() => setShowCategoryModal(true)}
-            >
+            <button className={`${styles.pillButton} ${styles.secondary}`} onClick={() => setShowCategoryModal(true)}>
               <Plus size={16} /> Danh mục
             </button>
             <button className={styles.pillButton} onClick={openAdd}>
@@ -979,49 +770,29 @@ export default function ManageBooks() {
                   <td>{b.title}</td>
                   <td>{b.code}</td>
                   <td>{b.author}</td>
-                  <td>
-                    {b.sellingPrice?.toLocaleString?.() || b.sellingPrice}
-                  </td>
+                  <td>{b.sellingPrice?.toLocaleString?.() || b.sellingPrice}</td>
                   <td>{b.stockQuantity ?? "-"}</td>
                   <td>{b.publicationDate}</td>
                   <td>
                     {b.categories?.map((c) => (
                       <span key={c.id}>
                         {c.name}
-                        {c.parentId ? (
-                          <span className={styles.subBadge}>Nho</span>
-                        ) : null}{" "}
+                        {c.parentId ? <span className={styles.subBadge}>Nho</span> : null}{" "}
                       </span>
                     ))}
                   </td>
                   <td>
                     <div className={styles.actions}>
-                      <button
-                        className={styles.btnView}
-                        onClick={() => openView(b)}
-                        title="Xem"
-                      >
+                      <button className={styles.btnView} onClick={() => openView(b)} title="Xem">
                         <Eye size={16} />
                       </button>
-                      <button
-                        className={styles.btnEdit}
-                        onClick={() => openEdit(b)}
-                        title="Sửa"
-                      >
+                      <button className={styles.btnEdit} onClick={() => openEdit(b)} title="Sửa">
                         <Edit2 size={16} />
                       </button>
-                      <button
-                        className={styles.btnDiscount}
-                        onClick={() => openDiscount(b)}
-                        title="Giảm giá"
-                      >
+                      <button className={styles.btnDiscount} onClick={() => openDiscount(b)} title="Giảm giá">
                         <BadgePercent size={16} />
                       </button>
-                      <button
-                        className={styles.btnDelete}
-                        onClick={() => openDelete(b)}
-                        title="Xóa"
-                      >
+                      <button className={styles.btnDelete} onClick={() => openDelete(b)} title="Xóa">
                         <Trash2 size={16} />
                       </button>
                     </div>
