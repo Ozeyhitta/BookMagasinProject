@@ -87,10 +87,23 @@ export default function ViewSalesReports() {
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", "sales-report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    try {
+      document.body.appendChild(link);
+      link.click();
+    } catch (e) {
+      console.error("Error triggering download", e);
+    } finally {
+      try {
+        if (link && link.parentNode) link.parentNode.removeChild(link);
+      } catch (e) {
+        console.error("Error removing download link", e);
+      }
+      try {
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error("Error revoking object URL", e);
+      }
+    }
   };
 
   const renderChart = () => {
