@@ -17,9 +17,11 @@ import com.bookmagasin.repository.OrderItemRepository;
 import com.bookmagasin.repository.OrderRepository;
 import com.bookmagasin.repository.OrderStatusHistoryRepository;
 import com.bookmagasin.repository.PaymentRepository;
+import com.bookmagasin.repository.ReturnRequestRepository;
 import com.bookmagasin.repository.ServiceRepository;
 import com.bookmagasin.repository.UserNotificationRepository;
 import com.bookmagasin.repository.UserRepository;
+import com.bookmagasin.enums.RequestStatus;
 import com.bookmagasin.service.OrderService;
 import com.bookmagasin.web.dto.OrderDto;
 import com.bookmagasin.web.dto.OrderItemDto;
@@ -47,16 +49,18 @@ public class OrderServiceImpl implements OrderService {
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final NotificationRepository notificationRepository;
     private final UserNotificationRepository userNotificationRepository;
+    private final ReturnRequestRepository returnRequestRepository;
 
     public OrderServiceImpl(OrderRepository orderRepository,
-                            UserRepository userRepository,
-                            ServiceRepository serviceRepository,
-                            PaymentRepository paymentRepository,
-                            BookRepository bookRepository,
-                            OrderItemRepository orderItemRepository,
-                            OrderStatusHistoryRepository orderStatusHistoryRepository,
-                            NotificationRepository notificationRepository,
-                            UserNotificationRepository userNotificationRepository) {
+            UserRepository userRepository,
+            ServiceRepository serviceRepository,
+            PaymentRepository paymentRepository,
+            BookRepository bookRepository,
+            OrderItemRepository orderItemRepository,
+            OrderStatusHistoryRepository orderStatusHistoryRepository,
+            NotificationRepository notificationRepository,
+            UserNotificationRepository userNotificationRepository,
+            ReturnRequestRepository returnRequestRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.serviceRepository = serviceRepository;
@@ -66,6 +70,7 @@ public class OrderServiceImpl implements OrderService {
         this.orderStatusHistoryRepository = orderStatusHistoryRepository;
         this.notificationRepository = notificationRepository;
         this.userNotificationRepository = userNotificationRepository;
+        this.returnRequestRepository = returnRequestRepository;
     }
 
     @Override
@@ -306,9 +311,11 @@ public class OrderServiceImpl implements OrderService {
 
         List<Order> filtered = orders.stream()
                 .filter(o -> statusFilter == null || o.getStatus() == statusFilter)
-                .filter(o -> paymentFilter == null || (o.getPayment() != null && paymentFilter.equals(o.getPayment().getMethod())))
+                .filter(o -> paymentFilter == null
+                        || (o.getPayment() != null && paymentFilter.equals(o.getPayment().getMethod())))
                 .filter(o -> {
-                    if (keywordFilter == null) return true;
+                    if (keywordFilter == null)
+                        return true;
                     String idString = String.valueOf(o.getId());
                     String customer = o.getUser() != null ? o.getUser().getFullName() : "";
                     return idString.contains(keywordFilter) || customer.toLowerCase().contains(keywordFilter);
@@ -317,18 +324,17 @@ public class OrderServiceImpl implements OrderService {
                     if ("amount-desc".equalsIgnoreCase(sortKey)) {
                         return Double.compare(
                                 b.getTotalPrice() != null ? b.getTotalPrice() : 0,
-                                a.getTotalPrice() != null ? a.getTotalPrice() : 0
-                        );
+                                a.getTotalPrice() != null ? a.getTotalPrice() : 0);
                     }
                     if ("amount-asc".equalsIgnoreCase(sortKey)) {
                         return Double.compare(
                                 a.getTotalPrice() != null ? a.getTotalPrice() : 0,
-                                b.getTotalPrice() != null ? b.getTotalPrice() : 0
-                        );
+                                b.getTotalPrice() != null ? b.getTotalPrice() : 0);
                     }
                     LocalDateTime dateA = a.getOrderDate();
                     LocalDateTime dateB = b.getOrderDate();
-                    if (dateA == null || dateB == null) return 0;
+                    if (dateA == null || dateB == null)
+                        return 0;
                     return dateB.compareTo(dateA);
                 })
                 .toList();
@@ -350,4 +356,89 @@ public class OrderServiceImpl implements OrderService {
                     return OrderMapper.toResponseDto(order);
                 });
     }
+
+    @Override
+    @Transactional
+    public OrderResponseDto returnBook(Integer orderId, Integer orderItemId, Integer quantity) {
+
+        // 1️⃣ Lấy order
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // 2️⃣ Lấy order item
+        OrderItem item = order.getBooks().stream()
+                .filter(i -> i.getId() == orderItemId)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Order item not found"));
+
+        // 3️⃣ Validate số lượng trả
+        if (quantity == null || quantity <= 0) {
+            throw new RuntimeException("Quantity must be greater than 0.");
+        }
+
+        if (quantity > item.getQuantity()) {
+            throw new RuntimeException(
+                    "Cannot return more than purchased. Remaining: " + item.getQuantity());
+        }
+
+        Book book = item.getBook();
+
+        // 4️⃣ Hoàn trả stock
+        Integer currentStock = (book.getStockQuantity() == null) ? 0 : book.getStockQuantity();
+        book.setStockQuantity(currentStock + quantity);
+        bookRepository.save(book);
+
+        // 5️⃣ Giảm số lượng item
+        item.setQuantity(item.getQuantity() - quantity);
+        orderItemRepository.save(item);
+
+        // 6️⃣ Nếu item = 0 → xóa khỏi order (nhưng chỉ nếu không có ReturnRequest đang
+        // pending
+        if (item.getQuantity() == 0) {
+            // Giữ item lại với quantity=0
+            orderItemRepository.save(item);
+        }
+
+
+        // 7️⃣ Nếu tất cả item đều 0 => mark order RETURNED
+        boolean allReturned = order.getBooks().stream()
+                .allMatch(i -> i.getQuantity() == 0);
+
+        if (allReturned) {
+            order.setStatus(EStatusBooking.RETURNED);
+            orderRepository.save(order);
+        }
+
+        // 8️⃣ Ghi lịch sử trạng thái
+        OrderStatusHistory history = new OrderStatusHistory();
+        history.setOrder(order);
+        history.setStatusChangeDate(new Date());
+        history.setEOrderHistory(EOrderHistory.RETURNED);
+        orderStatusHistoryRepository.save(history);
+
+        // 9️⃣ Gửi thông báo cho khách
+        try {
+            if (order.getUser() != null) {
+                Notification noti = new Notification();
+                noti.setTitle("Trả sách đơn #" + order.getId());
+                noti.setMessage("Bạn đã trả " + quantity + " quyển sách \"" + book.getTitle() + "\"");
+                noti.setType("CUSTOMER");
+                noti.setSendDate(new Date());
+
+                Notification savedNoti = notificationRepository.save(noti);
+
+                UserNotification un = new UserNotification();
+                un.setId(new UserNotificationId(order.getUser().getId(), savedNoti.getId()));
+                un.setUser(order.getUser());
+                un.setNotification(savedNoti);
+                un.setRead(false);
+                un.setReadAt(null);
+                userNotificationRepository.save(un);
+            }
+        } catch (Exception ignored) {
+        }
+
+        return OrderMapper.toResponseDto(order);
+    }
+
 }

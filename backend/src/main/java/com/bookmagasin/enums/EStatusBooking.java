@@ -5,5 +5,6 @@ public enum EStatusBooking {
     CONFIRMED,
     INPROGRESS,
     COMPLETED,
-    CANCELLED
+    CANCELLED,
+    RETURNED
 }

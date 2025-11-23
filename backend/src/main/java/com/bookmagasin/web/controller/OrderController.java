@@ -1,22 +1,27 @@
 package com.bookmagasin.web.controller;
 
 import com.bookmagasin.service.OrderService;
+import com.bookmagasin.service.ReturnRequestService;
 import com.bookmagasin.web.dto.OrderDto;
 import com.bookmagasin.web.dtoResponse.OrderResponseDto;
+import com.bookmagasin.web.dtoResponse.ReturnRequestResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
 @CrossOrigin(origins = "http://localhost:3000") // cho phép React frontend truy cập
 public class OrderController {
     private final OrderService orderService;
+    private final ReturnRequestService returnRequestService;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, ReturnRequestService returnRequestService) {
         this.orderService = orderService;
+        this.returnRequestService = returnRequestService;
     }
 
     @PostMapping
@@ -92,4 +97,28 @@ public class OrderController {
             return ResponseEntity.notFound().build();
         }
     }
+    // RETURN BOOK REQUEST – Tạo yêu cầu trả sách (thay vì return trực tiếp)
+    @PutMapping("/{orderId}/return")
+    public ResponseEntity<?> createReturnRequest(
+            @PathVariable Integer orderId,
+            @RequestParam Integer orderItemId,
+            @RequestParam Integer quantity,
+            @RequestBody(required = false) Map<String, String> body
+    ) {
+        try {
+            String reason = body != null ? body.get("reason") : null;
+            if (reason == null || reason.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Lý do trả hàng là bắt buộc");
+            }
+
+            ReturnRequestResponseDto returnRequest = returnRequestService.createReturnRequest(
+                    orderId, orderItemId, quantity, reason.trim()
+            );
+            return ResponseEntity.ok(returnRequest);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
+    }
+
+
 }
