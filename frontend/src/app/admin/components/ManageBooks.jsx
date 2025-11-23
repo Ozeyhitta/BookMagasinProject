@@ -151,20 +151,6 @@ export default function ManageBooks() {
     [categories]
   );
 
-  const subCategoriesByParent = useMemo(() => {
-    const map = {};
-    categories.forEach((c) => {
-      if (c.parentId) {
-        if (!map[c.parentId]) map[c.parentId] = [];
-        map[c.parentId].push(c);
-      }
-    });
-    Object.keys(map).forEach((k) => {
-      map[k].sort((a, b) => a.name.localeCompare(b.name));
-    });
-    return map;
-  }, [categories]);
-
   const filteredBooks = useMemo(() => {
     const term = normalize(search);
     if (!term) return books;
@@ -306,19 +292,19 @@ export default function ManageBooks() {
       .catch(() => {});
   };
 
-  const addSubCategory = async (parentId) => {
-    const name = window.prompt("Nhap ten danh muc nho");
+  const deleteCategory = async (categoryId) => {
+    await fetch(`http://localhost:8080/api/categories/${categoryId}`, { method: "DELETE" });
+    loadCategories();
+  };
+
+  const addMainCategory = async () => {
+    const name = window.prompt("Nhap ten danh muc");
     if (!name || !name.trim()) return;
     await fetch("http://localhost:8080/api/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), parentId, bookIds: [] }),
+      body: JSON.stringify({ name: name.trim(), parentId: null, bookIds: [] }),
     });
-    loadCategories();
-  };
-
-  const deleteCategory = async (categoryId) => {
-    await fetch(`http://localhost:8080/api/categories/${categoryId}`, { method: "DELETE" });
     loadCategories();
   };
 
@@ -374,44 +360,28 @@ export default function ManageBooks() {
     <div className={styles.modalOverlay}>
       <div className={`${styles.modal} ${styles.categoryModal}`}>
         <div className={styles.modalHeader}>
-          <h3>Quản lý danh mục</h3>
+          <h3>Quan ly danh muc</h3>
           <button className={styles.closeBtn} onClick={() => setShowCategoryModal(false)}>
             <X size={18} />
           </button>
         </div>
-        <p className={styles.helperText}>
-          Có sẵn 11 danh mục lớn. Bạn có thể thêm danh mục nhỏ bên trong từng danh mục lớn.
-        </p>
+        <div className={styles.modalToolbar}>
+          <p className={styles.helperText}>Co san 11 danh muc lon. Ban co the doi ten hoac xoa neu can.</p>
+          <button className={styles.secondaryButtonSmall} onClick={addMainCategory}>
+            + Them danh muc
+          </button>
+        </div>
         {categoryLoading ? (
-          <p className={styles.helperText}>Đang tải danh mục...</p>
+          <p className={styles.helperText}>Dang tai danh muc...</p>
         ) : (
           <div className={styles.categoryList}>
             {mainCategories.map((main) => (
               <div key={main.id} className={styles.categoryItemRow}>
                 <div className={styles.mainCategoryHeader}>
                   <span className={styles.mainCategoryName}>{main.name}</span>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button className={styles.secondaryButtonSmall} onClick={() => addSubCategory(main.id)}>
-                      + Them danh muc nho
-                    </button>
-                    <button className={styles.categoryDeleteBtn} onClick={() => deleteCategory(main.id)}>
-                      Xoa
-                    </button>
-                  </div>
-                </div>
-                <div className={styles.subCategoryList}>
-                  {subCategoriesByParent[main.id]?.length ? (
-                    subCategoriesByParent[main.id].map((sub) => (
-                      <div key={sub.id} className={styles.subCategoryRow}>
-                        <span>{sub.name}</span>
-                        <button className={styles.categoryDeleteBtn} onClick={() => deleteCategory(sub.id)}>
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <span className={styles.emptyText}>Chua co danh muc nho</span>
-                  )}
+                  <button className={styles.categoryDeleteBtn} onClick={() => deleteCategory(main.id)}>
+                    Xoa
+                  </button>
                 </div>
               </div>
             ))}
@@ -420,8 +390,7 @@ export default function ManageBooks() {
       </div>
     </div>
   );
-
-  const renderBookModal = () => (
+const renderBookModal = () => (
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
         <div className={styles.modalHeader}>

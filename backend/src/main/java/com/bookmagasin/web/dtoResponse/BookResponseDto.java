@@ -17,6 +17,7 @@ public class BookResponseDto {
     private String code;
     private double sellingPrice;
     private Integer stockQuantity;
+    private Long soldQuantity;
     private Date publicationDate;
     private int edition;
     private String author;

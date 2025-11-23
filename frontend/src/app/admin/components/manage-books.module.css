@@ -146,6 +146,19 @@
   font-size: 14px;
 }
 
+.modalToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 14px;
+  flex-wrap: wrap;
+}
+
+.modalToolbar .helperText {
+  margin: 0;
+}
+
 .categoryList {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

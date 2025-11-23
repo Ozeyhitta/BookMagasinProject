@@ -3,20 +3,26 @@ package com.bookmagasin.service.impl;
 
 import com.bookmagasin.entity.Book;
 import com.bookmagasin.entity.BookDetail;
+import com.bookmagasin.entity.Category;
+import com.bookmagasin.enums.EStatusBooking;
 import com.bookmagasin.repository.BookDetailRepository;
 import com.bookmagasin.repository.BookRepository;
 import com.bookmagasin.repository.CategoryRepository;
+import com.bookmagasin.repository.OrderItemRepository;
+import com.bookmagasin.repository.projection.BookSalesProjection;
 import com.bookmagasin.service.BookService;
 import com.bookmagasin.web.dto.BookDetailDto;
 import com.bookmagasin.web.dto.BookDto;
-import com.bookmagasin.entity.Category;
-
 import com.bookmagasin.web.dtoResponse.BookResponseDto;
 import com.bookmagasin.web.dtoResponse.CategoryResponseDto;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 @Service
 public class BookServiceImpl implements BookService {
@@ -24,11 +30,16 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final BookDetailRepository bookDetailRepository;
     private final CategoryRepository categoryRepository;
+    private final OrderItemRepository orderItemRepository;
 
-    public BookServiceImpl(BookRepository bookRepository, BookDetailRepository bookDetailRepository, CategoryRepository categoryRepository) {
+    public BookServiceImpl(BookRepository bookRepository,
+                           BookDetailRepository bookDetailRepository,
+                           CategoryRepository categoryRepository,
+                           OrderItemRepository orderItemRepository) {
         this.bookRepository = bookRepository;
         this.bookDetailRepository = bookDetailRepository;
         this.categoryRepository = categoryRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
 
@@ -131,14 +142,87 @@ public class BookServiceImpl implements BookService {
     // -------- Dto mở rộng -----------
     @Override
     public List<BookResponseDto> findAllWithDetails() {
+        Map<Integer, Long> soldQuantityMap = orderItemRepository
+                .aggregateTotalSoldByStatus(EStatusBooking.COMPLETED)
+                .stream()
+                .collect(Collectors.toMap(
+                        BookSalesProjection::getBookId,
+                        projection -> {
+                            Long total = projection.getTotalSold();
+                            return total != null ? total : 0L;
+                        }
+                ));
+
         return bookRepository.findAll().stream()
-                .map(this::mapToResponseDto)
+                .map(book -> {
+                    BookResponseDto dto = mapToResponseDto(book);
+                    dto.setSoldQuantity(soldQuantityMap.getOrDefault(book.getId(), 0L));
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
     @Override
     public Optional<BookResponseDto> findByIdWithDetails(int id) {
-        return bookRepository.findById(id).map(this::mapToResponseDto);
+        return bookRepository.findById(id).map(book -> {
+            BookResponseDto dto = mapToResponseDto(book);
+            Long sold = orderItemRepository.sumQuantityByBookIdAndStatus(
+                    book.getId(),
+                    EStatusBooking.COMPLETED
+            );
+            dto.setSoldQuantity(sold != null ? sold : 0L);
+            return dto;
+        });
+    }
+
+    @Override
+    public List<BookResponseDto> findTopSellingBooks(int limit) {
+        int resolvedLimit = limit > 0 ? limit : 8;
+        List<BookSalesProjection> totals =
+                orderItemRepository.aggregateTotalSoldByStatus(EStatusBooking.COMPLETED);
+        if (totals.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Integer, Long> soldMap = totals.stream()
+                .filter(projection -> projection.getBookId() != null)
+                .collect(Collectors.toMap(
+                        BookSalesProjection::getBookId,
+                        projection -> {
+                            Long total = projection.getTotalSold();
+                            return total != null ? total : 0L;
+                        }
+                ));
+
+        List<Integer> topIds = totals.stream()
+                .filter(projection -> projection.getBookId() != null)
+                .sorted((a, b) -> {
+                    long soldA = a.getTotalSold() != null ? a.getTotalSold() : 0L;
+                    long soldB = b.getTotalSold() != null ? b.getTotalSold() : 0L;
+                    return Long.compare(soldB, soldA);
+                })
+                .limit(resolvedLimit)
+                .map(BookSalesProjection::getBookId)
+                .collect(Collectors.toList());
+
+        List<BookResponseDto> responses = new ArrayList<>();
+        if (topIds.isEmpty()) {
+            return responses;
+        }
+
+        Map<Integer, Book> booksById = bookRepository.findAllById(topIds).stream()
+                .collect(Collectors.toMap(Book::getId, Function.identity()));
+
+        for (Integer id : topIds) {
+            Book book = booksById.get(id);
+            if (book == null) {
+                continue;
+            }
+            BookResponseDto dto = mapToResponseDto(book);
+            dto.setSoldQuantity(soldMap.getOrDefault(id, 0L));
+            responses.add(dto);
+        }
+        return responses;
     }
 
     @Override

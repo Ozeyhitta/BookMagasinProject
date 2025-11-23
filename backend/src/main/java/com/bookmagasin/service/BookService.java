@@ -16,6 +16,7 @@ public interface BookService {
     void deleteById(int id);
     List<BookResponseDto> findAllWithDetails();
     Optional<BookResponseDto> findByIdWithDetails(int id);
+    List<BookResponseDto> findTopSellingBooks(int limit);
 
     Optional<Book> patchBookDetail(Integer id, BookDetail detailUpdates);
 
