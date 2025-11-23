@@ -1,7 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, Bell, List, Type, Star } from "lucide-react";
+import {
+  LayoutDashboard,
+  Bell,
+  List,
+  Type,
+  Star,
+  RotateCcw,
+} from "lucide-react";
 import axiosClient from "../../utils/axiosClient";
 
 import "./staff.css";
@@ -11,6 +18,7 @@ import ViewNotifications from "./components/ViewNotifications";
 import BookList from "./components/BookList";
 import ProcessOrders from "./components/ProcessOrders";
 import ViewReviews from "./components/ViewReviews"; // 🔹 mới
+import ProcessReturns from "./components/ProcessReturns"; // 🔹 mới
 
 export default function StaffPage() {
   const router = useRouter();
@@ -75,6 +83,8 @@ export default function StaffPage() {
     { icon: <Type size={20} />, label: "Process Orders" },
     // 🔹 Mục mới: View reviews
     { icon: <Star size={20} />, label: "View reviews" },
+    // 🔹 Mục mới: Process Returns
+    { icon: <RotateCcw size={20} />, label: "Process Returns" },
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -109,7 +119,10 @@ export default function StaffPage() {
         {activeIndex === 1 && <ViewNotifications />}
         {activeIndex === 2 && <BookList />}
         {activeIndex === 3 && <ProcessOrders />}
-        {activeIndex === 4 && <ViewReviews />}{/* 🔹 tab mới */}
+        {activeIndex === 4 && <ViewReviews />}
+        {/* 🔹 tab mới */}
+        {activeIndex === 5 && <ProcessReturns />}
+        {/* 🔹 tab mới */}
       </main>
     </div>
   );

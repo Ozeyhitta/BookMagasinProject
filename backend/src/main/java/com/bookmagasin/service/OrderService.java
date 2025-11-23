@@ -15,5 +15,7 @@ public interface OrderService {
     OrderResponseDto updateOrderStatus(Integer orderId, String newStatus);
     List<OrderResponseDto> searchOrders(String status, String paymentMethod, String query, String sortBy);
     Optional<OrderResponseDto> getDetailedOrder(Integer id);
+    OrderResponseDto returnBook(Integer orderId, Integer orderItemId, Integer quantity);
+
 }
 

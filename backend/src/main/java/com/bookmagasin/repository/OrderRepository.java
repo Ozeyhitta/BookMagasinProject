@@ -23,13 +23,17 @@ public interface OrderRepository extends JpaRepository<Order,Integer> {
     @Query("SELECT o FROM Order o")
     List<Order> findAllLightweight();
 
+    // Chỉ fetch books trong EntityGraph để tránh MultipleBagFetchException
+    // orderStatusHistories sẽ được lazy load khi cần (đã có @BatchSize)
+    // Fetch thêm bookDetail và bookDiscounts để có imageUrl và discount info
     @EntityGraph(attributePaths = {
             "user",
             "service",
             "payment",
             "books",
             "books.book",
-            "orderStatusHistories"
+            "books.book.bookDetail",
+            "books.book.bookDiscounts"
     })
     @Query("SELECT o FROM Order o WHERE o.id = :id")
     Optional<Order> findByIdWithDetails(@Param("id") Integer id);

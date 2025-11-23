@@ -32,7 +32,7 @@ public class Book {
     private double sellingPrice;
 
     @Column(name = "stock_quantity")
-    private Integer stockQuantity;
+    private Integer stockQuantity =0;
 
     @Temporal(TemporalType.DATE)
     private Date publicationDate;

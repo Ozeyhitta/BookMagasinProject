@@ -81,6 +81,10 @@ export default function ProcessOrders() {
         bookTitle: it.bookTitle || it.title || "Sản phẩm",
         quantity,
         price: unitPrice,
+        imageUrl: it.imageUrl || null,
+        discountPercent: it.discountPercent || null,
+        discountAmount: it.discountAmount || null,
+        bookPrice: it.bookPrice || unitPrice,
       };
     });
   };
@@ -203,10 +207,30 @@ export default function ProcessOrders() {
         res?.data ||
         null;
       if (!payload) throw new Error("Empty detail");
+
+      // Debug: Log để kiểm tra dữ liệu từ backend
+      console.log("Order detail payload:", payload);
+      console.log("Items from payload:", payload.items);
+      if (payload.items && payload.items.length > 0) {
+        console.log("First item details:", payload.items[0]);
+        console.log("First item imageUrl:", payload.items[0].imageUrl);
+        console.log(
+          "First item discountPercent:",
+          payload.items[0].discountPercent
+        );
+        console.log(
+          "First item discountAmount:",
+          payload.items[0].discountAmount
+        );
+        console.log("First item bookPrice:", payload.items[0].bookPrice);
+      }
+
       setDetailData({
         ...payload,
         id: order.displayId || payload.id,
         displayId: order.displayId || payload.id,
+        // Đảm bảo items được set đúng
+        items: payload.items || [],
       });
     } catch (err) {
       console.error("Fetch detail failed", err);
@@ -236,7 +260,8 @@ export default function ProcessOrders() {
         <div>
           <h1>Process Orders</h1>
           <p>
-            Điều phối đơn hàng theo trạng thái, phương thức thanh toán và tốc độ giao vận.
+            Điều phối đơn hàng theo trạng thái, phương thức thanh toán và tốc độ
+            giao vận.
           </p>
         </div>
         <div className="tagline">Live operations • Staff workspace</div>
@@ -268,7 +293,10 @@ export default function ProcessOrders() {
       <div className="process-filters">
         <div className="filter-group">
           <label>Trạng thái</label>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
             {statusOptions.map((s) => (
               <option key={s} value={s}>
                 {s === "ALL" ? "Tất cả" : s}
@@ -279,7 +307,10 @@ export default function ProcessOrders() {
 
         <div className="filter-group">
           <label>Thanh toán</label>
-          <select value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)}>
+          <select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value)}
+          >
             {paymentOptions.map((s) => (
               <option key={s} value={s}>
                 {s === "ALL" ? "Tất cả" : s}
@@ -325,7 +356,9 @@ export default function ProcessOrders() {
             <span className="muted">{paymentLabel(order.payment)}</span>
             <span className="muted">{order.service}</span>
             <span>{statusBadge(order.status)}</span>
-            <span className="amount">{order.total.toLocaleString("vi-VN")} ₫</span>
+            <span className="amount">
+              {order.total.toLocaleString("vi-VN")} ₫
+            </span>
             <span className="muted">{order.createdAt}</span>
             <span className="align-right action-group">
               <button className="ghost" onClick={() => openDetail(order)}>
@@ -351,7 +384,8 @@ export default function ProcessOrders() {
                 <p className="status-eyebrow">Cập nhật trạng thái</p>
                 <h3>{selectedOrder.displayId}</h3>
                 <p className="status-subtext">
-                  Chọn trạng thái tiếp theo cho đơn hàng. Hệ thống sẽ lưu ngay khi bạn xác nhận.
+                  Chọn trạng thái tiếp theo cho đơn hàng. Hệ thống sẽ lưu ngay
+                  khi bạn xác nhận.
                 </p>
               </div>
               <button
@@ -399,15 +433,24 @@ export default function ProcessOrders() {
                 </select>
               </div>
               <p className="helper-text">
-                Ưu tiên xác nhận ngay khi đã chốt thông tin với khách. Chỉ chọn CANCELLED khi có yêu cầu rõ ràng.
+                Ưu tiên xác nhận ngay khi đã chốt thông tin với khách. Chỉ chọn
+                CANCELLED khi có yêu cầu rõ ràng.
               </p>
             </div>
 
             <div className="modal-actions">
-              <button className="ghost" onClick={() => setUpdateModal(false)} disabled={actionLoading}>
+              <button
+                className="ghost"
+                onClick={() => setUpdateModal(false)}
+                disabled={actionLoading}
+              >
                 Bỏ qua
               </button>
-              <button className="primary" onClick={handleUpdate} disabled={actionLoading}>
+              <button
+                className="primary"
+                onClick={handleUpdate}
+                disabled={actionLoading}
+              >
                 {actionLoading ? "Đang lưu..." : "Lưu cập nhật"}
               </button>
             </div>
@@ -419,19 +462,59 @@ export default function ProcessOrders() {
         <div className="modal-backdrop">
           <div className="modal-card detail-modal-card">
             {detailLoading && <div>Đang tải...</div>}
-            {!detailLoading && detailData && (
+            {!detailLoading &&
+              detailData &&
               (() => {
+                // Normalize items từ detailData
                 const items = normalizeOrderItems(detailData);
+                console.log("Normalized items:", items);
+                if (items.length > 0) {
+                  console.log("First normalized item:", items[0]);
+                  console.log("First item imageUrl:", items[0].imageUrl);
+                  console.log(
+                    "First item discountPercent:",
+                    items[0].discountPercent,
+                    "type:",
+                    typeof items[0].discountPercent
+                  );
+                  console.log(
+                    "First item discountAmount:",
+                    items[0].discountAmount,
+                    "type:",
+                    typeof items[0].discountAmount
+                  );
+                  console.log("First item bookPrice:", items[0].bookPrice);
+                  console.log(
+                    "First item price (order price):",
+                    items[0].price
+                  );
+                }
+
                 const subtotal = items.reduce(
                   (sum, it) => sum + (it.quantity || 0) * (it.price || 0),
                   0
                 );
-                const shipping = Math.max((detailData.totalPrice || 0) - subtotal, 0);
+                const shipping = Math.max(
+                  (detailData.totalPrice || 0) - subtotal,
+                  0
+                );
                 const total =
-                  detailData.totalPrice != null ? detailData.totalPrice : subtotal + shipping;
+                  detailData.totalPrice != null
+                    ? detailData.totalPrice
+                    : subtotal + shipping;
                 const orderDate = detailData.orderDate
                   ? new Date(detailData.orderDate).toLocaleString("vi-VN")
                   : "-";
+
+                // Kiểm tra nếu order có status RETURNED hoặc có history RETURNED
+                const isReturnedOrder =
+                  detailData.status === "RETURNED" ||
+                  (detailData.orderStatusHistories &&
+                    detailData.orderStatusHistories.some(
+                      (h) =>
+                        h.eOrderHistory === "RETURNED" ||
+                        h.eOrderHistory === "RETURN"
+                    ));
 
                 return (
                   <>
@@ -441,7 +524,9 @@ export default function ProcessOrders() {
                         <h3>{detailData.displayId || detailData.id}</h3>
                         <p className="detail-datetime">{orderDate}</p>
                       </div>
-                      <div className="detail-header__pill">{statusBadge(detailData.status)}</div>
+                      <div className="detail-header__pill">
+                        {statusBadge(detailData.status)}
+                      </div>
                     </div>
 
                     <div className="detail-meta">
@@ -451,7 +536,9 @@ export default function ProcessOrders() {
                       </div>
                       <div>
                         <span className="label">Thanh toán</span>
-                        <strong>{paymentLabel(detailData.paymentMethod)}</strong>
+                        <strong>
+                          {paymentLabel(detailData.paymentMethod)}
+                        </strong>
                       </div>
                       <div>
                         <span className="label">Vận chuyển</span>
@@ -463,13 +550,50 @@ export default function ProcessOrders() {
                       </div>
                     </div>
 
+                    {/* Hiển thị thông báo nếu order đã được trả */}
+                    {isReturnedOrder && (
+                      <div
+                        style={{
+                          marginTop: 16,
+                          marginBottom: 16,
+                          padding: 12,
+                          backgroundColor: "#fef3c7",
+                          borderRadius: "8px",
+                          border: "1px solid #fde68a",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <span style={{ fontSize: "16px" }}>⚠️</span>
+                        <span
+                          style={{
+                            color: "#92400e",
+                            fontSize: "14px",
+                            fontWeight: 500,
+                          }}
+                        >
+                          Đơn hàng này đã có sản phẩm được trả. Các sản phẩm còn
+                          lại được hiển thị bên dưới.
+                        </span>
+                      </div>
+                    )}
+
                     <div className="detail-items">
                       <div className="detail-items__header">
-                        <strong>Sản phẩm đã đặt</strong>
+                        <strong>
+                          {isReturnedOrder
+                            ? "Sản phẩm còn lại (đã có sản phẩm trả)"
+                            : "Sản phẩm đã đặt"}
+                        </strong>
                         <div className="item-stats">
                           <span className="badge">{items.length} đầu sách</span>
                           <span className="badge badge--accent">
-                            {items.reduce((sum, it) => sum + (it.quantity || 0), 0)} quyển
+                            {items.reduce(
+                              (sum, it) => sum + (it.quantity || 0),
+                              0
+                            )}{" "}
+                            quyển
                           </span>
                         </div>
                       </div>
@@ -480,28 +604,198 @@ export default function ProcessOrders() {
                         )}
                         {items.map((it) => {
                           const qty = it.quantity || 0;
-                          const unit = it.price || 0;
-                          const lineTotal = qty * unit;
+                          // it.price là giá tại thời điểm đặt hàng (đã áp dụng discount nếu có)
+                          const orderPrice = it.price || 0;
+                          const lineTotal = qty * orderPrice;
                           const shortTitle = (it.bookTitle || "Sách")
                             .slice(0, 2)
                             .toUpperCase();
+
+                          // Tính giá gốc và giá sau discount để hiển thị (giống mainpage)
+                          const originalPrice = it.bookPrice || orderPrice;
+
+                          // Kiểm tra discount: ưu tiên discountPercent, sau đó discountAmount (giống mainpage)
+                          let discountPercent = it.discountPercent
+                            ? Number(it.discountPercent)
+                            : null;
+                          let discountAmount = it.discountAmount
+                            ? Number(it.discountAmount)
+                            : null;
+
+                          // Nếu backend không trả về discount nhưng orderPrice < bookPrice,
+                          // tính toán discount từ sự chênh lệch
+                          if (
+                            !discountPercent &&
+                            !discountAmount &&
+                            originalPrice > orderPrice &&
+                            orderPrice > 0
+                          ) {
+                            const priceDiff = originalPrice - orderPrice;
+                            // Hiển thị theo số tiền (giống mainpage)
+                            discountAmount = priceDiff;
+                          }
+
+                          // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2 (giống mainpage)
+                          const priceAfterDiscount =
+                            discountPercent != null && discountPercent > 0
+                              ? Math.round(
+                                  originalPrice * (1 - discountPercent / 100)
+                                )
+                              : discountAmount != null && discountAmount > 0
+                              ? Math.max(
+                                  0,
+                                  Math.round(originalPrice - discountAmount)
+                                )
+                              : orderPrice;
+
+                          // Hiển thị text discount - ưu tiên discountPercent (giống mainpage)
+                          const discountText =
+                            discountPercent != null && discountPercent > 0
+                              ? `-${discountPercent}%`
+                              : discountAmount != null && discountAmount > 0
+                              ? `-${Math.round(discountAmount).toLocaleString(
+                                  "vi-VN"
+                                )}đ`
+                              : null;
+
+                          const hasDiscount = discountText !== null;
+
                           return (
-                            <div className="detail-card" key={it.id}>
-                              <div className="detail-thumb">
-                                <span>{shortTitle}</span>
+                            <div
+                              className="detail-card"
+                              key={it.id}
+                              style={{
+                                ...(isReturnedOrder
+                                  ? {
+                                      border: "1px solid #fde68a",
+                                      backgroundColor: "#fffbeb",
+                                    }
+                                  : {}),
+                              }}
+                            >
+                              <div
+                                className="detail-thumb"
+                                style={{ position: "relative" }}
+                              >
+                                {it.imageUrl ? (
+                                  <img
+                                    src={it.imageUrl}
+                                    alt={it.bookTitle}
+                                    style={{
+                                      width: "100%",
+                                      height: "100%",
+                                      objectFit: "cover",
+                                      borderRadius: "6px",
+                                    }}
+                                    onError={(e) => {
+                                      e.target.style.display = "none";
+                                      const fallback =
+                                        e.target.parentElement.querySelector(
+                                          ".detail-thumb-fallback"
+                                        );
+                                      if (fallback)
+                                        fallback.style.display = "flex";
+                                    }}
+                                  />
+                                ) : null}
+                                <span
+                                  className="detail-thumb-fallback"
+                                  style={{
+                                    display: it.imageUrl ? "none" : "flex",
+                                  }}
+                                >
+                                  {shortTitle}
+                                </span>
                               </div>
                               <div className="detail-card__content">
                                 <div className="detail-card__top">
                                   <div>
-                                    <p className="detail-card__title">{it.bookTitle}</p>
-                                    <p className="detail-card__meta">Mã: {it.bookCode || it.bookId || "-"}</p>
+                                    <p className="detail-card__title">
+                                      {it.bookTitle}
+                                    </p>
+                                    <p className="detail-card__meta">
+                                      Mã: {it.bookCode || it.bookId || "-"}
+                                    </p>
+                                    {/* Giá giảm hiển thị dưới chữ Mã */}
+                                    {hasDiscount && (
+                                      <p
+                                        style={{
+                                          color: "#ef4444",
+                                          fontWeight: 600,
+                                          fontSize: "14px",
+                                          marginTop: 4,
+                                          marginBottom: 0,
+                                        }}
+                                      >
+                                        {discountText}
+                                      </p>
+                                    )}
                                   </div>
-                                  <div className="detail-card__price">{unit.toLocaleString("vi-VN")} ₫</div>
+                                  <div style={{ textAlign: "right" }}>
+                                    {/* Giá mới (sau discount) - giống mainpage */}
+                                    <div className="detail-card__price">
+                                      {priceAfterDiscount.toLocaleString(
+                                        "vi-VN"
+                                      )}{" "}
+                                      ₫
+                                    </div>
+                                    {/* Giá cũ - chỉ hiển thị khi có discount - giống mainpage */}
+                                    {hasDiscount && (
+                                      <div
+                                        style={{
+                                          textDecoration: "line-through",
+                                          color: "#9ca3af",
+                                          fontSize: "14px",
+                                          marginTop: 4,
+                                        }}
+                                      >
+                                        {originalPrice.toLocaleString("vi-VN")}{" "}
+                                        ₫
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="detail-card__bottom">
-                                  <span className="pill muted">SL: {qty}</span>
+                                <div
+                                  className="detail-card__bottom"
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 8,
+                                    }}
+                                  >
+                                    <span
+                                      className="pill muted"
+                                      style={{ margin: 0 }}
+                                    >
+                                      SL: {qty}
+                                    </span>
+                                    {isReturnedOrder && (
+                                      <span
+                                        className="pill"
+                                        style={{
+                                          margin: 0,
+                                          backgroundColor: "#fef3c7",
+                                          color: "#d97706",
+                                          fontSize: "11px",
+                                          padding: "2px 8px",
+                                        }}
+                                      >
+                                        Còn lại
+                                      </span>
+                                    )}
+                                  </div>
                                   <span className="detail-card__line-total">
-                                    {lineTotal.toLocaleString("vi-VN")} ₫
+                                    {(qty * priceAfterDiscount).toLocaleString(
+                                      "vi-VN"
+                                    )}{" "}
+                                    ₫
                                   </span>
                                 </div>
                               </div>
@@ -513,22 +807,27 @@ export default function ProcessOrders() {
                       <div className="detail-summary">
                         <div className="detail-summary__row">
                           <span>Tạm tính</span>
-                          <span className="amount">{subtotal.toLocaleString("vi-VN")} ₫</span>
+                          <span className="amount">
+                            {subtotal.toLocaleString("vi-VN")} ₫
+                          </span>
                         </div>
                         <div className="detail-summary__row">
                           <span>Phí vận chuyển</span>
-                          <span className="amount">{shipping.toLocaleString("vi-VN")} ₫</span>
+                          <span className="amount">
+                            {shipping.toLocaleString("vi-VN")} ₫
+                          </span>
                         </div>
                         <div className="detail-summary__row detail-summary__row--total">
                           <span>Tổng cộng</span>
-                          <span className="amount">{total.toLocaleString("vi-VN")} ₫</span>
+                          <span className="amount">
+                            {total.toLocaleString("vi-VN")} ₫
+                          </span>
                         </div>
                       </div>
                     </div>
                   </>
                 );
-              })()
-            )}
+              })()}
             <div className="modal-actions">
               <button className="primary" onClick={() => setDetailModal(false)}>
                 Đóng

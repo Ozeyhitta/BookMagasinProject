@@ -42,9 +42,18 @@ export default function NotificationsPage() {
     };
 
     loadData();
+    
+    // Polling để tự động refresh notifications mỗi 10 giây
+    const interval = setInterval(() => {
+      loadData();
+    }, 10000); // Refresh mỗi 10 giây
+    
     const onFocus = () => loadData();
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [router]);
 
   const markAsRead = async (id) => {
@@ -118,6 +127,42 @@ export default function NotificationsPage() {
 
                   <h3 className={styles.notifTitle}>{n.title || "Không có tiêu đề"}</h3>
                   <p className={styles.description}>{n.message || "Không có nội dung"}</p>
+                  {/* Hiển thị badge cho return request notifications */}
+                  {(n.title?.includes("trả hàng") || n.message?.includes("trả hàng")) && (
+                    <div style={{
+                      marginTop: 8,
+                      display: "flex",
+                      gap: 8,
+                      flexWrap: "wrap"
+                    }}>
+                      {n.message?.includes("đã được duyệt") && (
+                        <span style={{
+                          padding: "4px 8px",
+                          backgroundColor: "#d1fae5",
+                          color: "#059669",
+                          borderRadius: "4px",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          border: "1px solid #34C759"
+                        }}>
+                          ✓ Đã chấp nhận
+                        </span>
+                      )}
+                      {n.message?.includes("đã bị từ chối") && (
+                        <span style={{
+                          padding: "4px 8px",
+                          backgroundColor: "#fee2e2",
+                          color: "#991b1b",
+                          borderRadius: "4px",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          border: "1px solid #EF4444"
+                        }}>
+                          ✗ Đã từ chối
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

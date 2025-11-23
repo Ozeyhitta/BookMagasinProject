@@ -597,6 +597,11 @@ body,
   color: #b91c1c;
 }
 
+.pill.returned {
+  background: #fef3c7;
+  color: #d97706;
+}
+
 .empty-state {
   padding: 18px;
   text-align: center;
