@@ -102,6 +102,12 @@
   border-collapse: collapse;
 }
 
+/* Ensure table cells vertically center their content for consistent alignment */
+.table th,
+.table td {
+  vertical-align: middle;
+}
+
 .table thead {
   background-color: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
@@ -184,24 +190,92 @@
 
 /* Added styling for cancel button in action column */
 .btnCancel {
-  padding: 8px 12px;
+  /* pill style button */
+  padding: 8px 14px;
   background-color: #ef4444;
   color: #ffffff;
   border: none;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 10px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  width: 36px;
-  height: 36px;
-  display: flex;
+  transition: all 0.15s ease;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-width: 56px;
+  height: 36px;
 }
 
 .btnCancel:hover {
   background-color: #dc2626;
+  box-shadow: 0 6px 18px rgba(220,38,38,0.18);
+}
+
+/* Action column cell: center actions and keep column compact */
+.actionCell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 12px; /* slightly reduce vertical padding to better center buttons */
+  vertical-align: middle;
+  width: 120px; /* compact but closer to table */
+}
+
+@media (max-width: 768px) {
+  .actionCell {
+    justify-content: flex-start;
+    text-align: left;
+    padding-right: 0;
+  }
+  .btnCancel {
+    min-width: 52px;
+    height: 34px;
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+}
+
+/* header alignment for action column */
+.table thead th:last-child {
+  text-align: center;
+  padding: 12px 12px;
+}
+
+/* Remove the table divider line under the action column to avoid a "faint border" looking
+   like an extra visual beneath buttons. This keeps rows visually balanced. */
+.table tbody td:last-child {
+  border-bottom: 1px solid transparent;
+}
+
+/* Prevent unwanted focus outlines/shadows on action buttons */
+.btnCancel,
+.btnDetails,
+.btnOutline {
+  box-shadow: none;
+  outline: none;
+}
+.btnCancel:focus,
+.btnDetails:focus,
+.btnOutline:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.btnCancel[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f3f4f6;
+  color: #9ca3af;
+}
+
+.actionText {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  font-weight: 600;
+  color: #6b7280;
 }
 
 /* Added styling for pay button */
@@ -689,3 +763,4 @@
   cursor: not-allowed;
   box-shadow: none;
 }
+

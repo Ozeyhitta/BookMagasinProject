@@ -17,6 +17,24 @@ export default function OrderHistory() {
     return s === "DELIVERED" || s === "COMPLETED";
   };
 
+  // fetchOrders moved to top-level so other handlers can refresh list
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+      const res = await fetch(`http://localhost:8080/api/orders/users/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching orders", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const userId = localStorage.getItem("userId");
     if (!userId) {
@@ -24,26 +42,44 @@ export default function OrderHistory() {
       return;
     }
 
-    const fetchOrders = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`http://localhost:8080/api/orders/users/${userId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setOrders(data || []);
-        }
-      } catch (err) {
-        console.error("Error fetching orders", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrders();
     const onFocus = () => fetchOrders();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [router]);
+
+  // Cancel order handler
+  const cancelOrder = async (order) => {
+    if (!order) return;
+    const ok = window.confirm("Bạn có chắc chắn muốn hủy đơn hàng?");
+    if (!ok) return;
+
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`http://localhost:8080/api/orders/${order.id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ status: "CANCELLED" }),
+      });
+      if (res.ok) {
+        alert("Đã hủy đơn hàng");
+        // refresh list and update modal if open
+        await fetchOrders();
+        if (selectedOrder && selectedOrder.id === order.id) {
+          setSelectedOrder((s) => ({ ...s, status: "CANCELLED" }));
+        }
+      } else {
+        const text = await res.text();
+        alert(text || "Hủy đơn hàng thất bại");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Không thể hủy đơn hàng, thử lại sau");
+    }
+  };
 
   const filteredOrders = orders.filter((order) => {
     if (activeTab === "all") return true;
@@ -159,6 +195,7 @@ export default function OrderHistory() {
               <th>Trạng thái</th>
               <th>Tổng tiền</th>
               <th>Chi tiết</th>
+              <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -178,6 +215,28 @@ export default function OrderHistory() {
                     <button className={styles.btnDetails} onClick={() => setSelectedOrder(order)}>
                       Chi tiết đơn hàng
                     </button>
+                  </td>
+                  <td className={styles.actionCell}>
+                    {(() => {
+                      const s = order.status?.toString().toUpperCase() || "";
+                      // allow cancel only when order is PENDING or PROCESSING
+                      const canCancel = ["PENDING", "PROCESSING"].includes(s);
+                      return canCancel ? (
+                        <button
+                          className={styles.btnCancel}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cancelOrder(order);
+                          }}
+                          title="Hủy đơn"
+                        >
+                          Hủy
+                        </button>
+                      ) : (
+                        // keep cell visually balanced when no action
+                        <span style={{ color: getStatusColor(order.status), fontWeight: 600 }}>{getStatusText(order.status)}</span>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))
