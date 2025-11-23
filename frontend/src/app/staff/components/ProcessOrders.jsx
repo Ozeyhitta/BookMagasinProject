@@ -109,14 +109,7 @@ export default function ProcessOrders() {
         bookTitle: it.bookTitle || it.title || "S???n ph??cm",
         quantity,
         price: unitPrice,
-<<<<<<< HEAD
         imageUrl,
-=======
-        imageUrl: it.imageUrl || null,
-        discountPercent: it.discountPercent || null,
-        discountAmount: it.discountAmount || null,
-        bookPrice: it.bookPrice || unitPrice,
->>>>>>> 8dcf7faa58b9f62866a8b49037d2aaa993a3854b
       };
     });
   };
@@ -245,41 +238,11 @@ export default function ProcessOrders() {
     setDetailData(null);
     setDetailLoading(true);
     try {
-<<<<<<< HEAD
       const payload = await fetchOrderDetailData(order.id);
-=======
-      const res = await axiosClient.get(`/orders/${order.id}/detail`);
-      const payload =
-        res?.data?.data ||
-        res?.data?.order ||
-        res?.data?.result ||
-        res?.data ||
-        null;
-      if (!payload) throw new Error("Empty detail");
-
-      // Debug: Log để kiểm tra dữ liệu từ backend
-      console.log("Order detail payload:", payload);
-      console.log("Items from payload:", payload.items);
-      if (payload.items && payload.items.length > 0) {
-        console.log("First item details:", payload.items[0]);
-        console.log("First item imageUrl:", payload.items[0].imageUrl);
-        console.log(
-          "First item discountPercent:",
-          payload.items[0].discountPercent
-        );
-        console.log(
-          "First item discountAmount:",
-          payload.items[0].discountAmount
-        );
-        console.log("First item bookPrice:", payload.items[0].bookPrice);
-      }
-
->>>>>>> 8dcf7faa58b9f62866a8b49037d2aaa993a3854b
       setDetailData({
         ...payload,
         id: order.displayId || payload.id,
         displayId: order.displayId || payload.id,
-        // Đảm bảo items được set đúng
         items: payload.items || [],
       });
     } catch (err) {
@@ -570,15 +533,7 @@ export default function ProcessOrders() {
             </div>
 
             <div className="modal-actions">
-<<<<<<< HEAD
               <button className="ghost" onClick={closeUpdateModal} disabled={actionLoading}>
-=======
-              <button
-                className="ghost"
-                onClick={() => setUpdateModal(false)}
-                disabled={actionLoading}
-              >
->>>>>>> 8dcf7faa58b9f62866a8b49037d2aaa993a3854b
                 Bỏ qua
               </button>
               <button
@@ -747,64 +702,10 @@ export default function ProcessOrders() {
                         )}
                         {items.map((it) => {
                           const qty = it.quantity || 0;
-                          // it.price là giá tại thời điểm đặt hàng (đã áp dụng discount nếu có)
-                          const orderPrice = it.price || 0;
-                          const lineTotal = qty * orderPrice;
-                          const shortTitle = (it.bookTitle || "Sách")
-                            .slice(0, 2)
-                            .toUpperCase();
-
-                          // Tính giá gốc và giá sau discount để hiển thị (giống mainpage)
-                          const originalPrice = it.bookPrice || orderPrice;
-
-                          // Kiểm tra discount: ưu tiên discountPercent, sau đó discountAmount (giống mainpage)
-                          let discountPercent = it.discountPercent
-                            ? Number(it.discountPercent)
-                            : null;
-                          let discountAmount = it.discountAmount
-                            ? Number(it.discountAmount)
-                            : null;
-
-                          // Nếu backend không trả về discount nhưng orderPrice < bookPrice,
-                          // tính toán discount từ sự chênh lệch
-                          if (
-                            !discountPercent &&
-                            !discountAmount &&
-                            originalPrice > orderPrice &&
-                            orderPrice > 0
-                          ) {
-                            const priceDiff = originalPrice - orderPrice;
-                            // Hiển thị theo số tiền (giống mainpage)
-                            discountAmount = priceDiff;
-                          }
-
-                          // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2 (giống mainpage)
-                          const priceAfterDiscount =
-                            discountPercent != null && discountPercent > 0
-                              ? Math.round(
-                                  originalPrice * (1 - discountPercent / 100)
-                                )
-                              : discountAmount != null && discountAmount > 0
-                              ? Math.max(
-                                  0,
-                                  Math.round(originalPrice - discountAmount)
-                                )
-                              : orderPrice;
-
-                          // Hiển thị text discount - ưu tiên discountPercent (giống mainpage)
-                          const discountText =
-                            discountPercent != null && discountPercent > 0
-                              ? `-${discountPercent}%`
-                              : discountAmount != null && discountAmount > 0
-                              ? `-${Math.round(discountAmount).toLocaleString(
-                                  "vi-VN"
-                                )}đ`
-                              : null;
-
-                          const hasDiscount = discountText !== null;
-
+                          const unit = it.price || 0;
+                          const lineTotal = qty * unit;
+                          const shortTitle = (it.bookTitle || "Sách").slice(0, 2).toUpperCase();
                           return (
-<<<<<<< HEAD
                             <div className="detail-card" key={it.id}>
                               <div className="detail-thumb">
                                 {it.imageUrl ? (
@@ -812,143 +713,21 @@ export default function ProcessOrders() {
                                 ) : (
                                   <span>{shortTitle}</span>
                                 )}
-=======
-                            <div
-                              className="detail-card"
-                              key={it.id}
-                              style={{
-                                ...(isReturnedOrder
-                                  ? {
-                                      border: "1px solid #fde68a",
-                                      backgroundColor: "#fffbeb",
-                                    }
-                                  : {}),
-                              }}
-                            >
-                              <div
-                                className="detail-thumb"
-                                style={{ position: "relative" }}
-                              >
-                                {it.imageUrl ? (
-                                  <img
-                                    src={it.imageUrl}
-                                    alt={it.bookTitle}
-                                    style={{
-                                      width: "100%",
-                                      height: "100%",
-                                      objectFit: "cover",
-                                      borderRadius: "6px",
-                                    }}
-                                    onError={(e) => {
-                                      e.target.style.display = "none";
-                                      const fallback =
-                                        e.target.parentElement.querySelector(
-                                          ".detail-thumb-fallback"
-                                        );
-                                      if (fallback)
-                                        fallback.style.display = "flex";
-                                    }}
-                                  />
-                                ) : null}
-                                <span
-                                  className="detail-thumb-fallback"
-                                  style={{
-                                    display: it.imageUrl ? "none" : "flex",
-                                  }}
-                                >
-                                  {shortTitle}
-                                </span>
->>>>>>> 8dcf7faa58b9f62866a8b49037d2aaa993a3854b
                               </div>
                               <div className="detail-card__content">
                                 <div className="detail-card__top">
                                   <div>
-                                    <p className="detail-card__title">
-                                      {it.bookTitle}
-                                    </p>
-                                    <p className="detail-card__meta">
-                                      Mã: {it.bookCode || it.bookId || "-"}
-                                    </p>
-                                    {/* Giá giảm hiển thị dưới chữ Mã */}
-                                    {hasDiscount && (
-                                      <p
-                                        style={{
-                                          color: "#ef4444",
-                                          fontWeight: 600,
-                                          fontSize: "14px",
-                                          marginTop: 4,
-                                          marginBottom: 0,
-                                        }}
-                                      >
-                                        {discountText}
-                                      </p>
-                                    )}
+                                    <p className="detail-card__title">{it.bookTitle}</p>
+                                    <p className="detail-card__meta">Mã: {it.bookCode || it.bookId || "-"}</p>
                                   </div>
-                                  <div style={{ textAlign: "right" }}>
-                                    {/* Giá mới (sau discount) - giống mainpage */}
-                                    <div className="detail-card__price">
-                                      {priceAfterDiscount.toLocaleString(
-                                        "vi-VN"
-                                      )}{" "}
-                                      ₫
-                                    </div>
-                                    {/* Giá cũ - chỉ hiển thị khi có discount - giống mainpage */}
-                                    {hasDiscount && (
-                                      <div
-                                        style={{
-                                          textDecoration: "line-through",
-                                          color: "#9ca3af",
-                                          fontSize: "14px",
-                                          marginTop: 4,
-                                        }}
-                                      >
-                                        {originalPrice.toLocaleString("vi-VN")}{" "}
-                                        ₫
-                                      </div>
-                                    )}
+                                  <div className="detail-card__price">
+                                    {unit.toLocaleString("vi-VN")} ₫
                                   </div>
                                 </div>
-                                <div
-                                  className="detail-card__bottom"
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 8,
-                                    }}
-                                  >
-                                    <span
-                                      className="pill muted"
-                                      style={{ margin: 0 }}
-                                    >
-                                      SL: {qty}
-                                    </span>
-                                    {isReturnedOrder && (
-                                      <span
-                                        className="pill"
-                                        style={{
-                                          margin: 0,
-                                          backgroundColor: "#fef3c7",
-                                          color: "#d97706",
-                                          fontSize: "11px",
-                                          padding: "2px 8px",
-                                        }}
-                                      >
-                                        Còn lại
-                                      </span>
-                                    )}
-                                  </div>
+                                <div className="detail-card__bottom">
+                                  <span className="pill muted">SL: {qty}</span>
                                   <span className="detail-card__line-total">
-                                    {(qty * priceAfterDiscount).toLocaleString(
-                                      "vi-VN"
-                                    )}{" "}
-                                    ₫
+                                    {lineTotal.toLocaleString("vi-VN")} ₫
                                   </span>
                                 </div>
                               </div>
@@ -992,4 +771,5 @@ export default function ProcessOrders() {
     </div>
   );
 }
+
 

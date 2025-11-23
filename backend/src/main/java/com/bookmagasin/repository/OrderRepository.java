@@ -29,15 +29,7 @@ public interface OrderRepository extends JpaRepository<Order,Integer> {
     @EntityGraph(attributePaths = {
             "user",
             "service",
-<<<<<<< HEAD
             "payment"
-=======
-            "payment",
-            "books",
-            "books.book",
-            "books.book.bookDetail",
-            "books.book.bookDiscounts"
->>>>>>> 8dcf7faa58b9f62866a8b49037d2aaa993a3854b
     })
     @Query("SELECT o FROM Order o WHERE o.id = :id")
     Optional<Order> findByIdWithDetails(@Param("id") Integer id);
