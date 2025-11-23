@@ -88,4 +88,10 @@ public class BookController {
                 : ResponseEntity.badRequest().body("Update failed!");
     }
 
+    @GetMapping("/top-selling")
+    public ResponseEntity<List<BookResponseDto>> getTopSellingBooks(
+            @RequestParam(value = "limit", defaultValue = "8") int limit) {
+        return ResponseEntity.ok(bookService.findTopSellingBooks(limit));
+    }
+
 }

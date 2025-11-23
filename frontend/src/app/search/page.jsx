@@ -209,6 +209,14 @@ export default function SearchPage() {
                         author: book.author, 
                         publisher: matchedDetail?.publisher, 
                         supplier: matchedDetail?.supplier,   
+                        stockQuantity:
+                            typeof book.stockQuantity === "number"
+                                ? book.stockQuantity
+                                : 0,
+                        soldQuantity:
+                            typeof book.soldQuantity === "number"
+                                ? book.soldQuantity
+                                : 0,
                         imageUrl:
                             matchedDetail?.imageUrl ||
                             "https://via.placeholder.com/200x280?text=No+Image",
@@ -468,6 +476,8 @@ export default function SearchPage() {
                             oldPrice={null}
                             discount={null}
                             image={book.imageUrl}
+                            stockQuantity={book.stockQuantity}
+                            soldQuantity={book.soldQuantity}
                         />
                     ))}
                 </div>

@@ -1,11 +1,12 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import styles from "./mainpage.module.css";
 import ProductCard from "../category/ProductCard"; // ✅ reuse CategoryPage’s ProductCard
 import { ChevronLeft, ChevronRight, BookText } from "lucide-react";
+import { buildApiUrl } from "../../utils/apiConfig";
 
 export default function MainPage() {
-  const categories = [
+  const rawCategories = [
     {
       label: "Sách Kinh Tế",
       children: [
@@ -149,6 +150,7 @@ export default function MainPage() {
       ],
     },
   ];
+  const categories = rawCategories.map(({ label }) => ({ label }));
 
   const banners = [
     "https://newshop.vn/public/uploads/landing-page/sach-hay-newshop/banner-mobile.png",
@@ -157,7 +159,6 @@ export default function MainPage() {
   ];
 
   const [current, setCurrent] = useState(0);
-  const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const prevBanner = () =>
     setCurrent((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
@@ -182,6 +183,58 @@ export default function MainPage() {
   const PRODUCTS_PER_BATCH = 12;
   const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_BATCH);
   const loadMoreRef = useRef(null);
+  const [bestSellers, setBestSellers] = useState([]);
+  const [bestSellerError, setBestSellerError] = useState(null);
+  const BEST_SELLER_LIMIT = 8;
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const placeholderImage =
+    "https://via.placeholder.com/200x280?text=No+Image";
+  const filteredBooks = useMemo(() => {
+    if (!selectedCategoryId) return books;
+    return books.filter((book) =>
+      (book.categories || []).some((c) => c.id === selectedCategoryId)
+    );
+  }, [books, selectedCategoryId]);
+
+  const formatCurrency = (value) => {
+    if (typeof value !== "number" || Number.isNaN(value)) return "";
+    return value.toLocaleString("vi-VN") + "đ";
+  };
+
+  const getPricingForBook = (book) => {
+    const discount = discounts[book.id];
+    const basePrice =
+      typeof book.sellingPrice === "number"
+        ? book.sellingPrice
+        : typeof book.price === "number"
+        ? book.price
+        : 0;
+    if (!basePrice) {
+      return { finalPrice: "", oldPrice: "", badge: null };
+    }
+
+    let finalPrice = basePrice;
+    let badge = null;
+
+    if (discount) {
+      if (discount.discountPercent && discount.discountPercent > 0) {
+        finalPrice = Math.max(
+          0,
+          basePrice * (1 - discount.discountPercent / 100)
+        );
+        badge = `-${discount.discountPercent}%`;
+      } else if (discount.discountAmount && discount.discountAmount > 0) {
+        finalPrice = Math.max(0, basePrice - discount.discountAmount);
+        badge = `-${discount.discountAmount.toLocaleString("vi-VN")}đ`;
+      }
+    }
+
+    return {
+      finalPrice: formatCurrency(Math.round(finalPrice)),
+      oldPrice: badge ? formatCurrency(Math.round(basePrice)) : "",
+      badge,
+    };
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -199,13 +252,28 @@ export default function MainPage() {
         const merged = booksData.map((book) => {
           const matchedDetail = detailsData.find((d) => d.book?.id === book.id);
 
+          const stockQuantity =
+            typeof book.stockQuantity === "number" ? book.stockQuantity : 0;
+          const soldQuantity =
+            typeof book.soldQuantity === "number" ? book.soldQuantity : 0;
+          const detailImage =
+            book.bookDetail?.imageUrl || matchedDetail?.imageUrl;
+
           return {
             id: book.id,
             title: book.title,
             price: book.sellingPrice,
+            sellingPrice:
+              typeof book.sellingPrice === "number"
+                ? book.sellingPrice
+                : book.price,
             imageUrl:
-              matchedDetail?.imageUrl ||
+              detailImage ||
               "https://via.placeholder.com/200x280?text=No+Image",
+            stockQuantity,
+            soldQuantity,
+            bookDetail: book.bookDetail || matchedDetail || null,
+            categories: book.categories || [],
           };
         });
 
@@ -288,17 +356,48 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
-    setVisibleCount(PRODUCTS_PER_BATCH);
-  }, [books.length]);
+    const fetchBestSellers = async () => {
+      try {
+        const res = await fetch(
+          buildApiUrl(`/api/books/top-selling?limit=${BEST_SELLER_LIMIT}`)
+        );
+        if (!res.ok) throw new Error("Failed to fetch best sellers");
+        const data = await res.json();
+        setBestSellers(data);
+        setBestSellerError(null);
+      } catch (error) {
+        console.warn("Lỗi load sách bán chạy:", error);
+        setBestSellerError("Không thể tải danh sách bán chạy");
+      }
+    };
+
+    fetchBestSellers();
+  }, []);
 
   useEffect(() => {
-    if (!books.length) return;
+    if (bestSellers.length > 0 || books.length === 0) return;
+    const derived = [...books]
+      .filter((book) => typeof book.soldQuantity === "number")
+      .sort((a, b) => (b.soldQuantity ?? 0) - (a.soldQuantity ?? 0))
+      .slice(0, BEST_SELLER_LIMIT);
+    if (derived.length) {
+      setBestSellers(derived);
+      setBestSellerError(null);
+    }
+  }, [books, bestSellers.length]);
+
+  useEffect(() => {
+    setVisibleCount(PRODUCTS_PER_BATCH);
+  }, [books.length, selectedCategoryId]);
+
+  useEffect(() => {
+    if (!filteredBooks.length) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
           setVisibleCount((prev) =>
-            Math.min(prev + PRODUCTS_PER_BATCH, books.length)
+            Math.min(prev + PRODUCTS_PER_BATCH, filteredBooks.length)
           );
         }
       },
@@ -312,7 +411,7 @@ export default function MainPage() {
       if (current) observer.unobserve(current);
       observer.disconnect();
     };
-  }, [books.length]);
+  }, [filteredBooks.length]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -346,7 +445,7 @@ export default function MainPage() {
   }, []);
 
   // Dữ liệu gợi ý sách MỚI (để hiển thị dưới danh mục)
-  const popularBooks = [
+  const fallbackBestSellers = [
     {
       title: "Đẻ Con Chăm Sóc Sức Khỏe Cho Bé",
       price: "131.200đ",
@@ -404,7 +503,15 @@ export default function MainPage() {
         "https://product.hstatic.net/200000845405/product/upload_cf64744ac7654215bad45173fa85b1a3_master.jpg",
     },
   ];
-  const displayedBooks = books.slice(0, visibleCount);
+  const topCategories = useMemo(
+    () =>
+      apiCategories
+        .filter((cat) => cat.parentId === null || cat.parentId === undefined)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [apiCategories]
+  );
+
+  const displayedBooks = filteredBooks.slice(0, visibleCount);
 
   return (
     <div className={styles.mainWrapper}>
@@ -418,31 +525,30 @@ export default function MainPage() {
             </h2>
 
             <ul className={styles.categoryList}>
-              {categories.map((cat, index) => (
+              <li
+                className={`${styles.categoryItem} ${
+                  selectedCategoryId === null ? styles.activeCategory : ""
+                }`}
+                onClick={() => setSelectedCategoryId(null)}
+              >
+                <span className={styles.categoryIcon}></span>
+                <span className={styles.categoryText}>Tất cả sản phẩm</span>
+              </li>
+              {topCategories.length === 0 && (
+                <li className={`${styles.categoryItem} ${styles.disabledItem}`}>
+                  <span>Đang tải danh mục...</span>
+                </li>
+              )}
+              {topCategories.map((cat) => (
                 <li
-                  key={index}
-                  className={styles.categoryItem}
-                  onMouseEnter={() => setHoveredIdx(index)}
-                  onMouseLeave={() => setHoveredIdx(null)}
+                  key={cat.id}
+                  className={`${styles.categoryItem} ${
+                    selectedCategoryId === cat.id ? styles.activeCategory : ""
+                  }`}
+                  onClick={() => setSelectedCategoryId(cat.id)}
                 >
                   <span className={styles.categoryIcon}></span>
-                  <span className={styles.categoryText}>{cat.label}</span>
-                  <span className={styles.arrow}>›</span>
-
-                  {/* ✅ Submenu hiện khi hover */}
-                  {hoveredIdx === index && cat.children?.length > 0 && (
-                    <div
-                      className={styles.subMenu}
-                      onMouseEnter={() => setHoveredIdx(index)}
-                      onMouseLeave={() => setHoveredIdx(null)}
-                    >
-                      {cat.children.map((sub, i) => (
-                        <div key={i} className={styles.subMenuItem}>
-                          {sub}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <span className={styles.categoryText}>{cat.name}</span>
                 </li>
               ))}
             </ul>
@@ -450,37 +556,96 @@ export default function MainPage() {
 
           <div className={styles.bestSellerBox}>
             {/* --- START: GỢI Ý SÁCH (Sách Mới Bán Chạy) --- */}
-            {/* SỬ DỤNG popularBooks */}
+            {/* Hiển thị fallback khi API không phản hồi */}
             <div className={styles.suggestionSection}>
               <h4 className={styles.suggestionTitle}>Sách Mới Bán Chạy ✨</h4>
-              {popularBooks.map((book, index) => (
-                <a href="#" key={index} className={styles.suggestedBookItem}>
-                  <div className={styles.suggestedImageContainer}>
-                    {/* THẺ HÌNH ẢNH ĐÃ ĐƯỢC THÊM VÀO ĐÂY */}
-                    <img
-                      src={book.image}
-                      alt={book.title}
-                      className={styles.suggestedImage}
-                    />
-                    {book.discount && (
-                      <span className={styles.suggestionSaleTag}>
-                        {book.discount}
-                      </span>
-                    )}
-                  </div>
-                  <div className={styles.suggestedDetails}>
-                    <p className={styles.suggestedTitle}>{book.title}</p>
-                    <div>
-                      <span className={styles.suggestedPriceCurrent}>
-                        {book.price}
-                      </span>
-                      <span className={styles.suggestedPriceOld}>
-                        {book.oldPrice}
-                      </span>
-                    </div>
-                  </div>
-                </a>
-              ))}
+              {bestSellerError && (
+                <p className={styles.suggestionNote}>{bestSellerError}</p>
+              )}
+              {bestSellers.length > 0
+                ? bestSellers.map((book) => {
+                    const { finalPrice, oldPrice, badge } = getPricingForBook(
+                      book
+                    );
+                    const soldText =
+                      typeof book.soldQuantity === "number" &&
+                      book.soldQuantity > 0
+                        ? `Đã bán ${book.soldQuantity}`
+                        : null;
+                    const cover =
+                      book.bookDetail?.imageUrl ||
+                      book.imageUrl ||
+                      placeholderImage;
+                    return (
+                      <a
+                        href={`/product/${book.id}`}
+                        key={book.id}
+                        className={styles.suggestedBookItem}
+                      >
+                        <div className={styles.suggestedImageContainer}>
+                          <img
+                            src={cover}
+                            alt={book.title}
+                            className={styles.suggestedImage}
+                          />
+                          {badge && (
+                            <span className={styles.suggestionSaleTag}>
+                              {badge}
+                            </span>
+                          )}
+                        </div>
+                        <div className={styles.suggestedDetails}>
+                          <p className={styles.suggestedTitle}>{book.title}</p>
+                          <div>
+                            <span className={styles.suggestedPriceCurrent}>
+                              {finalPrice || formatCurrency(book.sellingPrice)}
+                            </span>
+                            {oldPrice && (
+                              <span className={styles.suggestedPriceOld}>
+                                {oldPrice}
+                              </span>
+                            )}
+                          </div>
+                          {soldText && (
+                            <div className={styles.suggestedMeta}>
+                              <span className={styles.soldChip}>{soldText}</span>
+                            </div>
+                          )}
+                        </div>
+                      </a>
+                    );
+                  })
+                : fallbackBestSellers.map((book, index) => (
+                    <a
+                      href="#"
+                      key={index}
+                      className={styles.suggestedBookItem}
+                    >
+                      <div className={styles.suggestedImageContainer}>
+                        <img
+                          src={book.image}
+                          alt={book.title}
+                          className={styles.suggestedImage}
+                        />
+                        {book.discount && (
+                          <span className={styles.suggestionSaleTag}>
+                            {book.discount}
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles.suggestedDetails}>
+                        <p className={styles.suggestedTitle}>{book.title}</p>
+                        <div>
+                          <span className={styles.suggestedPriceCurrent}>
+                            {book.price}
+                          </span>
+                          <span className={styles.suggestedPriceOld}>
+                            {book.oldPrice}
+                          </span>
+                        </div>
+                      </div>
+                    </a>
+                  ))}
             </div>
             {/* --- END: GỢI Ý SÁCH --- */}
           </div>
@@ -514,10 +679,15 @@ export default function MainPage() {
             </button>
           </div>
 
-          {/* --- MỤC: SÁCH MỚI CẬP NHẬT (Lấy từ API) --- */}
+            {/* --- MỤC: SÁCH MỚI CẬP NHẬT (Lấy từ API) --- */}
           <div className={styles.productSection}>
             <h3 className={styles.sectionTitle}>Sách mới cập nhật (từ API)</h3>
             <div className={styles.productGrid}>
+              {displayedBooks.length === 0 && (
+                <p className={styles.emptyCategory}>
+                  Không tìm thấy sách trong danh mục đã chọn.
+                </p>
+              )}
               {displayedBooks.map((book) => {
                 const discount = discounts[book.id];
 
@@ -563,13 +733,15 @@ export default function MainPage() {
                     }
                     discount={discountText}
                     image={book.imageUrl}
+                    stockQuantity={book.stockQuantity}
+                    soldQuantity={book.soldQuantity}
                   />
                 );
               })}
             </div>
             {displayedBooks.length > 0 && (
               <div ref={loadMoreRef} className={styles.lazyLoader}>
-                {visibleCount < books.length
+                {visibleCount < filteredBooks.length
                   ? "Đang tải thêm sách..."
                   : "Đã hiển thị tất cả sách"}
               </div>
@@ -643,6 +815,8 @@ export default function MainPage() {
                         }
                         discount={discountText}
                         image={book.imageUrl}
+                        stockQuantity={book.stockQuantity}
+                        soldQuantity={book.soldQuantity}
                       />
                     );
                   })}

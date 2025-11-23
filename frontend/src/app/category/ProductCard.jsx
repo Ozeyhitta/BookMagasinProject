@@ -10,6 +10,8 @@ export default function ProductCard({
   oldPrice,
   discount,
   promotionCode, // Mã giảm giá (optional)
+  soldQuantity = 0,
+  stockQuantity = 0,
 }) {
   const router = useRouter();
 
@@ -22,6 +24,26 @@ export default function ProductCard({
   const hasDiscount =
     Boolean(discount) && discount !== "0%" && discount !== "0đ";
 
+  const normalizedSold =
+    typeof soldQuantity === "number" && soldQuantity > 0 ? soldQuantity : 0;
+  const normalizedStock =
+    typeof stockQuantity === "number" && stockQuantity > 0
+      ? stockQuantity
+      : 0;
+  const totalUnits =
+    normalizedSold + normalizedStock > 0
+      ? normalizedSold + normalizedStock
+      : normalizedSold;
+  const soldPercent =
+    totalUnits > 0
+      ? Math.min(100, Math.round((normalizedSold / totalUnits) * 100))
+      : normalizedSold > 0
+      ? 100
+      : 0;
+  const soldLabel =
+    normalizedSold > 0 ? `Đã bán ${normalizedSold}` : "Chưa có đơn";
+  const isSoldOut = normalizedStock === 0 && normalizedSold > 0;
+
   // Debug: luôn log để kiểm tra
   console.log("ProductCard render:", {
     id,
@@ -30,6 +52,8 @@ export default function ProductCard({
     hasDiscount,
     promotionCode,
     typeofDiscount: typeof discount,
+    stockQuantity,
+    soldQuantity,
   });
 
   return (
@@ -67,6 +91,25 @@ export default function ProductCard({
             {oldPrice}
           </span>
         )}
+      </div>
+
+      <div
+        className="sold-bar"
+        role="progressbar"
+        aria-valuenow={soldPercent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className={`sold-bar-track ${isSoldOut ? "sold-out" : ""}`}>
+          <div
+            className="sold-bar-fill"
+            style={{ width: `${soldPercent}%` }}
+          />
+        </div>
+        <div className="sold-bar-meta">
+          <span className="sold-count">{soldLabel}</span>
+          {isSoldOut && <span className="sold-status">Sắp hết</span>}
+        </div>
       </div>
 
       {/* Hiển thị thông tin mã giảm giá phía dưới (nếu có promotion code) */}

@@ -94,6 +94,44 @@
   font-size: 20px;
 }
 
+.sold-bar {
+  margin-top: 14px;
+}
+
+.sold-bar-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #fde2e2;
+  overflow: hidden;
+}
+
+.sold-bar-track.sold-out {
+  background: #ffe4e4;
+}
+
+.sold-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6a88 0%, #ff3d3d 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.sold-bar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #8b4513;
+  font-weight: 600;
+}
+
+.sold-status {
+  color: #c62828;
+  font-weight: 700;
+}
+
 .pagination {
   display: flex;
   justify-content: center;

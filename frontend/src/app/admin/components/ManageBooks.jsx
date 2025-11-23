@@ -177,15 +177,14 @@ export default function ManageBooks() {
 
   const subCategoriesByParent = useMemo(() => {
     const map = {};
-    categories.forEach((c) => {
-      if (c.parentId) {
-        if (!map[c.parentId]) map[c.parentId] = [];
-        map[c.parentId].push(c);
-      }
-    });
-    Object.keys(map).forEach((k) => {
-      map[k].sort((a, b) => a.name.localeCompare(b.name));
-    });
+    categories
+      .filter((c) => c.parentId !== null && c.parentId !== undefined)
+      .forEach((sub) => {
+        if (!map[sub.parentId]) {
+          map[sub.parentId] = [];
+        }
+        map[sub.parentId].push(sub);
+      });
     return map;
   }, [categories]);
 
@@ -415,7 +414,6 @@ export default function ManageBooks() {
       alert(`Lỗi kết nối: ${error.message}`);
     }
   };
-
   const openDiscount = (book) => {
     setDiscountBook(book);
     setDiscountForm({
@@ -491,7 +489,7 @@ export default function ManageBooks() {
           danh mục lớn.
         </p>
         {categoryLoading ? (
-          <p className={styles.helperText}>Đang tải danh mục...</p>
+          <p className={styles.helperText}>Dang tai danh muc...</p>
         ) : (
           <>
             <div style={{ marginBottom: 16 }}>
@@ -549,7 +547,6 @@ export default function ManageBooks() {
       </div>
     </div>
   );
-
   const renderBookModal = () => (
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>

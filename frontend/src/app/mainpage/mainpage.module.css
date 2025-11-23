@@ -82,7 +82,7 @@
 .categoryItem {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 8px 10px;
   color: #333;
   font-size: 15px;
@@ -91,6 +91,18 @@
   transition: all 0.25s ease;
   background: #fff;
   position: relative;
+}
+
+.activeCategory {
+  background: linear-gradient(to right, #e8f5e9, #ffffff);
+  border-left: 4px solid #2e7d32;
+  color: #1b5e20;
+  font-weight: 600;
+}
+
+.disabledItem {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .subMenu {
@@ -489,6 +501,36 @@
   text-decoration: line-through;
   font-size: 12px;
   margin-left: 5px;
+}
+
+.suggestedMeta {
+  margin-top: 4px;
+}
+
+.soldChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #c62828;
+  background: rgba(198, 40, 40, 0.12);
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.emptyCategory {
+  width: 100%;
+  text-align: center;
+  padding: 40px 0;
+  color: #777;
+  font-size: 15px;
+}
+
+.suggestionNote {
+  font-size: 12px;
+  color: #c62828;
+  margin-bottom: 8px;
 }
 
 .suggestionSaleTag {

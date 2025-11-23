@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Bell, ShoppingCart, FileClock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import "../components/header.css";
+import { buildApiUrl } from "../../utils/apiConfig";
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -39,9 +40,7 @@ export default function Header() {
 
   const fetchCartCount = async (userId) => {
     try {
-      const res = await fetch(
-        `http://localhost:8080/api/carts/users/${userId}`
-      );
+      const res = await fetch(buildApiUrl(`/api/carts/users/${userId}`));
       if (res.ok) {
         const data = await res.json();
         const total = data.length;
@@ -56,7 +55,7 @@ export default function Header() {
   const fetchUnreadCount = async (userId) => {
     try {
       const res = await fetch(
-        `http://localhost:8080/api/notifications/user/${userId}/unread-count`
+        buildApiUrl(`/api/notifications/user/${userId}/unread-count`)
       );
       if (res.ok) {
         const data = await res.json();
@@ -122,7 +121,7 @@ export default function Header() {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/logout", {
+      const response = await fetch(buildApiUrl("/api/auth/logout"), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -126,7 +126,30 @@ export default function ProductDetail({ params }) {
                   );
                 })
                 .slice(0, 4);
-              setRelated(filtered);
+              const enriched = await Promise.all(
+                filtered.map(async (relBook) => {
+                  try {
+                    const relDiscountRes = await fetch(
+                      `http://localhost:8080/api/book-discounts/book/${relBook.id}`
+                    );
+                    if (relDiscountRes.ok) {
+                      const relDiscountList = await relDiscountRes.json();
+                      const relDiscount = pickActiveDiscount(
+                        relBook,
+                        relDiscountList
+                      );
+                      return { ...relBook, _activeDiscount: relDiscount };
+                    }
+                  } catch (discountErr) {
+                    console.error(
+                      `Error fetching discount for related book ${relBook.id}:`,
+                      discountErr
+                    );
+                  }
+                  return { ...relBook, _activeDiscount: pickActiveDiscount(relBook) };
+                })
+              );
+              setRelated(enriched);
             }
           } catch (e) {
             console.error("Error fetching related books", e);
@@ -286,6 +309,21 @@ export default function ProductDetail({ params }) {
   const publicationYear = book.publicationYear || detail.publicationYear;
   const weight = detail.weight ? `${detail.weight} g` : "Đang cập nhật";
   const size = detail.size ? detail.size : "100 x 100 cm";
+  const soldCount =
+    typeof book?.soldQuantity === "number" ? book.soldQuantity : 0;
+  const availableCount =
+    typeof book?.stockQuantity === "number" ? book.stockQuantity : null;
+  const totalUnits =
+    availableCount !== null ? availableCount + soldCount : soldCount;
+  const soldPercent =
+    totalUnits > 0 ? Math.min(100, Math.round((soldCount / totalUnits) * 100)) : 0;
+  const soldLabel = soldCount > 0 ? `Đã bán ${soldCount}` : "Chưa có đơn";
+  const stockLabel =
+    availableCount !== null
+      ? availableCount > 0
+        ? `Còn ${availableCount} sản phẩm`
+        : "Hết hàng"
+      : null;
 
   return (
     <div className={styles.productPage}>
@@ -322,6 +360,19 @@ export default function ProductDetail({ params }) {
             {oldPriceFormatted && (
               <span className={styles.oldPrice}>{oldPriceFormatted}</span>
             )}
+          </div>
+
+          <div className={styles.soldStatus}>
+            <div className={styles.soldBarTrack}>
+              <div
+                className={styles.soldBarFill}
+                style={{ width: `${soldPercent}%` }}
+              />
+            </div>
+            <div className={styles.soldMeta}>
+              <span>{soldLabel}</span>
+              {stockLabel && <span>{stockLabel}</span>}
+            </div>
           </div>
 
           <div className={styles.quantityContainer}>
@@ -556,19 +607,109 @@ export default function ProductDetail({ params }) {
                 item.imageUrl ||
                 item.bookDetail?.imageUrl ||
                 "https://via.placeholder.com/240x320?text=No+Image";
-              const price = formatCurrency(
-                item.price ?? item.sellingPrice ?? 0
+              const basePrice =
+                toNumber(item?.sellingPrice) ??
+                toNumber(item?.price) ??
+                toNumber(item?.bookDetail?.sellingPrice) ??
+                toNumber(item?.bookDetail?.price);
+              const relatedDiscount =
+                item._activeDiscount ?? pickActiveDiscount(item);
+              const relatedDiscountPercent = toNumber(
+                relatedDiscount?.discountPercent
               );
+              const relatedDiscountAmount = toNumber(
+                relatedDiscount?.discountAmount
+              );
+
+              let relatedFinalPrice = basePrice;
+              if (basePrice !== null) {
+                if (relatedDiscountPercent && relatedDiscountPercent > 0) {
+                  relatedFinalPrice = Math.max(
+                    0,
+                    basePrice * (1 - relatedDiscountPercent / 100)
+                  );
+                } else if (relatedDiscountAmount && relatedDiscountAmount > 0) {
+                  relatedFinalPrice = Math.max(
+                    0,
+                    basePrice - relatedDiscountAmount
+                  );
+                }
+              }
+
+              const hasRelatedDiscount =
+                basePrice !== null &&
+                relatedFinalPrice !== null &&
+                relatedFinalPrice < basePrice;
+              const relatedSold =
+                typeof item?.soldQuantity === "number" ? item.soldQuantity : 0;
+              const relatedStock =
+                typeof item?.stockQuantity === "number" ? item.stockQuantity : null;
+              const relatedTotal =
+                relatedStock !== null ? relatedStock + relatedSold : relatedSold;
+              const relatedSoldPercent =
+                relatedTotal > 0
+                  ? Math.min(
+                      100,
+                      Math.round((relatedSold / relatedTotal) * 100)
+                    )
+                  : 0;
+              const relatedStockLabel =
+                relatedStock !== null
+                  ? relatedStock > 0
+                    ? `Còn ${relatedStock}`
+                    : "Hết hàng"
+                  : null;
+              const relatedPriceText =
+                relatedFinalPrice !== null
+                  ? formatCurrency(Math.round(relatedFinalPrice))
+                  : "Dang c?p nh?t";
+              const relatedOldPriceText =
+                hasRelatedDiscount && basePrice !== null
+                  ? formatCurrency(Math.round(basePrice))
+                  : null;
+              const relatedDiscountText = hasRelatedDiscount
+                ? relatedDiscountPercent && relatedDiscountPercent > 0
+                  ? `-${relatedDiscountPercent}%`
+                  : relatedDiscountAmount && relatedDiscountAmount > 0
+                  ? `-${formatCurrency(relatedDiscountAmount)}`
+                  : ""
+                : "";
               return (
                 <div
                   key={item.id}
                   className={styles.relatedCard}
                   onClick={() => router.push(`/product/${item.id}`)}
                 >
+                  {hasRelatedDiscount && relatedDiscountText && (
+                    <span className={styles.discountBadge}>
+                      {relatedDiscountText}
+                    </span>
+                  )}
                   <img src={cover} alt={item.title} />
                   <h3>{item.title}</h3>
                   <div className={styles.priceBox}>
-                    <span className={styles.price}>{price}</span>
+                    <span className={styles.price}>{relatedPriceText}</span>
+                    {relatedOldPriceText && (
+                      <span className={styles.oldPrice}>
+                        {relatedOldPriceText}
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.soldStatus}>
+                    <div className={styles.soldBarTrack}>
+                      <div
+                        className={styles.soldBarFill}
+                        style={{ width: `${relatedSoldPercent}%` }}
+                      />
+                    </div>
+                    <div className={styles.soldMeta}>
+                      <span>Đã bán {relatedSold}</span>
+                      {relatedStockLabel && (
+                        <span className={styles.stockNote}>
+                          {relatedStockLabel}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
