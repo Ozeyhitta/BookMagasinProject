@@ -3,6 +3,7 @@ package com.bookmagasin.repository;
 import com.bookmagasin.entity.OrderItem;
 import com.bookmagasin.enums.EStatusBooking;
 import com.bookmagasin.repository.projection.BookSalesProjection;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,10 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
     List<OrderItem> findByOrder_Id(Integer orderId);
 
     long countByOrder_User_IdAndBook_IdAndOrder_Status(Integer userId, Integer bookId, EStatusBooking status);
+
+    @EntityGraph(attributePaths = {"book"})
+    @Query("SELECT oi FROM OrderItem oi WHERE oi.order.id = :orderId")
+    List<OrderItem> fetchWithBookByOrderId(@Param("orderId") Integer orderId);
 
     @Query("SELECT oi.book.id AS bookId, SUM(oi.quantity) AS totalSold " +
             "FROM OrderItem oi " +

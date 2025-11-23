@@ -1,122 +1,144 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useEffect, useMemo, useState } from "react";
+import axiosClient from "../../../utils/axiosClient";
 
 export default function BookList() {
-  const [categories, setCategories] = useState([]); // Lấy từ API
-  const [books, setBooks] = useState([]); // Lấy từ API
+  const [categories, setCategories] = useState([]);
+  const [books, setBooks] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
   const [selectedBook, setSelectedBook] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // 🟣 Fetch dữ liệu từ backend khi load trang
   useEffect(() => {
-    fetch("http://localhost:8080/api/books")
-      .then((res) => res.json())
-      .then((data) => {
-        setBooks(data);
+    const fetchBooks = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await axiosClient.get("/books");
+        const payload = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        setBooks(payload);
 
-        // Rút ra danh sách categories từ API
-        const catList = new Set();
-        data.forEach((b) => {
-          b.categories?.forEach((c) => catList.add(c.name));
-        });
-
-        const finalCategories = [...catList];
+        const catSet = new Set();
+        payload.forEach((book) => book.categories?.forEach((c) => catSet.add(c.name)));
+        const finalCategories = [...catSet];
         setCategories(finalCategories);
-
         if (finalCategories.length > 0) {
           setSelectedCategory(finalCategories[0]);
         }
-      })
-      .catch((err) => console.error("Load books failed:", err));
+      } catch (err) {
+        console.warn("Load books failed:", err);
+        setError("Khong the tai danh sach sach. Vui long kiem tra backend.");
+        setBooks([]);
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
   }, []);
 
-  // 🟣 Lọc sách theo category được chọn
-  const filteredBooks = books.filter((b) =>
-    b.categories?.some((c) => c.name === selectedCategory)
-  );
+  const filteredBooks = useMemo(() => {
+    if (!selectedCategory) return books;
+    return books.filter((book) =>
+      book.categories?.some((cat) => cat.name === selectedCategory)
+    );
+  }, [books, selectedCategory]);
 
-  // 🟣 Sắp xếp theo giá
-  const sortedBooks = [...filteredBooks].sort((a, b) =>
-    sortOrder === "asc" ? a.sellingPrice - b.sellingPrice : b.sellingPrice - a.sellingPrice
-  );
+  const sortedBooks = useMemo(() => {
+    return [...filteredBooks].sort((a, b) =>
+      sortOrder === "asc" ? a.sellingPrice - b.sellingPrice : b.sellingPrice - a.sellingPrice
+    );
+  }, [filteredBooks, sortOrder]);
 
   return (
     <div className="info-card">
       <h1>BOOK LIST</h1>
       <p className="subtext">
-        Danh sách các cuốn sách được phân loại theo từng danh mục.
+        Danh sach cac cuon sach duoc phan loai theo danh muc va sap xep theo gia.
       </p>
 
-      {/* FILTER BAR */}
+      {loading && <p className="staff-loading">Dang tai danh sach sach...</p>}
+      {!loading && error && <p className="staff-error">{error}</p>}
+
       <div className="filter-bar">
         <div className="select-group">
-          <label>Danh mục:</label>
+          <label>Danh muc:</label>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
+            disabled={categories.length === 0}
           >
             {categories.length === 0 ? (
-              <option>Đang tải...</option>
+              <option>Khong co danh muc</option>
             ) : (
-              categories.map((cat, idx) => (
-                <option key={idx}>{cat}</option>
+              categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
               ))
             )}
           </select>
         </div>
 
         <div className="select-group">
-          <label>Sắp xếp theo giá:</label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-          >
-            <option value="asc">Tăng dần</option>
-            <option value="desc">Giảm dần</option>
+          <label>Sap xep theo gia:</label>
+          <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+            <option value="asc">Tang dan</option>
+            <option value="desc">Giam dan</option>
           </select>
         </div>
       </div>
 
-      {/* GRID SÁCH */}
-      {sortedBooks.length === 0 ? (
-        <div className="empty-message">Không có sách trong danh mục này</div>
-      ) : (
+      {sortedBooks.length === 0 && !loading && !error && (
+        <div className="empty-message">Khong co sach phu hop.</div>
+      )}
+
+      {sortedBooks.length > 0 && (
         <div className="book-grid">
-          {sortedBooks.map((book, index) => (
+          {sortedBooks.map((book) => (
             <div
-              key={index}
+              key={book.id}
               className="book-card"
               onClick={() => setSelectedBook(book)}
             >
               <h3>{book.title}</h3>
-              <p className="author">Tác giả: {book.author}</p>
-              <p className="price">{book.sellingPrice.toLocaleString()}₫</p>
+              <p className="author">Tac gia: {book.author}</p>
+              <p className="price">{book.sellingPrice.toLocaleString("vi-VN")} VND</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* MODAL CHI TIẾT */}
       {selectedBook && (
         <div className="book-modal" onClick={() => setSelectedBook(null)}>
           <div className="book-modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>{selectedBook.title}</h2>
-            <p><strong>Tác giả:</strong> {selectedBook.author}</p>
             <p>
-              <strong>Giá:</strong>{" "}
-              {selectedBook.sellingPrice.toLocaleString()}₫
+              <strong>Tac gia:</strong> {selectedBook.author}
+            </p>
+            <p>
+              <strong>Gia:</strong> {selectedBook.sellingPrice.toLocaleString("vi-VN")} VND
             </p>
 
             {selectedBook.bookDetail && (
               <>
-                <p><strong>Nhà xuất bản:</strong> {selectedBook.bookDetail.publisher}</p>
-                <p><strong>Số trang:</strong> {selectedBook.bookDetail.pages}</p>
-                <p><strong>Mô tả:</strong> {selectedBook.bookDetail.description}</p>
+                <p>
+                  <strong>Nha xuat ban:</strong> {selectedBook.bookDetail.publisher}
+                </p>
+                <p>
+                  <strong>So trang:</strong> {selectedBook.bookDetail.pages}
+                </p>
+                <p>
+                  <strong>Mo ta:</strong> {selectedBook.bookDetail.description}
+                </p>
               </>
             )}
 
-            <button onClick={() => setSelectedBook(null)}>Đóng</button>
+            <button onClick={() => setSelectedBook(null)}>Dong</button>
           </div>
         </div>
       )}

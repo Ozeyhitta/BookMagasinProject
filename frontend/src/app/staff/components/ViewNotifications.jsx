@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./ViewNotifications.module.css";
+import axiosClient from "../../../utils/axiosClient";
 
 export default function ViewNotifications() {
   const [notifications, setNotifications] = useState({
@@ -12,18 +13,30 @@ export default function ViewNotifications() {
   const [readStatus, setReadStatus] = useState({});
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/notifications/staff-view")
-      .then((res) => res.json())
-      .then((data) => {
-        setNotifications(data);
+    const fetchNotifications = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await axiosClient.get("/notifications/staff-view");
+        const payload = res.data?.data || res.data || {};
+        setNotifications({
+          customer: payload.customer || [],
+          staff: payload.staff || [],
+          admin: payload.admin || [],
+        });
+      } catch (err) {
+        console.warn("Fetch notifications failed:", err);
+        setError("Khong the tai thong bao. Vui long kiem tra backend.");
+        setNotifications({ customer: [], staff: [], admin: [] });
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Lỗi tải thông báo:", err);
-        setLoading(false);
-      });
+      }
+    };
+
+    fetchNotifications();
   }, []);
 
   const openDetail = (section, msg, idx) => {
@@ -34,13 +47,17 @@ export default function ViewNotifications() {
   const closeDetail = () => setSelected(null);
 
   if (loading) {
-    return <div className={styles.card}>Đang tải thông báo...</div>;
+    return <div className={styles.card}>Dang tai thong bao...</div>;
+  }
+
+  if (error) {
+    return <div className={styles.card}>{error}</div>;
   }
 
   const sections = [
-    { key: "staff", label: "Thông báo Staff", tone: "staff" },
-    { key: "customer", label: "Thông báo Customer", tone: "customer" },
-    { key: "admin", label: "Thông báo Admin", tone: "admin" },
+    { key: "staff", label: "Thong bao Staff", tone: "staff" },
+    { key: "customer", label: "Thong bao Customer", tone: "customer" },
+    { key: "admin", label: "Thong bao Admin", tone: "admin" },
   ];
 
   return (
@@ -48,9 +65,11 @@ export default function ViewNotifications() {
       <div className={styles.card}>
         <div className={styles.header}>
           <div>
-            <div className={styles.pill}>Thông báo</div>
-            <h2 className={styles.title}>Trung tâm thông báo</h2>
-            <p className={styles.desc}>Nhấn vào từng thông báo để xem chi tiết và đánh dấu đã đọc.</p>
+            <div className={styles.pill}>Thong bao</div>
+            <h2 className={styles.title}>Trung tam thong bao</h2>
+            <p className={styles.desc}>
+              Nhan vao tung thong bao de xem chi tiet va danh dau da doc.
+            </p>
           </div>
         </div>
 
@@ -69,14 +88,14 @@ export default function ViewNotifications() {
                   >
                     <span className={`${styles.dot} ${readStatus[`${key}-${idx}`] ? styles.dotRead : ""}`} />
                     <div className={styles.msgBlock}>
-                      <div className={styles.msgTitle}>{msg?.split(" - ")[0] || "Thông báo"}</div>
+                      <div className={styles.msgTitle}>{msg?.split(" - ")[0] || "Thong bao"}</div>
                       <div className={styles.msgText}>{msg}</div>
                     </div>
                     <button className={styles.viewBtn}>Xem</button>
                   </div>
                 ))}
                 {(notifications[key] || []).length === 0 && (
-                  <div className={styles.empty}>Chưa có thông báo.</div>
+                  <div className={styles.empty}>Chua co thong bao.</div>
                 )}
               </div>
             </div>
@@ -89,12 +108,16 @@ export default function ViewNotifications() {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div className={styles.modalPill}>{selected.title}</div>
-              <button className={styles.closeBtn} onClick={closeDetail}>×</button>
+              <button className={styles.closeBtn} onClick={closeDetail}>
+                ×
+              </button>
             </div>
-            <h3 className={styles.modalTitle}>{selected.message?.split(" - ")[0] || "Thông báo"}</h3>
+            <h3 className={styles.modalTitle}>{selected.message?.split(" - ")[0] || "Thong bao"}</h3>
             <p className={styles.modalBody}>{selected.message}</p>
             <div className={styles.modalActions}>
-              <button className={styles.primaryBtn} onClick={closeDetail}>Đã hiểu</button>
+              <button className={styles.primaryBtn} onClick={closeDetail}>
+                Da hieu
+              </button>
             </div>
           </div>
         </div>

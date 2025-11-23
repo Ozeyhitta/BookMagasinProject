@@ -17,6 +17,9 @@ public class OrderItemMapper {
             dto.setBookId(orderItem.getBook().getId());
             dto.setBookTitle(orderItem.getBook().getTitle());
             dto.setBookPrice(orderItem.getBook().getSellingPrice());
+            if (orderItem.getBook().getBookDetail() != null) {
+                dto.setBookImageUrl(orderItem.getBook().getBookDetail().getImageUrl());
+            }
         }
 
         return dto;

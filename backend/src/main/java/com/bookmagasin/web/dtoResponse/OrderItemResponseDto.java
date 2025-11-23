@@ -15,5 +15,5 @@ public class OrderItemResponseDto {
     private int bookId;
     private String bookTitle;
     private double bookPrice;
+    private String bookImageUrl;
 }
-

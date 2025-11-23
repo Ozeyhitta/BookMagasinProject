@@ -342,6 +342,12 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public Optional<OrderResponseDto> getDetailedOrder(Integer id) {
         return orderRepository.findByIdWithDetails(id)
-                .map(OrderMapper::toResponseDto);
+                .map(order -> {
+                    List<OrderStatusHistory> histories = orderStatusHistoryRepository.findByOrder_Id(order.getId());
+                    List<OrderItem> items = orderItemRepository.fetchWithBookByOrderId(order.getId());
+                    order.setOrderStatusHistories(histories);
+                    order.setBooks(items);
+                    return OrderMapper.toResponseDto(order);
+                });
     }
 }

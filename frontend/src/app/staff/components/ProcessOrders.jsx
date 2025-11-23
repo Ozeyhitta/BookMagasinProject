@@ -43,6 +43,26 @@ export default function ProcessOrders() {
 
   const [detailData, setDetailData] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [updateDetail, setUpdateDetail] = useState(null);
+  const [updateDetailLoading, setUpdateDetailLoading] = useState(false);
+
+  const closeUpdateModal = () => {
+    setUpdateModal(false);
+    setUpdateDetail(null);
+  };
+
+  const extractOrderPayload = (raw) => {
+    if (!raw) return null;
+    const data = raw.data ?? raw;
+    return data?.data || data?.order || data?.result || data;
+  };
+
+  const fetchOrderDetailData = useCallback(async (orderId) => {
+    const res = await axiosClient.get(`/orders/${orderId}/detail`);
+    const payload = extractOrderPayload(res);
+    if (!payload) throw new Error("Empty detail payload");
+    return payload;
+  }, []);
 
   const paymentLabel = (payment) => {
     if (payment === "BANK_TRANSFER") return "Banking";
@@ -64,6 +84,7 @@ export default function ProcessOrders() {
   const normalizeOrderItems = (data = {}) => {
     const raw =
       data.items ||
+      data.books ||
       data.orderItems ||
       data.orderDetails ||
       data.orderItemResponses ||
@@ -74,17 +95,24 @@ export default function ProcessOrders() {
       const unitPrice = Number(
         it.price ?? it.unitPrice ?? it.sellingPrice ?? it.bookPrice ?? 0
       );
+      const imageUrl =
+        it.bookImageUrl ||
+        it.imageUrl ||
+        it.coverUrl ||
+        it.book?.imageUrl ||
+        it.book?.bookDetail?.imageUrl ||
+        null;
       return {
         id: it.id || idx,
         bookId: it.bookId,
         bookCode: it.bookCode,
-        bookTitle: it.bookTitle || it.title || "Sản phẩm",
+        bookTitle: it.bookTitle || it.title || "S???n ph??cm",
         quantity,
         price: unitPrice,
+        imageUrl,
       };
     });
   };
-
   const mapOrders = (list) =>
     list.map((o) => ({
       id: o.id,
@@ -117,7 +145,7 @@ export default function ProcessOrders() {
         setOrders([]);
       }
     } catch (err) {
-      console.error("Fetch orders failed", err);
+      console.warn("Fetch orders failed", err);
       setError("Không tải được dữ liệu đơn hàng. Hiện hiển thị dữ liệu mẫu.");
       setOrders(MOCK_ORDERS);
     } finally {
@@ -167,10 +195,25 @@ export default function ProcessOrders() {
       });
   }, [orders, statusFilter, paymentFilter, search, sortBy]);
 
-  const openUpdate = (order) => {
+  const openUpdate = async (order) => {
     setSelectedOrder(order);
     setNewStatus(order.status === "PENDING" ? "CONFIRMED" : order.status);
     setUpdateModal(true);
+    setUpdateDetail(null);
+    setUpdateDetailLoading(true);
+    try {
+      const payload = await fetchOrderDetailData(order.id);
+      setUpdateDetail({
+        ...payload,
+        id: order.displayId || payload.id,
+        displayId: order.displayId || payload.id,
+      });
+    } catch (err) {
+      console.warn("Fetch update detail failed", err);
+      setUpdateDetail(null);
+    } finally {
+      setUpdateDetailLoading(false);
+    }
   };
 
   const handleUpdate = async () => {
@@ -181,9 +224,9 @@ export default function ProcessOrders() {
         status: newStatus,
       });
       await fetchOrders();
-      setUpdateModal(false);
+      closeUpdateModal();
     } catch (err) {
-      console.error("Update status failed", err);
+      console.warn("Update status failed", err);
       alert("Cập nhật thất bại");
     } finally {
       setActionLoading(false);
@@ -195,21 +238,14 @@ export default function ProcessOrders() {
     setDetailData(null);
     setDetailLoading(true);
     try {
-      const res = await axiosClient.get(`/orders/${order.id}/detail`);
-      const payload =
-        res?.data?.data ||
-        res?.data?.order ||
-        res?.data?.result ||
-        res?.data ||
-        null;
-      if (!payload) throw new Error("Empty detail");
+      const payload = await fetchOrderDetailData(order.id);
       setDetailData({
         ...payload,
         id: order.displayId || payload.id,
         displayId: order.displayId || payload.id,
       });
     } catch (err) {
-      console.error("Fetch detail failed", err);
+      console.warn("Fetch detail failed", err);
       setDetailData({
         id: order.displayId || order.id,
         displayId: order.displayId || order.id,
@@ -356,7 +392,7 @@ export default function ProcessOrders() {
               </div>
               <button
                 className="icon-button"
-                onClick={() => setUpdateModal(false)}
+                onClick={closeUpdateModal}
                 disabled={actionLoading}
                 aria-label="Dong"
               >
@@ -403,8 +439,89 @@ export default function ProcessOrders() {
               </p>
             </div>
 
+            <div className="status-detail-preview">
+              {updateDetailLoading && (
+                <p className="helper-text">Đang tải thông tin đơn hàng...</p>
+              )}
+              {!updateDetailLoading &&
+                updateDetail &&
+                (() => {
+                  const updateItems = normalizeOrderItems(updateDetail || {});
+                  return (
+                    <>
+                      <div className="customer-card">
+                        <div>
+                          <span className="label">Khách hàng</span>
+                          <strong>{updateDetail.userFullName || "-"}</strong>
+                        </div>
+                        <div>
+                          <span className="label">Điện thoại</span>
+                          <strong>{updateDetail.phoneNumber || "-"}</strong>
+                        </div>
+                        <div>
+                          <span className="label">Địa chỉ</span>
+                          <p className="muted">{updateDetail.shippingAddress || "-"}</p>
+                        </div>
+                        <div>
+                          <span className="label">Ghi chú</span>
+                          <p className="muted">{updateDetail.note || "-"}</p>
+                        </div>
+                      </div>
+                      <div className="detail-items">
+                        <div className="detail-items__header">
+                          <strong>Sản phẩm khách đặt</strong>
+                          <div className="item-stats">
+                            <span className="badge">{updateItems.length} đầu sách</span>
+                            <span className="badge badge--accent">
+                              {updateItems.reduce((sum, it) => sum + (it.quantity || 0), 0)} quyển
+                            </span>
+                          </div>
+                        </div>
+                        <div className="detail-card-list compact">
+                          {updateItems.length === 0 && (
+                            <div className="detail-empty">Chưa có sản phẩm.</div>
+                          )}
+                          {updateItems.map((it) => {
+                            const qty = it.quantity || 0;
+                            const unit = it.price || 0;
+                            const lineTotal = qty * unit;
+                            const shortTitle = (it.bookTitle || "Sách").slice(0, 2).toUpperCase();
+                            return (
+                              <div className="detail-card" key={`${it.id}-update`}>
+                                <div className="detail-thumb">
+                                  {it.imageUrl ? (
+                                    <img src={it.imageUrl} alt={it.bookTitle} />
+                                  ) : (
+                                    <span>{shortTitle}</span>
+                                  )}
+                                </div>
+                                <div className="detail-card__content">
+                                  <div className="detail-card__top">
+                                    <div>
+                                      <p className="detail-card__title">{it.bookTitle}</p>
+                                      <p className="detail-card__meta">Mã: {it.bookCode || it.bookId || "-"}</p>
+                                    </div>
+                                    <div className="detail-card__price">{unit.toLocaleString("vi-VN")} ₫</div>
+                                  </div>
+                                  <div className="detail-card__bottom">
+                                    <span className="pill muted">SL: {qty}</span>
+                                    <span className="detail-card__line-total">
+                                      {lineTotal.toLocaleString("vi-VN")} ₫
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+            </div>
+
             <div className="modal-actions">
-              <button className="ghost" onClick={() => setUpdateModal(false)} disabled={actionLoading}>
+              <button className="ghost" onClick={closeUpdateModal} disabled={actionLoading}>
                 Bỏ qua
               </button>
               <button className="primary" onClick={handleUpdate} disabled={actionLoading}>
@@ -454,12 +571,20 @@ export default function ProcessOrders() {
                         <strong>{paymentLabel(detailData.paymentMethod)}</strong>
                       </div>
                       <div>
+                        <span className="label">Điện thoại</span>
+                        <strong>{detailData.phoneNumber || "-"}</strong>
+                      </div>
+                      <div>
                         <span className="label">Vận chuyển</span>
                         <strong>{detailData.serviceName || "-"}</strong>
                       </div>
-                      <div>
+                      <div className="detail-meta__full">
+                        <span className="label">Địa chỉ giao</span>
+                        <p className="muted">{detailData.shippingAddress || "-"}</p>
+                      </div>
+                      <div className="detail-meta__full">
                         <span className="label">Ghi chú</span>
-                        <strong>{detailData.note || "-"}</strong>
+                        <p className="muted">{detailData.note || "-"}</p>
                       </div>
                     </div>
 
@@ -488,7 +613,11 @@ export default function ProcessOrders() {
                           return (
                             <div className="detail-card" key={it.id}>
                               <div className="detail-thumb">
-                                <span>{shortTitle}</span>
+                                {it.imageUrl ? (
+                                  <img src={it.imageUrl} alt={it.bookTitle} />
+                                ) : (
+                                  <span>{shortTitle}</span>
+                                )}
                               </div>
                               <div className="detail-card__content">
                                 <div className="detail-card__top">
@@ -540,3 +669,4 @@ export default function ProcessOrders() {
     </div>
   );
 }
+
