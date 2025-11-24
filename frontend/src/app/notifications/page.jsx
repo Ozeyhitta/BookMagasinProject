@@ -31,7 +31,16 @@ export default function NotificationsPage() {
         const listData = await listRes.json();
         const countData = countRes.ok ? await countRes.json() : 0;
 
-        setNotifications(Array.isArray(listData) ? listData : []);
+        const sorted =
+          Array.isArray(listData)
+            ? [...listData].sort((a, b) => {
+                const timeA = new Date(a?.createAt || 0).getTime();
+                const timeB = new Date(b?.createAt || 0).getTime();
+                return timeB - timeA;
+              })
+            : [];
+
+        setNotifications(sorted);
         setUnreadCount(Number(countData) || 0);
       } catch (err) {
         console.error(err);

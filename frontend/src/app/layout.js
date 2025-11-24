@@ -4,6 +4,9 @@ import Header from "./components/Header";
 import { usePathname } from "next/navigation";
 import Footer from "./components/footer";
 import ChatbotButton from "./components/chatbot/ChatbotButton";
+import { ensureHttpClients } from "../utils/httpClientSetup";
+
+ensureHttpClients();
 export default function RootLayout({ children }) {
   const pathname = usePathname();
 

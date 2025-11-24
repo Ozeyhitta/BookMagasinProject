@@ -80,6 +80,52 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
+.actionsRow {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.navButton {
+  padding: 12px 32px;
+  background-color: #1abc9c;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+  box-shadow: 0 6px 20px rgba(26, 188, 156, 0.35);
+}
+
+.navButton:hover {
+  background-color: #149a81;
+  transform: translateY(-2px);
+}
+
+.paymentInfo {
+  background: #fff;
+  padding: 24px 32px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  text-align: left;
+  max-width: 520px;
+  margin: 0 auto;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.paymentInfo p {
+  margin: 0 0 10px;
+}
+
+.paymentInfo strong {
+  color: #111;
+}
+
 /* Sections container */
 .sectionsContainer {
   display: grid;
@@ -171,6 +217,14 @@
     margin-bottom: 30px;
   }
 
+  .actionsRow {
+    margin-bottom: 30px;
+  }
+
+  .paymentInfo {
+    padding: 20px;
+  }
+
   .sectionsContainer {
     grid-template-columns: 1fr;
     gap: 20px;
@@ -248,5 +302,13 @@
   .visitButton {
     padding: 10px 24px;
     font-size: 14px;
+  }
+
+  .navButton {
+    width: 100%;
+  }
+
+  .paymentInfo {
+    padding: 18px;
   }
 }

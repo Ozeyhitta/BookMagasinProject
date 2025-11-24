@@ -13,6 +13,7 @@ import com.bookmagasin.web.dto.NotificationDto;
 import com.bookmagasin.web.dtoResponse.NotificationResponseDto;
 import com.bookmagasin.web.mapper.NotificationMapper;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -94,7 +95,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public List<NotificationResponseDto> getAllNotifications() {
-        return notificationRepository.findAll()
+        return notificationRepository
+                .findAll(Sort.by(Sort.Direction.DESC, "sendDate"))
                 .stream()
                 .map(NotificationMapper::toResponseDto)
                 .collect(Collectors.toList());

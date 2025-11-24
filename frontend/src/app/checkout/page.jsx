@@ -467,6 +467,24 @@ export default function CheckoutPage() {
     if (!selectedShipping) {
       throw new Error("Vui lòng chọn phương thức vận chuyển!");
     }
+    const insufficientItem = cartItems.find((item) => {
+      const stock =
+        item.book?.stockQuantity ??
+        item.book?.quantity ??
+        item.book?.inventoryQuantity;
+      if (stock === undefined || stock === null) return false;
+      return Number(stock) < item.quantity;
+    });
+    if (insufficientItem) {
+      const stock =
+        insufficientItem.book?.stockQuantity ??
+        insufficientItem.book?.quantity ??
+        insufficientItem.book?.inventoryQuantity ??
+        0;
+      throw new Error(
+        `Sách "${insufficientItem.book?.title ?? ""}" chỉ còn ${stock} quyển, vui lòng điều chỉnh số lượng.`
+      );
+    }
 
     const userIdStr = localStorage.getItem("userId");
     const userId = userIdStr ? parseInt(userIdStr, 10) : null;
@@ -643,7 +661,17 @@ export default function CheckoutPage() {
       window.dispatchEvent(new Event("cart-updated"));
 
       await new Promise((resolve) => setTimeout(resolve, 500));
-      window.location.href = "/orderhistory";
+      const params = new URLSearchParams({
+        status: data.status || "SUCCESS",
+        orderId: data.id,
+        amount:
+          data.orderTotal ??
+          data.totalPrice ??
+          orderPayload.orderTotal ??
+          total,
+        message: "success",
+      });
+      window.location.href = `/thankyoufororder?${params.toString()}`;
     } catch (err) {
       console.error("Lỗi khi tạo đơn hàng:", err);
       showModal("Đặt hàng thất bại, vui lòng thử lại!", { type: "error" });

@@ -1,4 +1,5 @@
 // Utility functions for handling discounts
+import { buildApiUrl } from "./apiConfig";
 
 /**
  * Tính giá sau discount
@@ -55,7 +56,7 @@ export function formatDiscountText(discount) {
 export async function fetchBookDiscount(bookId) {
   try {
     const res = await fetch(
-      `http://localhost:8080/api/book-discounts/book/${bookId}`
+      buildApiUrl(`/api/book-discounts/book/${bookId}`)
     );
     if (!res.ok) return null;
 

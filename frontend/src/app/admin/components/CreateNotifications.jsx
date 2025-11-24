@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Send } from "lucide-react";
+import { Bell, Send, Users } from "lucide-react";
 import styles from "../admin.module.css";
 
 export default function CreateNotifications() {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [targetMode, setTargetMode] = useState("all"); // all | selected
+  const [targetMode, setTargetMode] = useState("all");
   const [staffs, setStaffs] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState([]);
 
@@ -40,7 +40,7 @@ export default function CreateNotifications() {
       return;
     }
     if (targetMode === "selected" && selectedStaff.length === 0) {
-      alert("Chọn ít nhất 1 nhân viên hoặc chọn chế độ gửi toàn bộ.");
+      alert("Chọn ít nhất 1 nhân viên hoặc chọn gửi toàn bộ.");
       return;
     }
     setLoading(true);
@@ -66,6 +66,7 @@ export default function CreateNotifications() {
       alert("Đã gửi thông báo tới Staff.");
       setTitle("");
       setMessage("");
+      setSelectedStaff([]);
     } catch (err) {
       console.error(err);
       alert(err.message || "Có lỗi xảy ra.");
@@ -75,69 +76,80 @@ export default function CreateNotifications() {
   };
 
   return (
-    <div className={styles.notifyWrapper}>
-      <div className={styles.notifyHeader}>
+    <div className={styles.broadcastShell}>
+      <div className={styles.broadcastHeader}>
         <div>
-          <div className={styles.pillBadge}>Thông báo Staff</div>
-          <h2 className={styles.subTitle}>Create Notifications</h2>
-          <p className={styles.subText}>Soạn và gửi thông báo nhanh tới đội ngũ Staff.</p>
+          <p className={styles.broadcastEyebrow}>Thông báo Staff</p>
+          <h2 className={styles.broadcastTitle}>Create Notifications</h2>
+          <p className={styles.broadcastLead}>
+            Soạn và gửi thông báo nhanh tới đội ngũ Staff. Bạn có thể gửi cho toàn bộ nhân viên hoặc chọn từng người.
+          </p>
         </div>
-        <div className={styles.headerIcon}>
-          <Bell size={28} />
+        <div className={styles.broadcastIcon}>
+          <Bell size={32} />
         </div>
       </div>
 
-      <div className={styles.notifyGrid}>
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.targetRow}>
+      <div className={styles.broadcastGrid}>
+        <form className={styles.broadcastForm} onSubmit={handleSubmit}>
+          <div className={styles.modeSwitcher}>
             <button
               type="button"
-              className={`${styles.chip} ${targetMode === "all" ? styles.chipActive : ""}`}
+              className={`${styles.modeButton} ${
+                targetMode === "all" ? styles.modeActive : ""
+              }`}
               onClick={() => setTargetMode("all")}
             >
+              <Users size={18} />
               Gửi toàn bộ nhân viên
             </button>
             <button
               type="button"
-              className={`${styles.chip} ${targetMode === "selected" ? styles.chipActive : ""}`}
+              className={`${styles.modeButton} ${
+                targetMode === "selected" ? styles.modeActive : ""
+              }`}
               onClick={() => setTargetMode("selected")}
             >
+              <Users size={18} />
               Chọn nhân viên cụ thể
             </button>
           </div>
 
-          <div className={styles.formRow}>
-            <label className={styles.label}>Tiêu đề</label>
+          <label className={styles.field}>
+            <span>Tiêu đề</span>
             <input
               className={styles.input}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ví dụ: Đơn hàng mới cần xử lý"
+              placeholder="VD: Đơn hàng mới cần xử lý"
             />
-          </div>
+          </label>
 
-          <div className={styles.formRow}>
-            <label className={styles.label}>Nội dung</label>
+          <label className={styles.field}>
+            <span>Nội dung</span>
             <textarea
               className={styles.textarea}
               rows={6}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Nội dung chi tiết cho thông báo..."
+              placeholder="Nhập nội dung chi tiết cho thông báo..."
             />
-            <div className={styles.helperText}>
+            <small className={styles.helperText}>
               {targetMode === "all"
                 ? "Thông báo sẽ được gửi tới tất cả tài khoản Staff."
-                : "Chỉ gửi tới các nhân viên bạn đã chọn."}
-            </div>
-          </div>
+                : "Chỉ gửi tới các nhân viên bạn đã chọn bên dưới."}
+            </small>
+          </label>
 
           {targetMode === "selected" && (
-            <div className={styles.staffSelect}>
-              <div className={styles.staffList}>
-                {staffs.length === 0 && <div className={styles.helperText}>Không có dữ liệu nhân viên.</div>}
+            <div className={styles.staffPicker}>
+              <p>Chọn nhân viên</p>
+              <div className={styles.staffGrid}>
+                {staffs.length === 0 && (
+                  <div className={styles.helperText}>Không có dữ liệu nhân viên.</div>
+                )}
                 {staffs.map((s) => (
-                  <label key={s.id} className={styles.staffItem}>
+                  <label key={s.id} className={styles.staffChip}>
                     <input
                       type="checkbox"
                       checked={selectedStaff.includes(s.id)}
@@ -150,23 +162,28 @@ export default function CreateNotifications() {
             </div>
           )}
 
-          <button className={styles.primaryButton} type="submit" disabled={loading}>
+          <button className={styles.broadcastSubmit} type="submit" disabled={loading}>
             <Send size={16} />
             {loading ? "Đang gửi..." : "Gửi thông báo"}
           </button>
         </form>
 
         <div className={styles.previewCard}>
-          <h4>Preview</h4>
-          <div className={styles.previewBox}>
-            <div className={styles.previewTitle}>{title || "Tiêu đề thông báo"}</div>
-            <div className={styles.previewMessage}>{message || "Nội dung thông báo sẽ hiển thị ở đây."}</div>
-            <div className={styles.previewTag}>Gửi tới: Staff</div>
+          <p className={styles.previewLabel}>Preview</p>
+          <div className={styles.previewBubble}>
+            <p className={styles.previewTitle}>{title || "Tiêu đề thông báo"}</p>
+            <p className={styles.previewMessage}>
+              {message || "Nội dung thông báo sẽ hiển thị đầy đủ tại đây."}
+            </p>
+            <span className={styles.previewTag}>
+              Gửi tới: {targetMode === "all" ? "Tất cả Staff" : `${selectedStaff.length} Staff`}
+            </span>
           </div>
-          <ul className={styles.tipList}>
-            <li>Ngắn gọn, rõ ràng để staff đọc nhanh.</li>
-            <li>Nên kèm mã đơn hoặc hành động cụ thể.</li>
-            <li>Thông báo sẽ xuất hiện ngay cho tất cả staff.</li>
+
+          <ul className={styles.previewTips}>
+            <li>Nội dung ngắn gọn giúp staff đọc nhanh.</li>
+            <li>Có thể kèm mã đơn hoặc hành động cụ thể.</li>
+            <li>Thông báo xuất hiện ngay trong trung tâm Staff.</li>
           </ul>
         </div>
       </div>

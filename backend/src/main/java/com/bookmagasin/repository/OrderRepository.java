@@ -1,6 +1,7 @@
 package com.bookmagasin.repository;
 
 import com.bookmagasin.entity.Order;
+import com.bookmagasin.enums.EStatusBooking;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -43,4 +44,6 @@ public interface OrderRepository extends JpaRepository<Order,Integer> {
     @Query("SELECT DISTINCT o FROM Order o WHERE (:start IS NULL OR o.orderDate >= :start) AND (:end IS NULL OR o.orderDate <= :end)")
     List<Order> findWithItemsByDateRange(@Param("start") java.time.LocalDateTime start,
                                          @Param("end") java.time.LocalDateTime end);
+
+    long countByStatus(EStatusBooking status);
 }

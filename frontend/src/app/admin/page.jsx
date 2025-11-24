@@ -1,8 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./admin.module.css";
 import {
-  LayoutGrid,
   Users,
   UserCheck,
   Tag,
@@ -20,21 +19,18 @@ import ViewSalesReports from "./components/ViewSalesReports";
 import ManageBooks from "./components/ManageBooks";
 import CreateNotifications from "./components/CreateNotifications";
 import ManageServices from "./components/ManageServices";
+import { buildApiUrl } from "../../utils/apiConfig";
 
 export default function AdminPage() {
-  const [activeMenu, setActiveMenu] = useState("dashboards");
-
-  // ❌ ĐÃ BỎ useEffect kiểm tra token
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   if (!token) {
-  //     window.location.replace("/login");
-  //   }
-  // }, []);
+  const [activeMenu, setActiveMenu] = useState("customers");
+  const [metrics, setMetrics] = useState({
+    monthlyRevenue: 0,
+    monthlyRevenueChangePercent: 0,
+    pendingOrders: 0,
+    pendingApprovals: 0,
+  });
 
   const menuItems = [
-    { id: "dashboards", label: "Dashboards", icon: LayoutGrid },
-    { id: "account", label: "My Account", icon: UserCheck },
     { id: "customers", label: "Manage Customers", icon: Users },
     { id: "staffs", label: "Manage Staffs", icon: UserCheck },
     { id: "promotions", label: "Manage Promotions", icon: Tag },
@@ -44,15 +40,57 @@ export default function AdminPage() {
     { id: "services", label: "Manage Services", icon: Tag },
   ];
 
-  const outlineItems = [
-    { label: "@keenthemes", icon: "X" },
-    { label: "@keenthemes_hub", icon: "🔗" },
-    { label: "metronic", icon: "🎨" },
-  ];
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch(buildApiUrl("/api/dashboard/summary"));
+        if (!res.ok) throw new Error("Failed");
+        const data = await res.json();
+        setMetrics({
+          monthlyRevenue: data.monthlyRevenue || 0,
+          monthlyRevenueChangePercent: data.monthlyRevenueChangePercent || 0,
+          pendingOrders: data.pendingOrders || 0,
+          pendingApprovals: data.pendingApprovals || 0,
+        });
+      } catch (error) {
+        console.error("Failed to load dashboard metrics", error);
+      }
+    };
+    fetchMetrics();
+  }, []);
+
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(value || 0);
+
+  const formatPercent = (value) => {
+    if (!value) return "0%";
+    const rounded = Number(value).toFixed(1);
+    return `${value > 0 ? "+" : ""}${rounded}%`;
+  };
+
+  const quickStats = useMemo(
+    () => [
+      {
+        title: "Monthly Revenue",
+        value: formatCurrency(metrics.monthlyRevenue),
+        trend: `${formatPercent(metrics.monthlyRevenueChangePercent)} vs last month`,
+      },
+      {
+        title: "Pending Orders",
+        value: metrics.pendingOrders.toLocaleString("vi-VN"),
+        trend: `${metrics.pendingApprovals.toLocaleString("vi-VN")} need approval`,
+      },
+    ],
+    [metrics]
+  );
 
   const getPageTitle = () => {
     const item = menuItems.find((m) => m.id === activeMenu);
-    return item ? item.label : "Dashboards";
+    return item ? item.label : "Workspace";
   };
 
   const renderContent = () => {
@@ -71,9 +109,8 @@ export default function AdminPage() {
         return <CreateNotifications />;
       case "services":
         return <ManageServices />;
-      case "dashboards":
       default:
-        return <p>Dashboard content will be displayed here.</p>;
+        return <ManageCustomers />;
     }
   };
 
@@ -87,118 +124,107 @@ export default function AdminPage() {
   };
 
   return (
-    <div className={styles.dashboardWrapper}>
-      {/* SIDEBAR */}
-      <div className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarLogo}>B</div>
-          <span>Book Shop</span>
-        </div>
-
-        <button className={styles.addNewButton}>
-          <Plus size={16} />
-          Add New
-        </button>
-
-        <input
-          type="text"
-          placeholder="Search..."
-          className={styles.searchBox}
-        />
-
-        <div className={styles.sectionLabel}>Pages</div>
-        <ul className={styles.menuList}>
-          {menuItems.map((item) => {
-            const IconComponent = item.icon;
-            return (
-              <li
-                key={item.id}
-                className={`${styles.menuItem} ${
-                  activeMenu === item.id ? styles.active : ""
-                }`}
-                onClick={() => handleMenuClick(item.id)}
-              >
-                <span className={styles.menuIcon}>
-                  <IconComponent size={18} />
-                </span>
-                {item.label}
-              </li>
-            );
-          })}
-        </ul>
-
-        <button className={styles.logoutButton} onClick={handleLogout}>
-          <LogOut size={16} />
-          Đăng xuất
-        </button>
-
-        <div className={styles.sectionLabel} style={{ marginTop: "30px" }}>
-          Outline
-        </div>
-        <ul className={styles.menuList}>
-          {outlineItems.map((item, index) => (
-            <li key={index} className={styles.menuItem}>
-              <span className={styles.menuIcon}>{item.icon}</span>
-              {item.label}
-            </li>
-          ))}
-        </ul>
-
-        <div className={styles.userProfile}>
-          <div className={styles.userAvatar}>K</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "13px", fontWeight: "500" }}>
-              Keenthemes
-            </div>
-            <div style={{ fontSize: "11px", color: "#888" }}>Admin</div>
-          </div>
-        </div>
-      </div>
-
-      {/* MAIN CONTENT */}
-      <div className={styles.mainContent}>
-        <div className={styles.header}>
+    <div className={styles.layout}>
+      <aside className={styles.sidebar}>
+        <div className={styles.brand}>
+          <div className={styles.brandLogo}>BM</div>
           <div>
-            <h1 className={styles.headerTitle}>{getPageTitle()}</h1>
-            <p className={styles.headerBreadcrumb}>{getPageTitle()}</p>
+            <p className={styles.brandTitle}>BookMagasin</p>
+            <p className={styles.brandSub}>Administration Suite</p>
           </div>
-          <div className={styles.headerActions}>
-            <button className={styles.exportButton}>
-              <Download size={16} />
-              Export
-            </button>
+        </div>
+
+        <div className={styles.statusBadge}>System status: Operational</div>
+
+        <nav className={styles.navSection}>
+          <p className={styles.navLabel}>Workspace</p>
+          <ul className={styles.menuList}>
+            {menuItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <li
+                  key={item.id}
+                  className={`${styles.menuItem} ${
+                    activeMenu === item.id ? styles.active : ""
+                  }`}
+                  onClick={() => handleMenuClick(item.id)}
+                >
+                  <span className={styles.menuIcon}>
+                    <IconComponent size={18} />
+                  </span>
+                  {item.label}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className={styles.sidebarFooter}>
+          <div>
+            <p className={styles.sidebarFooterTitle}>Admin session</p>
+            <p className={styles.sidebarFooterMeta}>Secure mode enabled</p>
+          </div>
+          <button className={styles.logoutButton} onClick={handleLogout}>
+            <LogOut size={16} />
+            Đăng xuất
+          </button>
+        </div>
+      </aside>
+
+      <main className={styles.main}>
+        <header className={styles.topBar}>
+          <div>
+            <p className={styles.pageSubtitle}>Overview</p>
+            <h1 className={styles.pageTitle}>{getPageTitle()}</h1>
+          </div>
+          <div className={styles.topBarActions}>
             <input
-              type="text"
-              className={styles.dateRangeInput}
-              value="Jan 20, 2025 - Feb 09, 2025"
-              readOnly
+              type="search"
+              className={styles.search}
+              placeholder="Search modules, orders, users..."
             />
+            <button className={styles.actionGhost}>
+              <Download size={16} />
+              Export report
+            </button>
+            <button className={styles.actionPrimary}>
+              <Plus size={16} />
+              Quick create
+            </button>
           </div>
-        </div>
+        </header>
 
-        <div className={styles.contentArea}>{renderContent()}</div>
+        <section className={styles.statsGrid}>
+          {quickStats.map((stat) => (
+            <div key={stat.title} className={styles.statCard}>
+              <p className={styles.statLabel}>{stat.title}</p>
+              <p className={styles.statValue}>{stat.value}</p>
+              <p className={styles.statTrend}>{stat.trend}</p>
+            </div>
+          ))}
+        </section>
 
-        <div className={styles.footer}>
-          <p>2025 © Keenthemes Inc.</p>
+        <section className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <div>
+              <p className={styles.panelLabel}>Workspace</p>
+              <h2 className={styles.panelTitle}>{getPageTitle()}</h2>
+            </div>
+            <span className={styles.panelMeta}>Last refreshed 2 mins ago</span>
+          </div>
+          <div className={styles.panelBody}>{renderContent()}</div>
+        </section>
+
+        <footer className={styles.footer}>
+          <p>© {new Date().getFullYear()} BookMagasin Platform</p>
           <div className={styles.footerLinks}>
-            <a href="#" className={styles.footerLink}>
-              Docs
-            </a>
-            <a href="#" className={styles.footerLink}>
-              Purchase
-            </a>
-            <a href="#" className={styles.footerLink}>
-              FAQ
-            </a>
-            <a href="#" className={styles.footerLink}>
-              Support
-            </a>
-            <a href="#" className={styles.footerLink}>
-              License
-            </a>
+            <a href="#">Docs</a>
+            <a href="#">Support</a>
+            <a href="#">Status</a>
+            <a href="#">License</a>
           </div>
-        </div>
-      </div>
+        </footer>
+      </main>
     </div>
   );
 }

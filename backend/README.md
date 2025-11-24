@@ -129,7 +129,7 @@ bookmagasin_backend/
    ```
 
 3. **Configure environment variables**
-   Create a `.env` file in the root directory or set environment variables:
+   Create a `.env` file in the backend root (this repository already contains a template) or set environment variables:
 
    ```env
    JWT_SECRET=your-secret-key-here
@@ -139,15 +139,13 @@ bookmagasin_backend/
    SPRING_MAIL_PASSWORD=your-app-password
    SPRING_MAIL_SMTP_AUTH=true
    SPRING_MAIL_SMTP_STARTTLS_ENABLE=true
+
+   SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/bookmagasin?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+   SPRING_DATASOURCE_USERNAME=root
+   SPRING_DATASOURCE_PASSWORD=your-db-password
    ```
 
-4. **Update database credentials**
-   Edit `src/main/resources/application.properties`:
-
-   ```properties
-   spring.datasource.username=root
-   spring.datasource.password=1234
-   ```
+   The application now auto-loads `.env` via `spring.config.import`, so you can change credentials without touching `application.properties`.
 
 5. **Build the project**
 

@@ -108,9 +108,6 @@ export default function StaffPage() {
           ))}
         </ul>
 
-        <div className="upgrade-section">
-          <button className="upgrade-btn">UPGRADE TO PRO</button>
-        </div>
       </aside>
 
       {/* Main content */}
