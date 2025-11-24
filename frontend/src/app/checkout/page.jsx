@@ -39,33 +39,34 @@ export default function CheckoutPage() {
   };
 
   // 🚚 SHIPPING
-  const SHIPPING_METHODS = [
-    {
-      id: 1,
-      name: "Giao hàng tiêu chuẩn",
-      desc: "2 - 4 ngày làm việc",
-      fee: 20000,
-    },
-    {
-      id: 2,
-      name: "Giao nhanh",
-      desc: "Trong 24 - 48 giờ",
-      fee: 40000,
-    },
-    {
-      id: 3,
-      name: "Nhận tại cửa hàng",
-      desc: "Nhận tại điểm giao dịch, miễn phí vận chuyển",
-      fee: 0,
-    },
-  ];
+  const [shippingMethods, setShippingMethods] = useState([]);
+  const [loadingShipping, setLoadingShipping] = useState(true);
+  useEffect(() => {
+    async function fetchShippingServices() {
+      setLoadingShipping(true);
+      try {
+        const res = await fetch("http://localhost:8080/api/services");
+        const data = res.ok ? await res.json() : [];
+
+        const activeServices = data.filter((s) => s.status === true);
+        setShippingMethods(activeServices);
+      } catch (err) {
+        console.error("Không load được service vận chuyển:", err);
+      } finally {
+        setLoadingShipping(false);
+      }
+    }
+
+    fetchShippingServices();
+  }, []);
 
   const [selectedShipping, setSelectedShipping] = useState(null);
   const [shippingFee, setShippingFee] = useState(0);
+  const [orderNote, setOrderNote] = useState("");
 
-  const handleSelectShipping = (method) => {
-    setSelectedShipping(method);
-    setShippingFee(method.fee || 0);
+  const handleSelectShipping = (service) => {
+    setSelectedShipping(service);
+    setShippingFee(service.price || 0);
   };
 
   // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
@@ -132,6 +133,12 @@ export default function CheckoutPage() {
           address: userData.address || "",
           email: userData.email || "",
         });
+
+        // Đọc ghi chú từ cart page nếu có
+        const savedNote = sessionStorage.getItem("orderNote");
+        if (savedNote) {
+          setOrderNote(savedNote);
+        }
 
         // ✅ Kiểm tra "Mua ngay" item từ sessionStorage
         const buyNowItemStr = sessionStorage.getItem("buyNowItem");
@@ -260,6 +267,7 @@ export default function CheckoutPage() {
       // ✅ Tối ưu: Không chờ fetch, chỉ xử lý ngay và redirect
       if (event.data.status === "SUCCESS") {
         sessionStorage.removeItem("vnpayTxnRef");
+        sessionStorage.removeItem("orderNote");
         setPendingTxnRef(null);
         setCheckingVnpay(false);
         setCartItems([]);
@@ -337,6 +345,7 @@ export default function CheckoutPage() {
 
           setPaymentResult(payment);
           sessionStorage.removeItem("vnpayTxnRef");
+          sessionStorage.removeItem("orderNote");
           setPendingTxnRef(null);
           setCartItems([]);
           localStorage.setItem("cartCount", "0");
@@ -462,25 +471,44 @@ export default function CheckoutPage() {
     const userIdStr = localStorage.getItem("userId");
     const userId = userIdStr ? parseInt(userIdStr, 10) : null;
     if (!userId) {
-      throw new Error("Không tìm thấy thông tin người dùng, hãy đăng nhập lại!");
+      throw new Error(
+        "Không tìm thấy thông tin người dùng, hãy đăng nhập lại!"
+      );
     }
 
     const serviceId = selectedShipping.id;
+
+    // Tạo note: nếu có ghi chú từ cart thì dùng, không thì chỉ hiển thị tên dịch vụ
+    let finalNote = "";
+    if (orderNote && orderNote.trim()) {
+      // Có ghi chú từ cart
+      finalNote = appliedPromotion
+        ? `${orderNote.trim()} - ${selectedShipping.nameService} - Áp dụng mã ${
+            appliedPromotion.code
+          }`
+        : `${orderNote.trim()} - ${selectedShipping.nameService}`;
+    } else {
+      // Không có ghi chú từ cart, chỉ hiển thị tên dịch vụ
+      finalNote = appliedPromotion
+        ? `${selectedShipping.nameService} - Áp dụng mã ${appliedPromotion.code}`
+        : selectedShipping.nameService;
+    }
 
     return {
       userId,
       serviceId,
       paymentId: paymentIdOverride ?? 1,
-      note: appliedPromotion
-        ? `Giao buổi sáng - ${selectedShipping.name} - Áp dụng mã ${appliedPromotion.code}`
-        : `Giao buổi sáng - ${selectedShipping.name}`,
+      note: finalNote,
       status: "PENDING",
       orderDate: new Date().toISOString(),
       shippingAddress: user.address,
       phoneNumber: user.phoneNumber,
       orderItems: cartItems.map((item) => {
         const discount = discounts[item.book.id];
-        const priceAfterDiscount = calculatePriceAfterDiscount(item.book, discount);
+        const priceAfterDiscount = calculatePriceAfterDiscount(
+          item.book,
+          discount
+        );
         return {
           bookId: item.book.id,
           orderId: null,
@@ -560,7 +588,9 @@ export default function CheckoutPage() {
     e.preventDefault();
     let orderPayload;
     try {
-      orderPayload = prepareOrderPayload(paymentMethod === "COD" ? 1 : undefined);
+      orderPayload = prepareOrderPayload(
+        paymentMethod === "COD" ? 1 : undefined
+      );
     } catch (err) {
       showModal(err.message, { type: "error" });
       return;
@@ -583,7 +613,9 @@ export default function CheckoutPage() {
       if (!res.ok) {
         const text = await res.text();
         console.error("Lỗi tạo đơn hàng (response):", res.status, text);
-        alert("Đặt hàng thất bại, lỗi từ server: " + (text || "HTTP " + res.status));
+        alert(
+          "Đặt hàng thất bại, lỗi từ server: " + (text || "HTTP " + res.status)
+        );
         return;
       }
 
@@ -606,6 +638,8 @@ export default function CheckoutPage() {
         title: "Thành công",
       });
       localStorage.setItem("cartCount", "0");
+      // Xóa ghi chú đã dùng
+      sessionStorage.removeItem("orderNote");
       window.dispatchEvent(new Event("cart-updated"));
 
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -709,40 +743,59 @@ export default function CheckoutPage() {
               </div>
             ) : (
               <div className="shipping-options">
-                {SHIPPING_METHODS.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className={
-                      "shipping-option" +
-                      (selectedShipping?.id === m.id ? " active" : "")
-                    }
-                    onClick={() => handleSelectShipping(m)}
-                  >
-                    <div className="shipping-option-header">
-                      <div
-                        className="shipping-option-name"
-                        style={{ color: "#111" }} // 👈 đảm bảo chữ đen
-                      >
-                        {m.name}
-                      </div>
-                      <div
-                        className="shipping-option-fee"
-                        style={{ color: "#111" }} // 👈 đảm bảo chữ đen
-                      >
-                        {m.fee === 0
-                          ? "Miễn phí"
-                          : `${m.fee.toLocaleString("vi-VN")}đ`}
-                      </div>
-                    </div>
-                    <div
-                      className="shipping-option-desc"
-                      style={{ color: "#111" }} // 👈 đảm bảo chữ đen
+                {loadingShipping && (
+                  <div style={{ padding: 16, textAlign: "center" }}>
+                    <img
+                      src="https://i.gifer.com/ZZ5H.gif"
+                      alt="loading"
+                      style={{ width: 40, opacity: 0.7 }}
+                    />
+                    <p style={{ marginTop: 8, fontSize: 14, color: "#555" }}>
+                      Đang tải dịch vụ vận chuyển...
+                    </p>
+                  </div>
+                )}
+
+                {!loadingShipping && shippingMethods.length === 0 && (
+                  <p>Không có dịch vụ vận chuyển nào!</p>
+                )}
+
+                {!loadingShipping &&
+                  shippingMethods.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      className={
+                        "shipping-option" +
+                        (selectedShipping?.id === s.id ? " active" : "")
+                      }
+                      onClick={() => handleSelectShipping(s)}
                     >
-                      {m.desc}
-                    </div>
-                  </button>
-                ))}
+                      <div className="shipping-option-header">
+                        <div
+                          className="shipping-option-name"
+                          style={{ color: "#111" }}
+                        >
+                          {s.nameService}
+                        </div>
+                        <div
+                          className="shipping-option-fee"
+                          style={{ color: "#111" }}
+                        >
+                          {s.price === 0
+                            ? "Miễn phí"
+                            : `${s.price.toLocaleString("vi-VN")}đ`}
+                        </div>
+                      </div>
+
+                      <div
+                        className="shipping-option-desc"
+                        style={{ color: "#111" }}
+                      >
+                        Giao hàng theo dịch vụ {s.nameService}
+                      </div>
+                    </button>
+                  ))}
               </div>
             )}
           </div>

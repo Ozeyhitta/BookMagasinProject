@@ -7,6 +7,7 @@ export default function CartPage() {
   const [cartItems, setCartItems] = useState([]);
   const [discounts, setDiscounts] = useState({}); // { bookId: discount }
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [orderNote, setOrderNote] = useState("");
   const router = useRouter();
 
   // Fetch cart function - có thể gọi từ nhiều nơi
@@ -86,6 +87,12 @@ export default function CartPage() {
 
     // Fetch cart lần đầu
     fetchCart();
+
+    // Đọc ghi chú từ sessionStorage nếu có
+    const savedNote = sessionStorage.getItem("orderNote");
+    if (savedNote) {
+      setOrderNote(savedNote);
+    }
 
     // Listen for cart updates (khi thêm vào giỏ từ product page)
     const handleCartUpdate = () => {
@@ -367,7 +374,15 @@ export default function CartPage() {
         <div className={styles.summary}>
           <div className={styles.noteBox}>
             <h3>Ghi chú đơn hàng</h3>
-            <textarea placeholder="Ghi chú"></textarea>
+            <textarea 
+              placeholder="Ghi chú"
+              value={orderNote}
+              onChange={(e) => {
+                setOrderNote(e.target.value);
+                // Lưu vào sessionStorage để checkout page có thể đọc
+                sessionStorage.setItem("orderNote", e.target.value);
+              }}
+            ></textarea>
           </div>
 
           <div className={styles.orderInfo}>

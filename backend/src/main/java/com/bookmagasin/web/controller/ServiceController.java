@@ -44,13 +44,9 @@ public class ServiceController {
     @PutMapping("/{id}")
     public ResponseEntity<ServiceResponseDto> updateService(@PathVariable Integer id,
                                                             @RequestBody ServiceDto dto) {
-        try {
-            ServiceResponseDto updated = serviceService.updateService(id, dto);
-            return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(serviceService.updateService(id, dto));
     }
+
 
     // DELETE
     @DeleteMapping("/{id}")

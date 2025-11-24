@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderPromotion {
+public class    OrderPromotion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;

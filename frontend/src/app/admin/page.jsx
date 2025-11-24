@@ -19,6 +19,7 @@ import ManagePromotions from "./components/ManagePromotions";
 import ViewSalesReports from "./components/ViewSalesReports";
 import ManageBooks from "./components/ManageBooks";
 import CreateNotifications from "./components/CreateNotifications";
+import ManageServices from "./components/ManageServices";
 
 export default function AdminPage() {
   const [activeMenu, setActiveMenu] = useState("dashboards");
@@ -40,6 +41,7 @@ export default function AdminPage() {
     { id: "reports", label: "View Sales Reports", icon: BarChart3 },
     { id: "books", label: "Manage Books", icon: Book },
     { id: "notifications", label: "Create Notifications", icon: Plus },
+    { id: "services", label: "Manage Services", icon: Tag },
   ];
 
   const outlineItems = [
@@ -67,6 +69,8 @@ export default function AdminPage() {
         return <ManageBooks />;
       case "notifications":
         return <CreateNotifications />;
+      case "services":
+        return <ManageServices />;
       case "dashboards":
       default:
         return <p>Dashboard content will be displayed here.</p>;

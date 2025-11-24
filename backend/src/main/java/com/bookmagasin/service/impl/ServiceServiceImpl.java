@@ -5,7 +5,9 @@ import com.bookmagasin.service.ServiceService;
 import com.bookmagasin.web.dto.ServiceDto;
 import com.bookmagasin.web.dtoResponse.ServiceResponseDto;
 import com.bookmagasin.web.mapper.ServiceMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +54,10 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public void deleteService(Integer id) {
+        if (!serviceRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found");
+        }
         serviceRepository.deleteById(id);
     }
+
 }
