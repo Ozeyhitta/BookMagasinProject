@@ -66,7 +66,30 @@ export default function CheckoutPage() {
 
   const handleSelectShipping = (service) => {
     setSelectedShipping(service);
-    setShippingFee(service.price || 0);
+    const price = Number(service.price ?? 0);
+    setShippingFee(Number.isNaN(price) ? 0 : price);
+  };
+
+  const storeOrderSummary = (orderId) => {
+    if (typeof window === "undefined" || !orderId) return;
+    const summary = {
+      orderId,
+      originalTotal,
+      itemDiscount: Math.max(0, originalTotal - total),
+      promotionDiscount: orderLevelDiscount,
+      promotionCode: appliedPromotion?.code || null,
+      shippingFee: normalizedShippingFee,
+      grandTotal,
+      timestamp: Date.now(),
+    };
+    try {
+      sessionStorage.setItem(
+        `orderSummary:${orderId}`,
+        JSON.stringify(summary)
+      );
+    } catch (err) {
+      console.warn("Failed to store order summary", err);
+    }
   };
 
   // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
@@ -91,18 +114,20 @@ export default function CheckoutPage() {
     return sum + priceAfterDiscount * item.quantity;
   }, 0);
 
-  const orderLevelDiscount =
-    appliedPromotion?.discountAmount != null
-      ? appliedPromotion.discountAmount
-      : 0;
-
-  const orderTotalAfterPromo = Math.max(
+  const orderLevelDiscount = Math.max(
     0,
-    appliedPromotion?.finalAmount != null ? appliedPromotion.finalAmount : total
+    Math.min(total, appliedPromotion?.discountAmount ?? 0)
   );
 
+  const orderTotalAfterPromo = Math.max(0, total - orderLevelDiscount);
+
+  // Chuẩn hoá phí vận chuyển để tránh cộng chuỗi
+  const normalizedShippingFee = Number.isFinite(Number(shippingFee))
+    ? Number(shippingFee)
+    : 0;
+
   // Tổng cuối cùng = tiền hàng sau mã KM + phí ship (hiển thị cho người dùng)
-  const grandTotal = orderTotalAfterPromo + shippingFee;
+  const grandTotal = orderTotalAfterPromo + normalizedShippingFee;
 
   // Tổng giá gốc (không discount)
   const originalTotal = cartItems.reduce(
@@ -482,7 +507,9 @@ export default function CheckoutPage() {
         insufficientItem.book?.inventoryQuantity ??
         0;
       throw new Error(
-        `Sách "${insufficientItem.book?.title ?? ""}" chỉ còn ${stock} quyển, vui lòng điều chỉnh số lượng.`
+        `Sách "${
+          insufficientItem.book?.title ?? ""
+        }" chỉ còn ${stock} quyển, vui lòng điều chỉnh số lượng.`
       );
     }
 
@@ -536,7 +563,7 @@ export default function CheckoutPage() {
       }),
       promotionCode: appliedPromotion?.code || null,
       promotionDiscountAmount: orderLevelDiscount,
-      orderTotal: orderTotalAfterPromo || total,
+      orderTotal: grandTotal,
     };
   }
 
@@ -572,10 +599,11 @@ export default function CheckoutPage() {
       }
 
       const orderData = await orderRes.json();
-
       sessionStorage.setItem("lastOrderId", orderData.id);
       sessionStorage.setItem("vnpayTxnRef", data.vnpTxnRef);
       setPendingTxnRef(data.vnpTxnRef);
+
+      storeOrderSummary(orderData.id);
 
       const newWindow = window.open(
         data.paymentUrl,
@@ -660,6 +688,8 @@ export default function CheckoutPage() {
       sessionStorage.removeItem("orderNote");
       window.dispatchEvent(new Event("cart-updated"));
 
+      storeOrderSummary(data.id);
+
       await new Promise((resolve) => setTimeout(resolve, 500));
       const params = new URLSearchParams({
         status: data.status || "SUCCESS",
@@ -668,7 +698,7 @@ export default function CheckoutPage() {
           data.orderTotal ??
           data.totalPrice ??
           orderPayload.orderTotal ??
-          total,
+          grandTotal,
         message: "success",
       });
       window.location.href = `/thankyoufororder?${params.toString()}`;
@@ -1039,9 +1069,9 @@ export default function CheckoutPage() {
               <span>Phí vận chuyển</span>
               <span>
                 {selectedShipping
-                  ? shippingFee === 0
+                  ? normalizedShippingFee === 0
                     ? "Miễn phí"
-                    : `${shippingFee.toLocaleString("vi-VN")}đ`
+                    : `${normalizedShippingFee.toLocaleString("vi-VN")}đ`
                   : "Chưa chọn"}
               </span>
             </div>

@@ -68,7 +68,8 @@
   font-weight: 700;
   color: #1a1a1a;
   margin: 0 0 20px 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
 }
 
 /* Description */
@@ -77,13 +78,16 @@
   color: #666;
   line-height: 1.6;
   margin: 0 0 50px 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
 }
 
 .actionsRow {
   display: flex;
   justify-content: center;
+  gap: 16px;
   margin-bottom: 40px;
+  flex-wrap: wrap;
 }
 
 .navButton {
@@ -126,6 +130,187 @@
   color: #111;
 }
 
+/* Order Info Section */
+.orderInfo {
+  background: #fff;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  text-align: left;
+  max-width: 600px;
+  margin: 0 auto;
+  font-size: 15px;
+  color: #333;
+}
+
+.infoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.infoItem:last-child {
+  border-bottom: none;
+}
+
+.infoLabel {
+  font-weight: 600;
+  color: #666;
+  min-width: 140px;
+  margin-right: 16px;
+}
+
+.infoValue {
+  color: #1a1a1a;
+  text-align: right;
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Items Section */
+.itemsSection {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.itemsTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.itemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.itemName {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 15px;
+}
+
+.itemMeta {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.itemPricing {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  min-width: 140px;
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.newPrice {
+  color: #e60000;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.oldPrice {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.discountBadge {
+  display: inline-block;
+  background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+  color: #fff;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Payment Section */
+.paymentSection {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.paymentTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+/* Summary Section */
+.summarySection {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.summaryTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+.summaryContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summaryLine {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.summaryTotal {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  border-top: 2px solid #ddd;
+  margin-top: 8px;
+}
+
 /* Sections container */
 .sectionsContainer {
   display: grid;
@@ -147,7 +332,8 @@
   font-weight: 600;
   color: #1a1a1a;
   margin: 0 0 25px 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
 }
 
 /* Social links */
@@ -187,7 +373,8 @@
   font-weight: 600;
   font-size: 16px;
   transition: all 0.3s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
 }
 
 .visitButton:hover {
@@ -219,10 +406,25 @@
 
   .actionsRow {
     margin-bottom: 30px;
+    gap: 12px;
   }
 
   .paymentInfo {
     padding: 20px;
+  }
+
+  .orderInfo {
+    padding: 24px;
+    max-width: 100%;
+  }
+
+  .infoLabel {
+    min-width: 120px;
+    font-size: 14px;
+  }
+
+  .infoValue {
+    font-size: 14px;
   }
 
   .sectionsContainer {
@@ -306,9 +508,45 @@
 
   .navButton {
     width: 100%;
+    padding: 10px 24px;
+    font-size: 14px;
   }
 
   .paymentInfo {
     padding: 18px;
+  }
+
+  .orderInfo {
+    padding: 20px;
+  }
+
+  .infoItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .infoLabel {
+    min-width: auto;
+    margin-right: 0;
+    font-size: 13px;
+  }
+
+  .infoValue {
+    text-align: left;
+    font-size: 13px;
+  }
+
+  .itemRow {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .itemPricing {
+    align-items: flex-start;
+  }
+
+  .priceRow {
+    justify-content: flex-start;
   }
 }
