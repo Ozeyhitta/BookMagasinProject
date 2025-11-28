@@ -4,6 +4,7 @@ import { Bell, ShoppingCart, FileClock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import "../components/header.css";
 import { buildApiUrl } from "../../utils/apiConfig";
+import SupportRequestButton from "./requestsupport/SupportRequestButton";
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -242,6 +243,9 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Support Request Button */}
+      <SupportRequestButton />
     </header>
   );
 }

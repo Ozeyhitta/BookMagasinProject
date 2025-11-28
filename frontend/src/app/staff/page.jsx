@@ -8,6 +8,7 @@ import {
   Type,
   Star,
   RotateCcw,
+  MessageCircle,
 } from "lucide-react";
 import axiosClient from "../../utils/axiosClient";
 
@@ -19,6 +20,7 @@ import BookList from "./components/BookList";
 import ProcessOrders from "./components/ProcessOrders";
 import ViewReviews from "./components/ViewReviews"; // 🔹 mới
 import ProcessReturns from "./components/ProcessReturns"; // 🔹 mới
+import CustomerSupport from "./components/CustomerSupport"; // 🔹 mới
 
 export default function StaffPage() {
   const router = useRouter();
@@ -85,6 +87,8 @@ export default function StaffPage() {
     { icon: <Star size={20} />, label: "View reviews" },
     // 🔹 Mục mới: Process Returns
     { icon: <RotateCcw size={20} />, label: "Process Returns" },
+    // 🔹 Mục mới: Customer Support
+    { icon: <MessageCircle size={20} />, label: "Customer Support" },
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -119,6 +123,8 @@ export default function StaffPage() {
         {activeIndex === 4 && <ViewReviews />}
         {/* 🔹 tab mới */}
         {activeIndex === 5 && <ProcessReturns />}
+        {/* 🔹 tab mới */}
+        {activeIndex === 6 && <CustomerSupport />}
         {/* 🔹 tab mới */}
       </main>
     </div>
