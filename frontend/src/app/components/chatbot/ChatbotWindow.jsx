@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import "./chatbot.css";
-import axiosClient from "../../../utils/axiosClient";
 
 const BOOKS_API = "http://localhost:8080/api/books";
 
@@ -213,13 +212,6 @@ export default function ChatbotWindow({ onClose }) {
   const [books, setBooks] = useState([]);
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [isThinking, setIsThinking] = useState(false);
-  const [showSupportForm, setShowSupportForm] = useState(false);
-  const [supportEmail, setSupportEmail] = useState("");
-  const [supportType, setSupportType] = useState("Đơn hàng");
-  const [supportIssue, setSupportIssue] = useState("");
-  const [supportDescription, setSupportDescription] = useState("");
-  const [sendingSupport, setSendingSupport] = useState(false);
-  const [supportResult, setSupportResult] = useState(null);
   const messagesRef = useRef(null);
 
   useEffect(() => {
@@ -328,174 +320,84 @@ export default function ChatbotWindow({ onClose }) {
             <div className="chatHeading">Hỗ trợ trực tuyến</div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button
-            className="supportButton"
-            onClick={() => setShowSupportForm((s) => !s)}
-            aria-label="Yêu cầu hỗ trợ"
-          >
-            Yêu cầu hỗ trợ
-          </button>
-          <button
-            className="chatClose"
-            onClick={onClose}
-            aria-label="Đóng cửa sổ chat"
-          >
-            ×
-          </button>
-        </div>
+        <button
+          className="chatClose"
+          onClick={onClose}
+          aria-label="Đóng cửa sổ chat"
+        >
+          ×
+        </button>
       </div>
 
       <div className="chatBody">
-        {showSupportForm ? (
-          <div className="supportForm">
-            <div style={{ marginBottom: 8 }}>
-              <label>Email của bạn</label>
-              <input
-                type="email"
-                value={supportEmail}
-                onChange={(e) => setSupportEmail(e.target.value)}
-                placeholder="nhập email nhận phản hồi"
-              />
-            </div>
-            <div style={{ marginBottom: 8 }}>
-              <label>Loại hỗ trợ</label>
-              <select value={supportType} onChange={(e) => setSupportType(e.target.value)}>
-                <option>Đơn hàng</option>
-                <option>Sản phẩm</option>
-                <option>Thanh toán</option>
-                <option>Tài khoản</option>
-                <option>Khác</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: 8 }}>
-              <label>Vấn đề (ngắn)</label>
-              <input value={supportIssue} onChange={(e) => setSupportIssue(e.target.value)} />
-            </div>
-            <div style={{ marginBottom: 8 }}>
-              <label>Mô tả chi tiết</label>
-              <textarea
-                rows={5}
-                value={supportDescription}
-                onChange={(e) => setSupportDescription(e.target.value)}
-              />
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                className="sendButton"
-                disabled={sendingSupport}
-                onClick={async () => {
-                  if (!supportEmail) return setSupportResult({ error: "Vui lòng nhập email." });
-                  if (!supportIssue) return setSupportResult({ error: "Vui lòng nhập tiêu đề vấn đề." });
-                  setSendingSupport(true);
-                  setSupportResult(null);
-                  try {
-                    const payload = {
-                      email: supportEmail,
-                      type: supportType,
-                      issue: supportIssue,
-                      description: supportDescription,
-                    };
-                    const res = await axiosClient.post("/support/requests", payload);
-                    setSupportResult({ ok: true, id: res.data.id });
-                    setSupportEmail("");
-                    setSupportType("Đơn hàng");
-                    setSupportIssue("");
-                    setSupportDescription("");
-                  } catch (err) {
-                    const msg = err?.response?.data || err.message || "Lỗi khi gửi yêu cầu";
-                    setSupportResult({ error: msg });
-                  } finally {
-                    setSendingSupport(false);
-                  }
-                }}
-              >
-                Gửi yêu cầu
-              </button>
-              <button className="chatClose" onClick={() => setShowSupportForm(false)}>Đóng</button>
-            </div>
-            {supportResult && (
-              <div style={{ marginTop: 8 }}>
-                {supportResult.error ? (
-                  <div className="errorText">{supportResult.error}</div>
-                ) : (
-                  <div className="successText">Yêu cầu đã được gửi. ID: {supportResult.id}</div>
+        <div className="chatMessages" ref={messagesRef}>
+          {messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`messageRow ${
+                msg.from === "user" ? "userRow" : "botRow"
+              }`}
+            >
+              <div className="msgBubble">
+                <div className="msgText">{msg.text}</div>
+                {msg.suggestions && (
+                  <div className="suggestionList">
+                    {msg.suggestions.map((sug) => (
+                      <button
+                        key={`${sug.id}-${sug.title}`}
+                        type="button"
+                        className="suggestionCard"
+                        onClick={() =>
+                          window.open(`/product/${sug.id}`, "_blank")
+                        }
+                      >
+                        <div className="suggestionTitle">{sug.title}</div>
+                        <div className="suggestionMeta">
+                          <span className="suggestionPrice">
+                            {formatPrice(sug.sellingPrice)}
+                          </span>
+                          {sug.author && (
+                            <span className="suggestionAuthor">
+                              {" "}
+                              - {sug.author}
+                            </span>
+                          )}
+                        </div>
+                        {!!sug.categories?.length && (
+                          <div className="suggestionCategories">
+                            {sug.categories.join(", ")}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="chatMessages" ref={messagesRef}>
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`messageRow ${
-                    msg.from === "user" ? "userRow" : "botRow"
-                  }`}
-                >
-                  <div className="msgBubble">
-                    <div className="msgText">{msg.text}</div>
-                    {msg.suggestions && (
-                      <div className="suggestionList">
-                        {msg.suggestions.map((sug) => (
-                          <button
-                            key={`${sug.id}-${sug.title}`}
-                            type="button"
-                            className="suggestionCard"
-                            onClick={() =>
-                              window.open(`/product/${sug.id}`, "_blank")
-                            }
-                          >
-                            <div className="suggestionTitle">{sug.title}</div>
-                            <div className="suggestionMeta">
-                              <span className="suggestionPrice">
-                                {formatPrice(sug.sellingPrice)}
-                              </span>
-                              {sug.author && (
-                                <span className="suggestionAuthor">
-                                  {" "}
-                                  - {sug.author}
-                                </span>
-                              )}
-                            </div>
-                            {!!sug.categories?.length && (
-                              <div className="suggestionCategories">
-                                {sug.categories.join(", ")}
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {isThinking && (
-                <div className="messageRow botRow">
-                  <div className="typingBubble">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                </div>
-              )}
             </div>
+          ))}
+          {isThinking && (
+            <div className="messageRow botRow">
+              <div className="typingBubble">
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+          )}
+        </div>
 
-            <div className="chatInput">
-              <textarea
-                rows={2}
-                placeholder="Bạn cần tư vấn sách gì?"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-              <button type="button" className="sendButton" onClick={handleSend}>
-                Gửi
-              </button>
-            </div>
-          </>
-        )}
+        <div className="chatInput">
+          <textarea
+            rows={2}
+            placeholder="Bạn cần tư vấn sách gì?"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button type="button" className="sendButton" onClick={handleSend}>
+            Gửi
+          </button>
+        </div>
       </div>
     </div>
   );
