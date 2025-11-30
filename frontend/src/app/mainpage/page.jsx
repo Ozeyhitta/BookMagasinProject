@@ -1,9 +1,146 @@
 "use client";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import styles from "./mainpage.module.css";
 import ProductCard from "../category/ProductCard"; // ✅ reuse CategoryPage’s ProductCard
 import { ChevronLeft, ChevronRight, BookText } from "lucide-react";
 import { buildApiUrl } from "../../utils/apiConfig";
+
+const FLASH_SALE_VISIBLE_COUNT = 5;
+const FLASH_SALE_MAX_ITEMS = 15;
+const NEW_SECTION_PAGE_SIZE = 12;
+const CATEGORY_SECTION_PAGE_SIZE = 8;
+const SUGGESTION_LIMIT = 20;
+
+const createFlashSaleDeadline = () => Date.now() + 60 * 60 * 1000;
+
+const getCountdownFromDeadline = (deadline) => {
+  const diff = Math.max(0, deadline - Date.now());
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  return {
+    hours: String(hours).padStart(2, "0"),
+    minutes: String(minutes).padStart(2, "0"),
+    seconds: String(seconds).padStart(2, "0"),
+  };
+};
+
+const FALLBACK_FLASH_SALE_ITEMS = [
+  {
+    id: null,
+    title: '"Chém" Tiếng Anh Không Cần Động Não',
+    finalPrice: "101.400 đ",
+    oldPrice: "169.000 đ",
+    badge: "-40%",
+    imageUrl:
+      "https://cdn0.fahasa.com/media/catalog/product/9/7/9786043245110.jpg",
+    soldQuantity: 3,
+    stockQuantity: 12,
+  },
+  {
+    id: null,
+    title: "Destination B1 Grammar And Vocabulary",
+    finalPrice: "144.000 đ",
+    oldPrice: "198.000 đ",
+    badge: "-27%",
+    imageUrl:
+      "https://cdn0.fahasa.com/media/catalog/product/i/m/image_195509.jpg",
+    soldQuantity: 12,
+    stockQuantity: 30,
+  },
+  {
+    id: null,
+    title: "Lộ Trình Học Tiếng Anh Cho Người Mất Gốc",
+    finalPrice: "134.000 đ",
+    oldPrice: "198.000 đ",
+    badge: "-32%",
+    imageUrl:
+      "https://cdn0.fahasa.com/media/catalog/product/b/i/bia_164.jpg",
+    soldQuantity: 7,
+    stockQuantity: 14,
+  },
+  {
+    id: null,
+    title: "Destination B2 Grammar And Vocabulary",
+    finalPrice: "144.000 đ",
+    oldPrice: "198.000 đ",
+    badge: "-27%",
+    imageUrl:
+      "https://cdn0.fahasa.com/media/catalog/product/i/m/image_195508.jpg",
+    soldQuantity: 9,
+    stockQuantity: 20,
+  },
+  {
+    id: null,
+    title: "Destination B1 Grammar & Vocabulary Key",
+    finalPrice: "129.000 đ",
+    oldPrice: "178.000 đ",
+    badge: "-27%",
+    imageUrl:
+      "https://cdn0.fahasa.com/media/catalog/product/i/m/image_195507.jpg",
+    soldQuantity: 12,
+    stockQuantity: 8,
+  },
+  {
+    id: null,
+    title: "Combo Tiếng Anh Bino Cho Bé",
+    finalPrice: "210.000 đ",
+    oldPrice: "300.000 đ",
+    badge: "-30%",
+    imageUrl:
+      "https://cdn0.fahasa.com/media/catalog/product/c/o/combo_bino.jpg",
+    soldQuantity: 5,
+    stockQuantity: 15,
+  },
+];
+
+const RANKING_TABS = [
+  { id: "literature", label: "Văn học", keywords: ["văn học"] },
+  { id: "economy", label: "Kinh tế", keywords: ["kinh tế"] },
+  {
+    id: "mindset",
+    label: "Tâm lý - Kỹ năng sống",
+    keywords: ["tâm lý", "kỹ năng", "kĩ năng", "phát triển bản thân"],
+  },
+  { id: "kids", label: "Thiếu nhi", keywords: ["thiếu nhi"] },
+  {
+    id: "language",
+    label: "Sách học ngoại ngữ",
+    keywords: ["ngoại ngữ", "tiếng anh", "tiếng nhật", "tiếng hàn", "tiếng trung"],
+  },
+  { id: "foreign", label: "Foreign books", keywords: ["foreign", "english"] },
+  { id: "others", label: "Thể loại khác", keywords: [] },
+];
+const RANKING_LIMIT = 10;
+const RANKING_MODAL_LIMIT = 10;
+
+const PaginationControls = ({ currentPage, totalPages, onChange }) => {
+  if (totalPages <= 1) return null;
+  const handlePrev = () => onChange(Math.max(1, currentPage - 1));
+  const handleNext = () => onChange(Math.min(totalPages, currentPage + 1));
+  return (
+    <div className={styles.pagination}>
+      <button
+        className={styles.paginationButton}
+        onClick={handlePrev}
+        disabled={currentPage === 1}
+      >
+        Trước
+      </button>
+      <span className={styles.paginationInfo}>
+        Trang {currentPage}/{totalPages}
+      </span>
+      <button
+        className={styles.paginationButton}
+        onClick={handleNext}
+        disabled={currentPage === totalPages}
+      >
+        Sau
+      </button>
+    </div>
+  );
+};
 
 export default function MainPage() {
   const rawCategories = [
@@ -180,21 +317,47 @@ export default function MainPage() {
   const [apiCategories, setApiCategories] = useState([]);
   // ✅ Dữ liệu discount cho từng book
   const [discounts, setDiscounts] = useState({});
-  const PRODUCTS_PER_BATCH = 12;
-  const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_BATCH);
-  const loadMoreRef = useRef(null);
+  const [newSectionPage, setNewSectionPage] = useState(1);
+  const [categoryPages, setCategoryPages] = useState({});
   const [bestSellers, setBestSellers] = useState([]);
   const [bestSellerError, setBestSellerError] = useState(null);
   const BEST_SELLER_LIMIT = 8;
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const placeholderImage =
-    "https://via.placeholder.com/200x280?text=No+Image";
+    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjgwIiB2aWV3Qm94PSIwIDAgMjAwIDI4MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyODAiIHJ4PSIxNiIgZmlsbD0iI2YzZjZmYiIvPjxwYXRoIGQ9Ik02OCAxOTBMOTAgMTU4TDExMSAxODhMMTMxIDE2NEwxNjAgMjA4SDQwTDY4IDE5MFoiIGZpbGw9IiNkNWRlZWYiLz48Y2lyY2xlIGN4PSI5MCIgY3k9IjEyMCIgcj0iMzAiIGZpbGw9IiNkNWRlZWYiLz48dGV4dCB4PSIxMDAiIHk9IjI1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzlhYThjMSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=";
+  const handleImageError = (event) => {
+    event.currentTarget.src = placeholderImage;
+    event.currentTarget.onerror = null;
+  };
+  const [activeRankingTab, setActiveRankingTab] = useState(RANKING_TABS[0].id);
+  const [selectedRankingBook, setSelectedRankingBook] = useState(null);
+  const [flashSaleSlide, setFlashSaleSlide] = useState(0);
+  const [flashSaleDeadline, setFlashSaleDeadline] = useState(() =>
+    createFlashSaleDeadline()
+  );
+  const [flashSaleCountdown, setFlashSaleCountdown] = useState(() =>
+    getCountdownFromDeadline(flashSaleDeadline)
+  );
+  const [showRankingModal, setShowRankingModal] = useState(false);
+  const [showFlashSaleModal, setShowFlashSaleModal] = useState(false);
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
   const filteredBooks = useMemo(() => {
     if (!selectedCategoryId) return books;
     return books.filter((book) =>
       (book.categories || []).some((c) => c.id === selectedCategoryId)
     );
   }, [books, selectedCategoryId]);
+  const newSectionTotalPages = Math.max(
+    1,
+    Math.ceil(filteredBooks.length / NEW_SECTION_PAGE_SIZE) || 1
+  );
+  const displayedBooks = useMemo(() => {
+    const startIndex = (newSectionPage - 1) * NEW_SECTION_PAGE_SIZE;
+    return filteredBooks.slice(
+      startIndex,
+      startIndex + NEW_SECTION_PAGE_SIZE
+    );
+  }, [filteredBooks, newSectionPage]);
 
   const formatCurrency = (value) => {
     if (typeof value !== "number" || Number.isNaN(value)) return "";
@@ -356,6 +519,16 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
+    setNewSectionPage(1);
+  }, [filteredBooks.length]);
+
+  useEffect(() => {
+    if (newSectionPage > newSectionTotalPages) {
+      setNewSectionPage(newSectionTotalPages);
+    }
+  }, [newSectionPage, newSectionTotalPages]);
+
+  useEffect(() => {
     const fetchBestSellers = async () => {
       try {
         const res = await fetch(
@@ -375,6 +548,21 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
+    const tick = setInterval(() => {
+      const diff = flashSaleDeadline - Date.now();
+      if (diff <= 0) {
+        const nextDeadline = createFlashSaleDeadline();
+        setFlashSaleDeadline(nextDeadline);
+        setFlashSaleCountdown(getCountdownFromDeadline(nextDeadline));
+      } else {
+        setFlashSaleCountdown(getCountdownFromDeadline(flashSaleDeadline));
+      }
+    }, 1000);
+
+    return () => clearInterval(tick);
+  }, [flashSaleDeadline]);
+
+  useEffect(() => {
     if (bestSellers.length > 0 || books.length === 0) return;
     const derived = [...books]
       .filter((book) => typeof book.soldQuantity === "number")
@@ -385,33 +573,6 @@ export default function MainPage() {
       setBestSellerError(null);
     }
   }, [books, bestSellers.length]);
-
-  useEffect(() => {
-    setVisibleCount(PRODUCTS_PER_BATCH);
-  }, [books.length, selectedCategoryId]);
-
-  useEffect(() => {
-    if (!filteredBooks.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((prev) =>
-            Math.min(prev + PRODUCTS_PER_BATCH, filteredBooks.length)
-          );
-        }
-      },
-      { rootMargin: "0px 0px 200px 0px" }
-    );
-
-    const current = loadMoreRef.current;
-    if (current) observer.observe(current);
-
-    return () => {
-      if (current) observer.unobserve(current);
-      observer.disconnect();
-    };
-  }, [filteredBooks.length]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -503,6 +664,98 @@ export default function MainPage() {
         "https://product.hstatic.net/200000845405/product/upload_cf64744ac7654215bad45173fa85b1a3_master.jpg",
     },
   ];
+  const flashSaleItems = useMemo(() => {
+    const discounted = books
+      .map((book) => {
+        const discount = discounts[book.id];
+        if (!discount) return null;
+        const pricing = getPricingForBook(book);
+        if (!pricing.badge || !pricing.finalPrice) return null;
+
+        const basePrice =
+          typeof book.sellingPrice === "number"
+            ? book.sellingPrice
+            : typeof book.price === "number"
+            ? book.price
+            : 0;
+        const discountPercent =
+          discount.discountPercent ??
+          (discount.discountAmount && basePrice
+            ? Math.round((discount.discountAmount / basePrice) * 100)
+            : 0);
+
+        return {
+          id: book.id,
+          title: book.title,
+          imageUrl: book.imageUrl || placeholderImage,
+          finalPrice: pricing.finalPrice,
+          oldPrice: pricing.oldPrice,
+          badge: pricing.badge,
+          soldQuantity: book.soldQuantity ?? 0,
+          stockQuantity: book.stockQuantity ?? 0,
+          discountPercent: discountPercent || 0,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (b.discountPercent ?? 0) - (a.discountPercent ?? 0));
+
+    if (!discounted.length) {
+      return FALLBACK_FLASH_SALE_ITEMS;
+    }
+
+    return discounted.slice(0, FLASH_SALE_MAX_ITEMS);
+  }, [books, discounts]);
+
+  const flashSaleSlides = useMemo(() => {
+    if (!flashSaleItems.length) return [[]];
+    const slides = [];
+    for (let i = 0; i < flashSaleItems.length; i += FLASH_SALE_VISIBLE_COUNT) {
+      slides.push(flashSaleItems.slice(i, i + FLASH_SALE_VISIBLE_COUNT));
+    }
+    return slides;
+  }, [flashSaleItems]);
+
+  const totalFlashSaleSlides = flashSaleSlides.length || 1;
+  const flashSaleHasMultipleSlides = totalFlashSaleSlides > 1;
+
+  useEffect(() => {
+    setFlashSaleSlide(0);
+  }, [totalFlashSaleSlides]);
+
+  const rankingList = useMemo(() => {
+    if (!books.length) return [];
+    const tab = RANKING_TABS.find((item) => item.id === activeRankingTab);
+    let sourceBooks = books;
+    if (tab && tab.keywords.length) {
+      const keywords = tab.keywords.map((k) => k.toLowerCase());
+      const filtered = books.filter((book) =>
+        (book.categories || []).some((cat) => {
+          if (!cat?.name) return false;
+          const name = cat.name.toLowerCase();
+          return keywords.some((keyword) => name.includes(keyword));
+        })
+      );
+      if (filtered.length) {
+        sourceBooks = filtered;
+      }
+    }
+    return [...sourceBooks]
+      .sort(
+        (a, b) =>
+          (b.soldQuantity ?? 0) - (a.soldQuantity ?? 0) ||
+          (b.stockQuantity ?? 0) - (a.stockQuantity ?? 0)
+      )
+      .slice(0, RANKING_LIMIT);
+  }, [books, activeRankingTab]);
+
+  useEffect(() => {
+    if (rankingList.length) {
+      setSelectedRankingBook(rankingList[0]);
+    } else {
+      setSelectedRankingBook(null);
+    }
+  }, [rankingList]);
+
   const topCategories = useMemo(
     () =>
       apiCategories
@@ -511,7 +764,78 @@ export default function MainPage() {
     [apiCategories]
   );
 
-  const displayedBooks = filteredBooks.slice(0, visibleCount);
+  const suggestionBooks = useMemo(() => {
+    const preferred = books
+      .filter((book) =>
+        (book.categories || []).some((c) => c.name?.toLowerCase().includes("2025"))
+      )
+      .sort((a, b) => (b.soldQuantity ?? 0) - (a.soldQuantity ?? 0));
+    const combined = [...preferred];
+    if (combined.length < SUGGESTION_LIMIT) {
+      books.forEach((book) => {
+        if (combined.length >= SUGGESTION_LIMIT) return;
+        if (!combined.includes(book)) combined.push(book);
+      });
+    }
+    if (combined.length < SUGGESTION_LIMIT) {
+      fallbackBestSellers.forEach((fallback, index) => {
+        if (combined.length >= SUGGESTION_LIMIT) return;
+        const parsePrice = (value) => {
+          if (typeof value === "number") return value;
+          if (typeof value === "string") {
+            const numeric = parseInt(value.replace(/[^0-9]/g, ""), 10);
+            return Number.isNaN(numeric) ? 0 : numeric;
+          }
+          return 0;
+        };
+        combined.push({
+          id: `suggest-fallback-${index}`,
+          title: fallback.title,
+          price: parsePrice(fallback.price),
+          sellingPrice: parsePrice(fallback.price),
+          imageUrl: fallback.image,
+          stockQuantity: 0,
+          soldQuantity: parseInt(
+            fallback.soldQuantity?.replace(/[^0-9]/g, "") || "0",
+            10
+          ),
+          bookDetail: { authorName: fallback.author || "Đang cập nhật" },
+          categories: [],
+        });
+      });
+    }
+    return combined.slice(0, SUGGESTION_LIMIT);
+  }, [books]);
+
+  const handleFlashSalePrev = () => {
+    setFlashSaleSlide((prev) =>
+      prev === 0 ? totalFlashSaleSlides - 1 : prev - 1
+    );
+  };
+
+  const handleFlashSaleNext = () => {
+    setFlashSaleSlide((prev) =>
+      prev === totalFlashSaleSlides - 1 ? 0 : prev + 1
+    );
+  };
+
+  const flashSaleTrackStyle = {
+    transform: `translateX(-${flashSaleSlide * 100}%)`,
+  };
+
+  const rankingDescription =
+    selectedRankingBook?.bookDetail?.description ||
+    selectedRankingBook?.bookDetail?.shortDescription ||
+    "Nội dung đang được cập nhật.";
+
+  const rankingCover =
+    selectedRankingBook?.bookDetail?.imageUrl ||
+    selectedRankingBook?.imageUrl ||
+    placeholderImage;
+  const selectedRankingPricing = selectedRankingBook
+    ? getPricingForBook(selectedRankingBook)
+    : null;
+  const rankingModalList = rankingList.slice(0, RANKING_MODAL_LIMIT);
 
   return (
     <div className={styles.mainWrapper}>
@@ -679,6 +1003,124 @@ export default function MainPage() {
             </button>
           </div>
 
+        <div className={styles.flashSaleSection}>
+          <div className={styles.flashSaleHeader}>
+            <div className={styles.flashSaleTitleRow}>
+              <span className={styles.flashSaleLabel}>FLASH SALE</span>
+              <span className={styles.flashSaleCountdownLabel}>Ket thuc trong</span>
+              <div className={styles.flashSaleCountdown}>
+                <div className={styles.flashSaleTimeBox}>
+                  <span>{flashSaleCountdown.hours}</span>
+                </div>
+                <span className={styles.timeSeparator}>:</span>
+                <div className={styles.flashSaleTimeBox}>
+                  <span>{flashSaleCountdown.minutes}</span>
+                </div>
+                <span className={styles.timeSeparator}>:</span>
+                <div className={styles.flashSaleTimeBox}>
+                  <span>{flashSaleCountdown.seconds}</span>
+                </div>
+              </div>
+            </div>
+            <div className={styles.flashSaleActions}>
+              <button
+                type="button"
+                className={styles.flashSaleSeeAll}
+                onClick={() => setShowFlashSaleModal(true)}
+              >
+                Xem tat ca
+              </button>
+            </div>
+          </div>
+          <div className={styles.flashSaleCarousel}>
+            <button
+              className={`${styles.flashSaleControl} ${styles.flashSaleControlPrev}`}
+              onClick={handleFlashSalePrev}
+              disabled={!flashSaleHasMultipleSlides}
+              aria-label="Flash sale previous"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <div className={styles.flashSaleViewport}>
+              <div className={styles.flashSaleTrack} style={flashSaleTrackStyle}>
+                {flashSaleSlides.map((slide, slideIndex) => (
+                  <div className={styles.flashSaleSlide} key={`flash-sale-slide-${slideIndex}`}>
+                    {slide.map((item, cardIndex) => {
+                      const sold = item.soldQuantity ?? 0;
+                      const stock = item.stockQuantity ?? 0;
+                      const totalUnits = sold + stock;
+                      const progress =
+                        totalUnits > 0
+                          ? Math.min(100, Math.round((sold / totalUnits) * 100))
+                          : sold > 0
+                          ? 100
+                          : 0;
+                      const soldText =
+                        sold > 0
+                          ? `Da ban ${sold}`
+                          : stock === 0
+                          ? 'Sap het'
+                          : 'Vua mo ban';
+                      const card = (
+                        <div className={styles.flashSaleCard}>
+                          <div className={styles.flashSaleImageWrap}>
+                            <img
+                              src={item.imageUrl}
+                              alt={item.title}
+                              className={styles.flashSaleImage}
+                            />
+                            {item.badge && (
+                              <span className={styles.flashSaleDiscount}>
+                                {item.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className={styles.flashSaleTitle}>{item.title}</p>
+                          <div className={styles.flashSalePrices}>
+                            <span className={styles.flashSalePrice}>{item.finalPrice}</span>
+                            {item.oldPrice && (
+                              <span className={styles.flashSaleOldPrice}>{item.oldPrice}</span>
+                            )}
+                          </div>
+                          <div className={styles.flashSaleProgress}>
+                            <div className={styles.flashSaleProgressBar}>
+                              <span
+                                className={styles.flashSaleProgressFill}
+                                style={{ width: `${progress}%` }}
+                              ></span>
+                            </div>
+                            <span className={styles.flashSaleSoldText}>{soldText}</span>
+                          </div>
+                        </div>
+                      );
+                      const key = item.id ?? `fallback-${slideIndex}-${cardIndex}`;
+                      return item.id ? (
+                        <a key={key} href={`/product/${item.id}`} className={styles.flashSaleLink}>
+                          {card}
+                        </a>
+                      ) : (
+                        <div
+                          key={key}
+                          className={`${styles.flashSaleLink} ${styles.flashSaleLinkDisabled}`}
+                        >
+                          {card}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              className={`${styles.flashSaleControl} ${styles.flashSaleControlNext}`}
+              onClick={handleFlashSaleNext}
+              disabled={!flashSaleHasMultipleSlides}
+              aria-label="Flash sale next"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
             {/* --- MỤC: SÁCH MỚI CẬP NHẬT (Lấy từ API) --- */}
           <div className={styles.productSection}>
             <h3 className={styles.sectionTitle}>Sách mới cập nhật (từ API)</h3>
@@ -739,36 +1181,183 @@ export default function MainPage() {
                 );
               })}
             </div>
-            {displayedBooks.length > 0 && (
-              <div ref={loadMoreRef} className={styles.lazyLoader}>
-                {visibleCount < filteredBooks.length
-                  ? "Đang tải thêm sách..."
-                  : "Đã hiển thị tất cả sách"}
+            <PaginationControls
+              currentPage={newSectionPage}
+              totalPages={newSectionTotalPages}
+              onChange={setNewSectionPage}
+            />
+          </div>
+
+          <div className={styles.rankingSection}>
+            <div className={styles.rankingHeader}>
+              <h3 className={styles.rankingTitle}>Bảng xếp hạng bán chạy tuần</h3>
+              <div className={styles.rankingTabs}>
+                {RANKING_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    className={`${styles.rankingTabButton} ${
+                      activeRankingTab === tab.id ? styles.activeRankingTab : ""
+                    }`}
+                    onClick={() => setActiveRankingTab(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
+
+            <div className={styles.rankingContent}>
+              <div className={styles.rankingList}>
+                {rankingList.length === 0 && (
+                  <p className={styles.rankingEmpty}>
+                    Chưa có dữ liệu cho tab này.
+                  </p>
+                )}
+                {rankingList.map((book, index) => {
+                  const isActive = selectedRankingBook?.id === book.id;
+                  const cover =
+                    book.bookDetail?.imageUrl || book.imageUrl || placeholderImage;
+                  return (
+                    <button
+                      key={book.id ?? `ranking-${index}`}
+                      className={`${styles.rankingListItem} ${
+                        isActive ? styles.activeRankingItem : ""
+                      }`}
+                      onClick={() => setSelectedRankingBook(book)}
+                    >
+                      <span className={styles.rankingPosition}>
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div className={styles.rankingThumbWrap}>
+                        <img
+                          src={cover}
+                          alt={book.title}
+                          className={styles.rankingThumb}
+                          onError={handleImageError}
+                        />
+                      </div>
+                      <div className={styles.rankingInfo}>
+                        <p className={styles.rankingBookTitle}>{book.title}</p>
+                        <span className={styles.rankingMeta}>
+                          {(book.bookDetail?.authorName ||
+                            book.bookDetail?.author ||
+                            "Đang cập nhật") +
+                            (book.soldQuantity
+                              ? ` • ${book.soldQuantity} lượt bán`
+                              : "")}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className={styles.rankingDetail}>
+                {selectedRankingBook ? (
+                  <>
+                    <div className={styles.rankingDetailImage}>
+                      <img
+                        src={rankingCover}
+                        alt={selectedRankingBook.title}
+                        onError={handleImageError}
+                      />
+                    </div>
+                    <div className={styles.rankingDetailInfo}>
+                      <h4 className={styles.rankingDetailTitle}>
+                        {selectedRankingBook.title}
+                      </h4>
+                      <p className={styles.rankingDetailMeta}>
+                        Tác giả:{" "}
+                        <strong>
+                          {selectedRankingBook.bookDetail?.authorName ||
+                            selectedRankingBook.bookDetail?.author ||
+                            "Đang cập nhật"}
+                        </strong>
+                      </p>
+                      <p className={styles.rankingDetailMeta}>
+                        Nhà xuất bản:{" "}
+                        <strong>
+                          {selectedRankingBook.bookDetail?.publisher ||
+                            "Đang cập nhật"}
+                        </strong>
+                      </p>
+                      <div className={styles.rankingDetailPriceWrap}>
+                        <span className={styles.rankingDetailPrice}>
+                          {selectedRankingPricing?.finalPrice ||
+                            formatCurrency(selectedRankingBook.sellingPrice)}
+                        </span>
+                        {selectedRankingPricing?.badge && (
+                          <span className={styles.rankingDetailBadge}>
+                            {selectedRankingPricing.badge}
+                          </span>
+                        )}
+                        {selectedRankingPricing?.oldPrice && (
+                          <span className={styles.rankingDetailOldPrice}>
+                            {selectedRankingPricing.oldPrice}
+                          </span>
+                        )}
+                      </div>
+                      <p className={styles.rankingDetailDesc}>
+                        {rankingDescription}
+                      </p>
+                      {selectedRankingBook.id && (
+                        <a
+                          href={`/product/${selectedRankingBook.id}`}
+                          className={styles.rankingDetailButton}
+                        >
+                          Xem chi tiết
+                        </a>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className={styles.rankingEmpty}>Chưa có dữ liệu.</div>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.rankingFooter}>
+              <button
+                type="button"
+                className={styles.rankingViewMore}
+                onClick={() => setShowRankingModal(true)}
+              >
+                Xem thêm
+              </button>
+            </div>
           </div>
 
           {/* --- PHẦN SÁCH THEO TỪNG DANH MỤC (từ API /api/categories) --- */}
           {apiCategories.map((cat) => {
-            // Nếu category không có bookIds thì bỏ qua
             if (!cat.bookIds || cat.bookIds.length === 0) return null;
-
-            // Lọc sách thuộc category này (dùng bookIds)
             const booksInCategory = books.filter((b) =>
               cat.bookIds.includes(b.id)
             );
-
-            // Nếu không có sách nào thì cũng không render
             if (booksInCategory.length === 0) return null;
+            const totalCategoryPages = Math.max(
+              1,
+              Math.ceil(booksInCategory.length / CATEGORY_SECTION_PAGE_SIZE)
+            );
+            const currentCategoryPage = Math.min(
+              categoryPages[cat.id] || 1,
+              totalCategoryPages
+            );
+            const startIndex =
+              (currentCategoryPage - 1) * CATEGORY_SECTION_PAGE_SIZE;
+            const displayedCategoryBooks = booksInCategory.slice(
+              startIndex,
+              startIndex + CATEGORY_SECTION_PAGE_SIZE
+            );
+            const handleCategoryPageChange = (page) =>
+              setCategoryPages((prev) => ({ ...prev, [cat.id]: page }));
 
             return (
               <div key={cat.id} className={styles.productSection}>
                 <h3 className={styles.sectionTitle}>{cat.name}</h3>
                 <div className={styles.productGrid}>
-                  {booksInCategory.map((book) => {
+                  {displayedCategoryBooks.map((book) => {
                     const discount = discounts[book.id];
 
-                    // Tính giá sau discount - ưu tiên discountPercent nếu có cả 2
                     const priceAfterDiscount = discount
                       ? Math.round(
                           discount.discountPercent != null &&
@@ -781,19 +1370,20 @@ export default function MainPage() {
                         )
                       : book.price;
 
-                    // Hiển thị text discount - ưu tiên discountPercent
                     const discountText = discount
                       ? discount.discountPercent != null &&
                         discount.discountPercent > 0
-                        ? `-${discount.discountPercent}%`
+                        ? "-" + discount.discountPercent + "%"
                         : discount.discountAmount != null &&
                           discount.discountAmount > 0
-                        ? `-${discount.discountAmount.toLocaleString("vi-VN")}đ`
+                        ? "-" +
+                          discount.discountAmount.toLocaleString("vi-VN") +
+                          "d"
                         : null
                       : null;
 
                     console.log(
-                      `Rendering ProductCard for category book ${book.id}:`,
+                      "Rendering ProductCard for category book " + book.id + ":",
                       {
                         discount,
                         discountText,
@@ -807,10 +1397,10 @@ export default function MainPage() {
                         key={book.id}
                         id={book.id}
                         title={book.title}
-                        price={priceAfterDiscount.toLocaleString("vi-VN") + "đ"}
+                        price={priceAfterDiscount.toLocaleString("vi-VN") + "d"}
                         oldPrice={
                           discount
-                            ? book.price.toLocaleString("vi-VN") + "đ"
+                            ? book.price.toLocaleString("vi-VN") + "d"
                             : null
                         }
                         discount={discountText}
@@ -821,11 +1411,293 @@ export default function MainPage() {
                     );
                   })}
                 </div>
+                <PaginationControls
+                  currentPage={currentCategoryPage}
+                  totalPages={totalCategoryPages}
+                  onChange={handleCategoryPageChange}
+                />
               </div>
             );
           })}
+
+          <div className={styles.suggestionHighlight}>
+            <div className={styles.suggestionHighlightHeader}>
+              <div className={styles.suggestionHighlightTitle}>
+                <span className={styles.suggestionTag}>Personalized</span>
+                <h3>Gợi ý sách cho bạn</h3>
+                <p>Gợi ý dựa trên thói quen và đơn gần đây của bạn.</p>
+              </div>
+              <button
+                type="button"
+                className={styles.suggestionHighlightSeeAll}
+                onClick={() => setShowSuggestionModal(true)}
+              >
+                Xem thêm
+              </button>
+            </div>
+            <div className={styles.productGrid}>
+              {suggestionBooks.slice(0, 12).map((book) => {
+                const price = getPricingForBook(book);
+                return (
+                  <ProductCard
+                    key={`suggestion-${book.id}`}
+                    id={book.id}
+                    title={book.title}
+                    price={price.finalPrice || formatCurrency(book.sellingPrice)}
+                    oldPrice={price.oldPrice}
+                    discount={price.badge}
+                    image={book.imageUrl || placeholderImage}
+                    stockQuantity={book.stockQuantity}
+                    soldQuantity={book.soldQuantity}
+                  />
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
+
+      {showRankingModal && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setShowRankingModal(false)}
+        >
+          <div
+            className={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h3>Bảng xếp hạng top {rankingModalList.length}</h3>
+              <button
+                className={styles.modalClose}
+                onClick={() => setShowRankingModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.modalTabs}>
+              {RANKING_TABS.map((tab) => (
+                <button
+                  key={`modal-${tab.id}`}
+                  className={`${styles.modalTab} ${
+                    activeRankingTab === tab.id ? styles.activeModalTab : ""
+                  }`}
+                  onClick={() => setActiveRankingTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className={styles.modalList}>
+              {rankingModalList.length === 0 && (
+                <p className={styles.rankingEmpty}>
+                  Chưa có dữ liệu cho tab này.
+                </p>
+              )}
+              {rankingModalList.map((book, index) => {
+                const cover =
+                  book.bookDetail?.imageUrl || book.imageUrl || placeholderImage;
+                return (
+                  <div key={`modal-item-${book.id ?? index}`} className={styles.modalListItem}>
+                    <span className={styles.modalIndex}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <img
+                      src={cover}
+                      alt={book.title}
+                      onError={handleImageError}
+                    />
+                    <div>
+                      <p className={styles.modalBookTitle}>{book.title}</p>
+                      <span className={styles.modalBookMeta}>
+                        {book.bookDetail?.authorName ||
+                          book.bookDetail?.author ||
+                          "Đang cập nhật"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCloseButton}
+                onClick={() => setShowRankingModal(false)}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showFlashSaleModal && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setShowFlashSaleModal(false)}
+        >
+          <div
+            className={styles.flashModalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.modalHeader}>
+              <h3>Flash Sale - xem tất cả</h3>
+              <button
+                className={styles.modalClose}
+                onClick={() => setShowFlashSaleModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.flashModalList}>
+              {flashSaleItems.length === 0 && (
+                <p className={styles.rankingEmpty}>
+                  Chưa có sản phẩm flash sale nào.
+                </p>
+              )}
+              {flashSaleItems.map((item, index) => {
+                const sold = item.soldQuantity ?? 0;
+                const stock = item.stockQuantity ?? 0;
+                const total = sold + stock;
+                const progress =
+                  total > 0 ? Math.min(100, Math.round((sold / total) * 100)) : 0;
+                return (
+                  <div
+                    key={`flash-modal-${item.id ?? index}`}
+                    className={styles.flashModalItem}
+                  >
+                    <span className={styles.flashModalIndex}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      onError={handleImageError}
+                    />
+                    <div className={styles.flashModalInfo}>
+                      <div className={styles.flashModalTitleRow}>
+                        <p>{item.title}</p>
+                        {item.badge && (
+                          <span className={styles.flashModalBadge}>{item.badge}</span>
+                        )}
+                      </div>
+                      <div className={styles.flashModalPriceRow}>
+                        <span className={styles.flashModalPrice}>
+                          {item.finalPrice}
+                        </span>
+                        {item.oldPrice && (
+                          <span className={styles.flashModalOldPrice}>
+                            {item.oldPrice}
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles.flashModalProgress}>
+                        <span style={{ width: `${progress}%` }} />
+                      </div>
+                      <div className={styles.flashModalMeta}>
+                        Đã bán {sold} / {total || "∞"}
+                      </div>
+                    </div>
+                    {item.id && (
+                      <a
+                        className={styles.flashModalButton}
+                        href={`/product/${item.id}`}
+                      >
+                        Xem chi tiết
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCloseButton}
+                onClick={() => setShowFlashSaleModal(false)}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSuggestionModal && (
+        <div
+          className={styles.suggestionModalOverlay}
+          onClick={() => setShowSuggestionModal(false)}
+        >
+          <div
+            className={styles.suggestionModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.suggestionModalHeader}>
+              <div>
+                <p className={styles.suggestionModalSubtitle}>
+                  Những lựa chọn phù hợp với bạn
+                </p>
+                <h3>Danh sách gợi ý mở rộng</h3>
+              </div>
+              <button
+                className={styles.suggestionModalClose}
+                onClick={() => setShowSuggestionModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.suggestionModalGrid}>
+              {suggestionBooks.slice(0, 20).map((book, index) => {
+                const price = getPricingForBook(book);
+                const sold =
+                  typeof book.soldQuantity === "number" ? book.soldQuantity : 0;
+                return (
+                  <div
+                    key={`suggestion-modal-${book.id ?? index}`}
+                    className={styles.suggestionModalCard}
+                  >
+                    <span className={styles.suggestionModalIndex}>
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <img
+                      src={book.imageUrl || placeholderImage}
+                      alt={book.title}
+                      onError={handleImageError}
+                    />
+                    <div className={styles.suggestionModalInfo}>
+                      <p className={styles.suggestionModalTitle}>{book.title}</p>
+                      <span className={styles.suggestionModalAuthor}>
+                        {book.bookDetail?.authorName || "Đang cập nhật"}
+                      </span>
+                      <div className={styles.suggestionModalPriceRow}>
+                        <span className={styles.suggestionModalPrice}>
+                          {price.finalPrice || formatCurrency(book.sellingPrice)}
+                        </span>
+                        {price.oldPrice && (
+                          <span className={styles.suggestionModalOldPrice}>
+                            {price.oldPrice}
+                          </span>
+                        )}
+                      </div>
+                      <span className={styles.suggestionModalSold}>
+                        Đã bán {sold} lượt
+                      </span>
+                    </div>
+                    <a
+                      href={`/product/${book.id}`}
+                      className={styles.suggestionModalButton}
+                    >
+                      Xem chi tiết
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+
+
