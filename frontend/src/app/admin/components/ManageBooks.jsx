@@ -2,22 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import styles from "./manage-books.module.css";
-import { Plus, Search, X, Edit2, Trash2, Eye, BadgePercent } from "lucide-react";
-
-const MAIN_CATEGORY_NAMES = [
-  "Sách Kinh Tế",
-  "Sách Văn Học Trong Nước",
-  "Sách Văn Học Nước Ngoài",
-  "Sách Thường Thức Đời Sống",
-  "Sách Thiếu Nhi",
-  "Sách Phát Triển Bản Thân",
-  "Sách Tin Học - Ngoại Ngữ",
-  "Sách Chuyên Ngành",
-  "Sách Giáo Khoa - Giáo Trình",
-  "Sách Phát Hành 2024",
-  "Sách Mới 2025",
-  "Review Sách",
-];
+import {
+  Plus,
+  Search,
+  X,
+  Edit2,
+  Trash2,
+  Eye,
+  BadgePercent,
+} from "lucide-react";
 
 const normalize = (str) => str?.trim().toLowerCase();
 
@@ -72,6 +65,8 @@ export default function ManageBooks() {
     startDate: "",
     endDate: "",
   });
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   useEffect(() => {
     loadBooks();
@@ -79,7 +74,12 @@ export default function ManageBooks() {
   }, []);
 
   useEffect(() => {
-    if (showModal || showCategoryModal || showDeleteModal || showDiscountModal) {
+    if (
+      showModal ||
+      showCategoryModal ||
+      showDeleteModal ||
+      showDiscountModal
+    ) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
@@ -113,22 +113,23 @@ export default function ManageBooks() {
       .catch(() => setBooks([]));
   };
 
-  const fetchCategories = () => fetch("http://localhost:8080/api/categories").then((res) => res.json());
+  const fetchCategories = () =>
+    fetch("http://localhost:8080/api/categories").then((res) => res.json());
 
-const seedMainCategoriesIfEmpty = async (list) => {
-  if (Array.isArray(list) && list.length > 0) {
-    return false;
-  }
+  const seedMainCategoriesIfEmpty = async (list) => {
+    if (Array.isArray(list) && list.length > 0) {
+      return false;
+    }
 
-  for (const main of MAIN_CATEGORY_NAMES) {
-    await fetch("http://localhost:8080/api/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: main, parentId: null, bookIds: [] }),
-    });
-  }
-  return true;
-};
+    for (const main of MAIN_CATEGORY_NAMES) {
+      await fetch("http://localhost:8080/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: main, parentId: null, bookIds: [] }),
+      });
+    }
+    return true;
+  };
 
   const loadCategories = () => {
     setCategoryLoading(true);
@@ -143,10 +144,7 @@ const seedMainCategoriesIfEmpty = async (list) => {
   };
 
   const mainCategories = useMemo(
-    () =>
-      categories
-        .filter((c) => c.parentId === null || c.parentId === undefined)
-        .sort((a, b) => MAIN_CATEGORY_NAMES.indexOf(a.name) - MAIN_CATEGORY_NAMES.indexOf(b.name)),
+    () => categories.filter((c) => !c.parentId),
     [categories]
   );
 
@@ -204,54 +202,91 @@ const seedMainCategoriesIfEmpty = async (list) => {
       const exists = prev.categoryIds.includes(id);
       return {
         ...prev,
-        categoryIds: exists ? prev.categoryIds.filter((c) => c !== id) : [...prev.categoryIds, id],
+        categoryIds: exists
+          ? prev.categoryIds.filter((c) => c !== id)
+          : [...prev.categoryIds, id],
       };
     });
   };
 
   const handleSubmit = () => {
+    const isEdit = Boolean(editingId);
+
     const payload = {
-      id: editingId || 0,
+      id: isEdit ? editingId : undefined,
       title: bookForm.title,
       code: bookForm.code,
       sellingPrice: Number(bookForm.sellingPrice) || 0,
-      stockQuantity: bookForm.stockQuantity !== "" ? Number(bookForm.stockQuantity) : null,
-      publicationDate: bookForm.publicationDate ? new Date(bookForm.publicationDate + "T00:00:00") : null,
-      edition: parseInt(bookForm.edition || 0, 10),
+      stockQuantity:
+        bookForm.stockQuantity !== "" ? Number(bookForm.stockQuantity) : null,
+      publicationDate: bookForm.publicationDate
+        ? `${bookForm.publicationDate}T00:00:00`
+        : null,
+      edition: Number(bookForm.edition) || 1,
       author: bookForm.author,
       imageUrl: bookForm.imageUrl,
-      categoryIds: (bookForm.categoryIds || []).map((c) => Number(c)),
-      bookDetailId: bookForm.bookDetail?.id ? Number(bookForm.bookDetail.id) : 0,
+      categoryIds: (bookForm.categoryIds || []).map(Number),
+
       bookDetail: {
-        id: bookForm.bookDetail?.id ? Number(bookForm.bookDetail.id) : 0,
-        publisher: bookForm.bookDetail?.publisher || "",
-        supplier: bookForm.bookDetail?.supplier || "",
-        pages: parseInt(bookForm.bookDetail?.pages || 0, 10),
-        description: bookForm.bookDetail?.description || "",
-        imageUrl: bookForm.bookDetail?.imageUrl || "",
-        length: parseFloat(bookForm.bookDetail?.length || 0),
-        width: parseFloat(bookForm.bookDetail?.width || 0),
-        height: parseFloat(bookForm.bookDetail?.height || 0),
-        weight: parseFloat(bookForm.bookDetail?.weight || 0),
+        ...(isEdit && bookForm.bookDetail?.id
+          ? { id: Number(bookForm.bookDetail.id) }
+          : {}),
+        publisher: bookForm.bookDetail.publisher || "",
+        supplier: bookForm.bookDetail.supplier || "",
+        pages: Number(bookForm.bookDetail.pages) || 0,
+        description: bookForm.bookDetail.description || "",
+        imageUrl: bookForm.bookDetail.imageUrl || "",
+        length: Number(bookForm.bookDetail.length) || 0,
+        width: Number(bookForm.bookDetail.width) || 0,
+        height: Number(bookForm.bookDetail.height) || 0,
+        weight: Number(bookForm.bookDetail.weight) || 0,
       },
     };
 
-    const method = editingId ? "PUT" : "POST";
-    const url = editingId ? `http://localhost:8080/api/books/${editingId}` : "http://localhost:8080/api/books";
+    const method = isEdit ? "PUT" : "POST";
+    const url = isEdit
+      ? `http://localhost:8080/api/books/${editingId}`
+      : "http://localhost:8080/api/books";
+
+    // 🔥 DEBUG LOG
+    console.log("📌 SUBMIT BOOK - MODE:", isEdit ? "EDIT" : "CREATE");
+    console.log("📌 URL:", url);
+    console.log("📌 METHOD:", method);
+    console.log("📌 PAYLOAD SENT:", payload);
 
     fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
-      .then(() => {
+      .then(async (res) => {
+        console.log("📌 RESPONSE STATUS:", res.status);
+
+        let json;
+        try {
+          json = await res.json();
+          console.log("📌 RESPONSE JSON:", json);
+        } catch (e) {
+          console.warn("⚠️ Không parse được JSON response:", e);
+        }
+
+        if (!res.ok) {
+          console.error("❌ API FAILED:", res.status, json);
+          alert("Lỗi khi thêm sách! Xem console để biết chi tiết.");
+          return;
+        }
+
+        // Thành công
         setShowModal(false);
         setEditingId(null);
         setIsViewing(false);
         setBookForm(createEmptyBook());
         loadBooks();
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("🔥 FETCH ERROR:", err);
+        alert("Không thể gọi API. Kiểm tra server.");
+      });
   };
 
   const openAdd = () => {
@@ -282,7 +317,9 @@ const seedMainCategoriesIfEmpty = async (list) => {
 
   const confirmDelete = () => {
     if (!bookPendingDelete) return;
-    fetch(`http://localhost:8080/api/books/${bookPendingDelete.id}`, { method: "DELETE" })
+    fetch(`http://localhost:8080/api/books/${bookPendingDelete.id}`, {
+      method: "DELETE",
+    })
       .then(() => {
         setShowDeleteModal(false);
         setBookPendingDelete(null);
@@ -292,7 +329,9 @@ const seedMainCategoriesIfEmpty = async (list) => {
   };
 
   const deleteCategory = async (categoryId) => {
-    await fetch(`http://localhost:8080/api/categories/${categoryId}`, { method: "DELETE" });
+    await fetch(`http://localhost:8080/api/categories/${categoryId}`, {
+      method: "DELETE",
+    });
     loadCategories();
   };
 
@@ -330,10 +369,19 @@ const seedMainCategoriesIfEmpty = async (list) => {
   const handleDiscountSubmit = () => {
     if (!discountBook) return;
     setDiscountSubmitting(true);
+
     const payload = {
-      discountPercent: discountMethod === "percent" ? Number(discountForm.discountPercent) || 0 : null,
-      discountAmount: discountMethod === "amount" ? Number(discountForm.discountAmount) || 0 : null,
-      startDate: discountForm.startDate ? `${discountForm.startDate}T00:00:00` : null,
+      discountPercent:
+        discountMethod === "percent"
+          ? Number(discountForm.discountPercent) || 0
+          : null,
+      discountAmount:
+        discountMethod === "amount"
+          ? Number(discountForm.discountAmount) || 0
+          : null,
+      startDate: discountForm.startDate
+        ? `${discountForm.startDate}T00:00:00`
+        : null,
       endDate: discountForm.endDate ? `${discountForm.endDate}T00:00:00` : null,
       bookId: discountBook.id,
     };
@@ -350,9 +398,68 @@ const seedMainCategoriesIfEmpty = async (list) => {
   };
 
   const deleteDiscount = (id) => {
-    fetch(`http://localhost:8080/api/book-discounts/${id}`, { method: "DELETE" }).then(() => {
+    fetch(`http://localhost:8080/api/book-discounts/${id}`, {
+      method: "DELETE",
+    }).then(() => {
       if (discountBook) loadDiscounts(discountBook.id);
     });
+  };
+
+  const renderAddCategoryModal = () => (
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <h3 className={styles.addCategoryTitle}>Thêm danh mục mới</h3>
+          <button
+            className={styles.closeBtn}
+            onClick={() => setShowAddCategoryModal(false)}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className={styles.addCategoryForm}>
+          <label>
+            Tên danh mục
+            <input
+              placeholder="Nhập tên danh mục..."
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+            />
+          </label>
+        </div>
+
+        <div className={styles.addCategoryFooter}>
+          <button
+            className={styles.addCategoryCancel}
+            onClick={() => setShowAddCategoryModal(false)}
+          >
+            Hủy
+          </button>
+          <button
+            className={styles.addCategorySave}
+            onClick={handleAddCategorySubmit}
+          >
+            Lưu
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const handleAddCategorySubmit = async () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+
+    await fetch("http://localhost:8080/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, parentId: null, bookIds: [] }),
+    });
+
+    setNewCategoryName("");
+    setShowAddCategoryModal(false);
+    loadCategories();
   };
 
   const renderCategoryModal = () => (
@@ -360,14 +467,22 @@ const seedMainCategoriesIfEmpty = async (list) => {
       <div className={`${styles.modal} ${styles.categoryModal}`}>
         <div className={styles.modalHeader}>
           <h3>Quan ly danh muc</h3>
-          <button className={styles.closeBtn} onClick={() => setShowCategoryModal(false)}>
+          <button
+            className={styles.closeBtn}
+            onClick={() => setShowCategoryModal(false)}
+          >
             <X size={18} />
           </button>
         </div>
         <div className={styles.modalToolbar}>
-          <p className={styles.helperText}>Co san 11 danh muc lon. Ban co the doi ten hoac xoa neu can.</p>
-          <button className={styles.secondaryButtonSmall} onClick={addMainCategory}>
-            + Them danh muc
+          <p className={styles.helperText}>
+            Co san 11 danh muc lon. Ban co the doi ten hoac xoa neu can.
+          </p>
+          <button
+            className={styles.secondaryButtonSmall}
+            onClick={() => setShowAddCategoryModal(true)}
+          >
+            + Thêm danh mục
           </button>
         </div>
         {categoryLoading ? (
@@ -378,7 +493,10 @@ const seedMainCategoriesIfEmpty = async (list) => {
               <div key={main.id} className={styles.categoryItemRow}>
                 <div className={styles.mainCategoryHeader}>
                   <span className={styles.mainCategoryName}>{main.name}</span>
-                  <button className={styles.categoryDeleteBtn} onClick={() => deleteCategory(main.id)}>
+                  <button
+                    className={styles.categoryDeleteBtn}
+                    onClick={() => deleteCategory(main.id)}
+                  >
                     Xoa
                   </button>
                 </div>
@@ -389,12 +507,17 @@ const seedMainCategoriesIfEmpty = async (list) => {
       </div>
     </div>
   );
-const renderBookModal = () => (
+  const renderBookModal = () => (
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
-          <h3>{isViewing ? "Xem sách" : editingId ? "Sửa sách" : "Thêm sách"}</h3>
-          <button className={styles.closeBtn} onClick={() => setShowModal(false)}>
+          <h3>
+            {isViewing ? "Xem sách" : editingId ? "Sửa sách" : "Thêm sách"}
+          </h3>
+          <button
+            className={styles.closeBtn}
+            onClick={() => setShowModal(false)}
+          >
             <X size={18} />
           </button>
         </div>
@@ -469,32 +592,24 @@ const renderBookModal = () => (
               placeholder="Nhap ten tac gia"
             />
           </label>
-          <label>
-            Ảnh sách (URL)
-            <input
-              name="imageUrl"
-              value={bookForm.imageUrl}
-              onChange={handleBookChange}
-              disabled={isViewing}
-              placeholder="https://..."
-            />
-          </label>
 
           <div className={styles.categorySection}>
             <label>Danh mục</label>
+
             <div className={styles.categoryCheckboxList}>
-              {categories.map((c) => (
-                <label key={c.id} className={styles.categoryCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={bookForm.categoryIds.includes(c.id)}
-                    onChange={() => toggleCategory(c.id)}
-                    disabled={isViewing}
-                  />
-                  {c.name}
-                  {c.parentId ? <span className={styles.subBadge}>Nho</span> : null}
-                </label>
-              ))}
+              {categories
+                .filter((c) => !c.parentId) // ❗ CHỈ LẤY DANH MỤC LỚN
+                .map((c) => (
+                  <label key={c.id} className={styles.categoryCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={bookForm.categoryIds.includes(c.id)}
+                      onChange={() => toggleCategory(c.id)}
+                      disabled={isViewing}
+                    />
+                    {c.name}
+                  </label>
+                ))}
             </div>
           </div>
 
@@ -587,7 +702,10 @@ const renderBookModal = () => (
 
           {!isViewing && (
             <div className={styles.modalActions}>
-              <button className={styles.cancelBtn} onClick={() => setShowModal(false)}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setShowModal(false)}
+              >
                 Hủy
               </button>
               <button className={styles.saveBtn} onClick={handleSubmit}>
@@ -605,13 +723,21 @@ const renderBookModal = () => (
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h3>Xóa sách</h3>
-          <button className={styles.closeBtn} onClick={() => setShowDeleteModal(false)}>
+          <button
+            className={styles.closeBtn}
+            onClick={() => setShowDeleteModal(false)}
+          >
             <X size={18} />
           </button>
         </div>
-        <p className={styles.helperText}>Bạn có chắc muốn xóa sách "{bookPendingDelete?.title}" không?</p>
+        <p className={styles.helperText}>
+          Bạn có chắc muốn xóa sách "{bookPendingDelete?.title}" không?
+        </p>
         <div className={styles.modalActions}>
-          <button className={styles.cancelBtn} onClick={() => setShowDeleteModal(false)}>
+          <button
+            className={styles.cancelBtn}
+            onClick={() => setShowDeleteModal(false)}
+          >
             Hủy
           </button>
           <button className={styles.deleteConfirmBtn} onClick={confirmDelete}>
@@ -627,7 +753,10 @@ const renderBookModal = () => (
       <div className={styles.modal}>
         <div className={styles.modalHeader}>
           <h3>Giảm giá: {discountBook?.title}</h3>
-          <button className={styles.closeBtn} onClick={() => setShowDiscountModal(false)}>
+          <button
+            className={styles.closeBtn}
+            onClick={() => setShowDiscountModal(false)}
+          >
             <X size={18} />
           </button>
         </div>
@@ -656,19 +785,33 @@ const renderBookModal = () => (
             <label>
               % giảm
               <input
-                className={discountMethod === "percent" ? "" : styles.discountFieldHidden}
+                className={
+                  discountMethod === "percent" ? "" : styles.discountFieldHidden
+                }
                 disabled={discountMethod !== "percent"}
                 value={discountForm.discountPercent}
-                onChange={(e) => setDiscountForm({ ...discountForm, discountPercent: e.target.value })}
+                onChange={(e) =>
+                  setDiscountForm({
+                    ...discountForm,
+                    discountPercent: e.target.value,
+                  })
+                }
               />
             </label>
             <label>
               Số tiền giảm
               <input
-                className={discountMethod === "amount" ? "" : styles.discountFieldHidden}
+                className={
+                  discountMethod === "amount" ? "" : styles.discountFieldHidden
+                }
                 disabled={discountMethod !== "amount"}
                 value={discountForm.discountAmount}
-                onChange={(e) => setDiscountForm({ ...discountForm, discountAmount: e.target.value })}
+                onChange={(e) =>
+                  setDiscountForm({
+                    ...discountForm,
+                    discountAmount: e.target.value,
+                  })
+                }
               />
             </label>
             <label>
@@ -676,7 +819,12 @@ const renderBookModal = () => (
               <input
                 type="date"
                 value={discountForm.startDate}
-                onChange={(e) => setDiscountForm({ ...discountForm, startDate: e.target.value })}
+                onChange={(e) =>
+                  setDiscountForm({
+                    ...discountForm,
+                    startDate: e.target.value,
+                  })
+                }
               />
             </label>
             <label>
@@ -684,12 +832,18 @@ const renderBookModal = () => (
               <input
                 type="date"
                 value={discountForm.endDate}
-                onChange={(e) => setDiscountForm({ ...discountForm, endDate: e.target.value })}
+                onChange={(e) =>
+                  setDiscountForm({ ...discountForm, endDate: e.target.value })
+                }
               />
             </label>
           </div>
           <div className={styles.modalActions}>
-            <button className={styles.saveBtn} onClick={handleDiscountSubmit} disabled={discountSubmitting}>
+            <button
+              className={styles.saveBtn}
+              onClick={handleDiscountSubmit}
+              disabled={discountSubmitting}
+            >
               {discountSubmitting ? "Đang lưu..." : "Lưu giảm giá"}
             </button>
           </div>
@@ -710,7 +864,10 @@ const renderBookModal = () => (
                     {d.startDate?.split("T")[0]} - {d.endDate?.split("T")[0]}
                   </p>
                 </div>
-                <button className={styles.categoryDeleteBtn} onClick={() => deleteDiscount(d.id)}>
+                <button
+                  className={styles.categoryDeleteBtn}
+                  onClick={() => deleteDiscount(d.id)}
+                >
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -740,7 +897,10 @@ const renderBookModal = () => (
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button className={`${styles.pillButton} ${styles.secondary}`} onClick={() => setShowCategoryModal(true)}>
+            <button
+              className={`${styles.pillButton} ${styles.secondary}`}
+              onClick={() => setShowCategoryModal(true)}
+            >
               <Plus size={16} /> Danh mục
             </button>
             <button className={styles.pillButton} onClick={openAdd}>
@@ -769,29 +929,49 @@ const renderBookModal = () => (
                   <td>{b.title}</td>
                   <td>{b.code}</td>
                   <td>{b.author}</td>
-                  <td>{b.sellingPrice?.toLocaleString?.() || b.sellingPrice}</td>
+                  <td>
+                    {b.sellingPrice?.toLocaleString?.() || b.sellingPrice}
+                  </td>
                   <td>{b.stockQuantity ?? "-"}</td>
                   <td>{b.publicationDate}</td>
                   <td>
                     {b.categories?.map((c) => (
                       <span key={c.id}>
                         {c.name}
-                        {c.parentId ? <span className={styles.subBadge}>Nho</span> : null}{" "}
+                        {c.parentId ? (
+                          <span className={styles.subBadge}>Nho</span>
+                        ) : null}{" "}
                       </span>
                     ))}
                   </td>
                   <td>
                     <div className={styles.actions}>
-                      <button className={styles.btnView} onClick={() => openView(b)} title="Xem">
+                      <button
+                        className={styles.btnView}
+                        onClick={() => openView(b)}
+                        title="Xem"
+                      >
                         <Eye size={16} />
                       </button>
-                      <button className={styles.btnEdit} onClick={() => openEdit(b)} title="Sửa">
+                      <button
+                        className={styles.btnEdit}
+                        onClick={() => openEdit(b)}
+                        title="Sửa"
+                      >
                         <Edit2 size={16} />
                       </button>
-                      <button className={styles.btnDiscount} onClick={() => openDiscount(b)} title="Giảm giá">
+                      <button
+                        className={styles.btnDiscount}
+                        onClick={() => openDiscount(b)}
+                        title="Giảm giá"
+                      >
                         <BadgePercent size={16} />
                       </button>
-                      <button className={styles.btnDelete} onClick={() => openDelete(b)} title="Xóa">
+                      <button
+                        className={styles.btnDelete}
+                        onClick={() => openDelete(b)}
+                        title="Xóa"
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -812,6 +992,7 @@ const renderBookModal = () => (
       {showCategoryModal && renderCategoryModal()}
       {showDeleteModal && renderDeleteModal()}
       {showDiscountModal && renderDiscountModal()}
+      {showAddCategoryModal && renderAddCategoryModal()}
     </div>
   );
 }

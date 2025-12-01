@@ -142,11 +142,16 @@ export default function ThankYouPage() {
             </div>
           )}
 
-          {!orderDetails && amount && (
+          {/* Tổng tiền – áp dụng cho cả COD và VNPay */}
+          {(orderDetails?.totalPrice || amount) && (
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>Tổng tiền:</span>
               <span className={styles.infoValue}>
-                {Number(amount).toLocaleString("vi-VN")}đ
+                {(orderDetails?.totalPrice
+                  ? orderDetails.totalPrice
+                  : Number(amount)
+                ).toLocaleString("vi-VN")}
+                đ
               </span>
             </div>
           )}

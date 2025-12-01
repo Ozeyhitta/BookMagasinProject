@@ -386,37 +386,103 @@
   grid-column: 1 / -1;
 }
 
-/* ============ Discounts ============ */
+/* ============ Discounts ============ */ /* ============ Discounts ============ */
+
 .discountForm {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: radial-gradient(
+    circle at top left,
+    #eef2ff 0,
+    #f8fafc 40%,
+    #ffffff 100%
+  );
+}
+
+.discountForm label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.discountForm input {
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: #ffffff;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.discountForm input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+  background: #f9fafb;
 }
 
 .discountGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 12px 14px;
 }
 
+/* Dòng chọn phương thức giảm giá */
 .discountMethodRow {
-  display: flex;
-  gap: 16px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.radioOption {
   display: inline-flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 999px;
+  background: #eff6ff;
   align-items: center;
 }
 
+/* Radio styled như pill */
+.radioOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: #e0ecff;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, transform 0.12s ease,
+    border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.radioOption input {
+  accent-color: #2563eb;
+}
+
+/* Highlight option đang chọn – dùng :has (modern browser) */
+.radioOption:has(input:checked) {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Ẩn field không dùng */
 .discountFieldHidden {
   display: none;
 }
 
+/* List các giảm giá đã tạo */
 .discountList {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -426,27 +492,39 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: #f8fafc;
 }
 
 .discountItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
+  padding: 10px 11px;
   border-radius: 10px;
-  background: #f8fafc;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
 }
 
 .discountTitle {
   margin: 0;
   font-weight: 800;
   color: #0f172a;
+  font-size: 14px;
 }
 
 .discountMeta {
   margin: 4px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Text "Chưa có giảm giá" */
+.discountList .emptyText {
+  text-align: center;
+  padding: 12px 4px;
   font-size: 13px;
-  color: #475569;
+  color: #9ca3af;
 }
 
 /* ============ Table ============ */
@@ -566,4 +644,102 @@
 
 .modal {
   color: #0f172a;
+}
+
+/* ================= Add Category Modal ================= */
+
+.addCategoryModal {
+  width: 480px !important;
+  max-width: 90vw;
+  border-radius: 20px;
+  padding: 24px;
+  animation: fadeInScale 0.25s ease;
+}
+
+.addCategoryTitle {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 14px;
+}
+
+.addCategoryForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.addCategoryForm label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.addCategoryForm input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  font-size: 14px;
+  transition: 0.2s ease;
+}
+
+.addCategoryForm input:hover {
+  background: #f1f5f9;
+}
+
+.addCategoryForm input:focus {
+  outline: 2px solid #2563eb;
+  background: #ffffff;
+}
+
+.addCategoryFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.addCategoryCancel {
+  background: #e2e8f0;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.addCategoryCancel:hover {
+  background: #cbd5e1;
+}
+
+.addCategorySave {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s ease;
+  box-shadow: 0px 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+.addCategorySave:hover {
+  transform: translateY(-1px);
+  box-shadow: 0px 12px 25px rgba(37, 99, 235, 0.32);
+}
+
+/* Animation */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

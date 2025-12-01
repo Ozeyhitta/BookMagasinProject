@@ -317,3 +317,28 @@
     height: calc(100vh - 140px);
   }
 }
+/* Hiệu ứng hover sách gợi ý */
+.suggestionCard {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.suggestionCard:hover {
+  background: #f9fafb;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
+}
+
+.suggestionTitle {
+  font-weight: 700;
+}
+
+.suggestionPrice {
+  font-weight: 600;
+  color: #4f46e5;
+}

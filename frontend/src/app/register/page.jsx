@@ -3,14 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import styles from "./Register.module.css";
+import { Check, X, Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const onChange = (e) => {
@@ -23,13 +28,24 @@ export default function RegisterPage() {
     setMsg(null);
     setLoading(true);
 
+    // ⚠️ Kiểm tra mật khẩu nhập lại
+    if (form.password !== form.confirmPassword) {
+      setMsg({ type: "error", text: "Mật khẩu nhập lại không khớp" });
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(
-        "http://localhost:8080/api/auth/register-customer", // 🔴 GỌI THẲNG BACKEND
+        "http://localhost:8080/api/auth/register-customer",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            fullName: form.fullName,
+            email: form.email,
+            password: form.password,
+          }),
         }
       );
 
@@ -40,7 +56,13 @@ export default function RegisterPage() {
         type: "success",
         text: `Đăng ký thành công: ${data?.user?.fullName}`,
       });
-      setForm({ fullName: "", email: "", password: "" });
+
+      setForm({
+        fullName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
     } catch (err) {
       setMsg({ type: "error", text: err.message });
     } finally {
@@ -80,16 +102,46 @@ export default function RegisterPage() {
 
           <label className={styles.label}>
             Mật khẩu
-            <input
-              className={styles.input}
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={onChange}
-              autoComplete="new-password"
-              minLength={6}
-              required
-            />
+            <div className={styles.passwordWrapper}>
+              <input
+                className={styles.input}
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={form.password}
+                onChange={onChange}
+                autoComplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className={styles.eyeBtn}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </label>
+
+          <label className={styles.label}>
+            Nhập lại mật khẩu
+            <div className={styles.passwordWrapper}>
+              <input
+                className={styles.input}
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={form.confirmPassword}
+                onChange={onChange}
+                autoComplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className={styles.eyeBtn}
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </label>
 
           <button className={styles.button} type="submit" disabled={loading}>

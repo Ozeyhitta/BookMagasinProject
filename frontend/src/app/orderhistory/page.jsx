@@ -1472,17 +1472,9 @@ export default function OrderHistory() {
                         Math.min(Math.max(1, val), returnItem.quantity)
                       );
                     }}
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "6px",
-                      fontSize: "16px",
-                    }}
+                    className={styles.returnQuantityInput}
                   />
-                  <p
-                    style={{ marginTop: 8, color: "#6b7280", fontSize: "14px" }}
-                  >
+                  <p className={styles.returnHint}>
                     Nhập số lượng sách muốn trả (tối đa: {returnItem.quantity}{" "}
                     quyển)
                   </p>
@@ -1493,39 +1485,28 @@ export default function OrderHistory() {
                 <h3>Lý do trả hàng</h3>
                 <div style={{ marginTop: 12 }}>
                   <textarea
+                    className={styles.returnReasonInput}
                     value={returnReason}
                     onChange={(e) => setReturnReason(e.target.value)}
-                    placeholder="Vui lòng nhập lý do trả hàng (ví dụ: Sách bị hỏng, không đúng sản phẩm, ...)"
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "6px",
-                      fontSize: "14px",
-                      minHeight: "100px",
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
-                    required
+                    placeholder="Vui lòng nhập lý do trả hàng..."
                   />
-                  <p
-                    style={{ marginTop: 8, color: "#6b7280", fontSize: "14px" }}
-                  >
+                  <p className={styles.returnHint}>
                     Lý do trả hàng là bắt buộc
                   </p>
                 </div>
               </div>
 
-              <div className={styles.modalActions} style={{ marginTop: 24 }}>
+              <div className={styles.returnActions}>
                 <button
-                  className={styles.cancelBtn}
+                  className={styles.btnCancelReturn}
                   onClick={() => setReturnModal(false)}
                   disabled={returnLoading}
                 >
                   Hủy
                 </button>
+
                 <button
-                  className={styles.saveBtn}
+                  className={styles.btnConfirmReturn}
                   onClick={handleReturn}
                   disabled={returnLoading}
                 >
