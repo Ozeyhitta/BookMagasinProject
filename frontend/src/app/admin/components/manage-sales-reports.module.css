@@ -35,6 +35,7 @@
   font-size: 14px;
   background-color: white;
   cursor: pointer;
+  color: #111;
 }
 
 .select:focus,
@@ -121,6 +122,11 @@
 .helperText {
   color: #666;
   font-size: 14px;
+}
+
+.select::placeholder,
+.dateInput::placeholder {
+  color: #555;
 }
 
 .errorBox {
