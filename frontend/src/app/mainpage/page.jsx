@@ -752,7 +752,7 @@ export default function MainPage() {
       <div className={styles.flashSaleHeader}>
         <div className={styles.flashSaleTitleRow}>
           <span className={styles.flashSaleLabel}>{title}</span>
-          <span className={styles.flashSaleCountdownLabel}>Ket thuc trong</span>
+          <span className={styles.flashSaleCountdownLabel}>Kết thúc trong</span>
           <div className={styles.flashSaleCountdown}>
             <div className={styles.flashSaleTimeBox}>
               <span>{flashSaleCountdown.hours}</span>
@@ -774,7 +774,7 @@ export default function MainPage() {
               className={styles.flashSaleSeeAll}
               onClick={() => setShowFlashSaleModal(true)}
             >
-              Xem tat ca
+              Xem tất cả
             </button>
           )}
         </div>
