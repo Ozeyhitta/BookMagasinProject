@@ -143,7 +143,8 @@ const PaginationControls = ({ currentPage, totalPages, onChange }) => {
 };
 
 export default function MainPage() {
-  const rawCategories = [
+  const rawCategories = useMemo(
+    () => [
     {
       label: "Sách Kinh Tế",
       children: [
@@ -286,9 +287,9 @@ export default function MainPage() {
         "Top 10 Sách Hot",
       ],
     },
-  ];
-  const categories = rawCategories.map(({ label }) => ({ label }));
-
+  ],
+    []
+  );
   const banners = [
     "https://newshop.vn/public/uploads/landing-page/sach-hay-newshop/banner-mobile.png",
     "https://tudongchat.com/wp-content/uploads/2025/01/stt-ban-sach-5.jpg",
@@ -315,6 +316,13 @@ export default function MainPage() {
   const [books, setBooks] = useState([]);
   // ✅ Dữ liệu categories lấy từ API
   const [apiCategories, setApiCategories] = useState([]);
+  const topCategories = useMemo(
+    () =>
+      apiCategories
+        .filter((cat) => cat.parentId === null || cat.parentId === undefined)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [apiCategories]
+  );
   // ✅ Dữ liệu discount cho từng book
   const [discounts, setDiscounts] = useState({});
   const [newSectionPage, setNewSectionPage] = useState(1);
@@ -323,6 +331,9 @@ export default function MainPage() {
   const [bestSellerError, setBestSellerError] = useState(null);
   const BEST_SELLER_LIMIT = 8;
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const handleCategoryClick = (categoryId) => {
+    setSelectedCategoryId(categoryId ?? null);
+  };
   const placeholderImage =
     "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjgwIiB2aWV3Qm94PSIwIDAgMjAwIDI4MCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyODAiIHJ4PSIxNiIgZmlsbD0iI2YzZjZmYiIvPjxwYXRoIGQ9Ik02OCAxOTBMOTAgMTU4TDExMSAxODhMMTMxIDE2NEwxNjAgMjA4SDQwTDY4IDE5MFoiIGZpbGw9IiNkNWRlZWYiLz48Y2lyY2xlIGN4PSI5MCIgY3k9IjEyMCIgcj0iMzAiIGZpbGw9IiNkNWRlZWYiLz48dGV4dCB4PSIxMDAiIHk9IjI1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzlhYThjMSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=";
   const handleImageError = (event) => {
@@ -706,14 +717,28 @@ export default function MainPage() {
     return discounted.slice(0, FLASH_SALE_MAX_ITEMS);
   }, [books, discounts]);
 
+  const filteredFlashSaleItems = useMemo(() => {
+    if (!selectedCategoryId) return flashSaleItems;
+    return flashSaleItems.filter((item) => {
+      const book = books.find((b) => b.id === item.id);
+      if (!book) return false;
+      return (book.categories || []).some((cat) => cat.id === selectedCategoryId);
+    });
+  }, [flashSaleItems, books, selectedCategoryId]);
+
+  const activeFlashSaleItems = selectedCategoryId
+    ? filteredFlashSaleItems
+    : flashSaleItems;
+
   const flashSaleSlides = useMemo(() => {
-    if (!flashSaleItems.length) return [[]];
+    const source = selectedCategoryId ? filteredFlashSaleItems : flashSaleItems;
+    if (!source.length) return [[]];
     const slides = [];
-    for (let i = 0; i < flashSaleItems.length; i += FLASH_SALE_VISIBLE_COUNT) {
-      slides.push(flashSaleItems.slice(i, i + FLASH_SALE_VISIBLE_COUNT));
+    for (let i = 0; i < source.length; i += FLASH_SALE_VISIBLE_COUNT) {
+      slides.push(source.slice(i, i + FLASH_SALE_VISIBLE_COUNT));
     }
     return slides;
-  }, [flashSaleItems]);
+  }, [flashSaleItems, filteredFlashSaleItems, selectedCategoryId]);
 
   const totalFlashSaleSlides = flashSaleSlides.length || 1;
   const flashSaleHasMultipleSlides = totalFlashSaleSlides > 1;
@@ -721,6 +746,131 @@ export default function MainPage() {
   useEffect(() => {
     setFlashSaleSlide(0);
   }, [totalFlashSaleSlides]);
+
+  const FlashSaleSection = ({ title, showSeeAll = true }) => (
+    <div className={styles.flashSaleSection}>
+      <div className={styles.flashSaleHeader}>
+        <div className={styles.flashSaleTitleRow}>
+          <span className={styles.flashSaleLabel}>{title}</span>
+          <span className={styles.flashSaleCountdownLabel}>Ket thuc trong</span>
+          <div className={styles.flashSaleCountdown}>
+            <div className={styles.flashSaleTimeBox}>
+              <span>{flashSaleCountdown.hours}</span>
+            </div>
+            <span className={styles.timeSeparator}>:</span>
+            <div className={styles.flashSaleTimeBox}>
+              <span>{flashSaleCountdown.minutes}</span>
+            </div>
+            <span className={styles.timeSeparator}>:</span>
+            <div className={styles.flashSaleTimeBox}>
+              <span>{flashSaleCountdown.seconds}</span>
+            </div>
+          </div>
+        </div>
+        <div className={styles.flashSaleActions}>
+          {showSeeAll && activeFlashSaleItems.length > 0 && (
+            <button
+              type="button"
+              className={styles.flashSaleSeeAll}
+              onClick={() => setShowFlashSaleModal(true)}
+            >
+              Xem tat ca
+            </button>
+          )}
+        </div>
+      </div>
+      {activeFlashSaleItems.length === 0 ? (
+        <p className={styles.emptyCategory}>Chua co Flash Sale cho danh muc nay.</p>
+      ) : (
+        <div className={styles.flashSaleCarousel}>
+          <button
+            className={`${styles.flashSaleControl} ${styles.flashSaleControlPrev}`}
+            onClick={handleFlashSalePrev}
+            disabled={!flashSaleHasMultipleSlides}
+            aria-label="Flash sale previous"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div className={styles.flashSaleViewport}>
+            <div className={styles.flashSaleTrack} style={flashSaleTrackStyle}>
+              {flashSaleSlides.map((slide, slideIndex) => (
+                <div className={styles.flashSaleSlide} key={`flash-sale-slide-${slideIndex}`}>
+                  {slide.map((item, cardIndex) => {
+                    const sold = item.soldQuantity ?? 0;
+                    const stock = item.stockQuantity ?? 0;
+                    const totalUnits = sold + stock;
+                    const progress =
+                      totalUnits > 0
+                        ? Math.min(100, Math.round((sold / totalUnits) * 100))
+                        : sold > 0
+                        ? 100
+                        : 0;
+                    const soldText =
+                      sold > 0
+                        ? `Da ban ${sold}`
+                        : stock === 0
+                        ? "Sap het"
+                        : "Vua mo ban";
+                    const card = (
+                      <div className={styles.flashSaleCard}>
+                        <div className={styles.flashSaleImageWrap}>
+                          <img
+                            src={item.imageUrl}
+                            alt={item.title}
+                            className={styles.flashSaleImage}
+                          />
+                          {item.badge && (
+                            <span className={styles.flashSaleDiscount}>{item.badge}</span>
+                          )}
+                        </div>
+                        <p className={styles.flashSaleTitle}>{item.title}</p>
+                        <div className={styles.flashSalePrices}>
+                          <span className={styles.flashSalePrice}>{item.finalPrice}</span>
+                          {item.oldPrice && (
+                            <span className={styles.flashSaleOldPrice}>{item.oldPrice}</span>
+                          )}
+                        </div>
+                        <div className={styles.flashSaleProgress}>
+                          <div className={styles.flashSaleProgressBar}>
+                            <span
+                              className={styles.flashSaleProgressFill}
+                              style={{ width: `${progress}%` }}
+                            ></span>
+                          </div>
+                          <span className={styles.flashSaleSoldText}>{soldText}</span>
+                        </div>
+                      </div>
+                    );
+                    const key = item.id ?? `fallback-${slideIndex}-${cardIndex}`;
+                    return item.id ? (
+                      <a key={key} href={`/product/${item.id}`} className={styles.flashSaleLink}>
+                        {card}
+                      </a>
+                    ) : (
+                      <div
+                        key={key}
+                        className={`${styles.flashSaleLink} ${styles.flashSaleLinkDisabled}`}
+                      >
+                        {card}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+          <button
+            className={`${styles.flashSaleControl} ${styles.flashSaleControlNext}`}
+            onClick={handleFlashSaleNext}
+            disabled={!flashSaleHasMultipleSlides}
+            aria-label="Flash sale next"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   const rankingList = useMemo(() => {
     if (!books.length) return [];
@@ -755,14 +905,6 @@ export default function MainPage() {
       setSelectedRankingBook(null);
     }
   }, [rankingList]);
-
-  const topCategories = useMemo(
-    () =>
-      apiCategories
-        .filter((cat) => cat.parentId === null || cat.parentId === undefined)
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    [apiCategories]
-  );
 
   const suggestionBooks = useMemo(() => {
     const preferred = books
@@ -853,7 +995,7 @@ export default function MainPage() {
                 className={`${styles.categoryItem} ${
                   selectedCategoryId === null ? styles.activeCategory : ""
                 }`}
-                onClick={() => setSelectedCategoryId(null)}
+                onClick={() => handleCategoryClick(null)}
               >
                 <span className={styles.categoryIcon}></span>
                 <span className={styles.categoryText}>Tất cả sản phẩm</span>
@@ -869,7 +1011,7 @@ export default function MainPage() {
                   className={`${styles.categoryItem} ${
                     selectedCategoryId === cat.id ? styles.activeCategory : ""
                   }`}
-                  onClick={() => setSelectedCategoryId(cat.id)}
+                  onClick={() => handleCategoryClick(cat.id)}
                 >
                   <span className={styles.categoryIcon}></span>
                   <span className={styles.categoryText}>{cat.name}</span>
@@ -1003,125 +1145,11 @@ export default function MainPage() {
             </button>
           </div>
 
-        <div className={styles.flashSaleSection}>
-          <div className={styles.flashSaleHeader}>
-            <div className={styles.flashSaleTitleRow}>
-              <span className={styles.flashSaleLabel}>FLASH SALE</span>
-              <span className={styles.flashSaleCountdownLabel}>Ket thuc trong</span>
-              <div className={styles.flashSaleCountdown}>
-                <div className={styles.flashSaleTimeBox}>
-                  <span>{flashSaleCountdown.hours}</span>
-                </div>
-                <span className={styles.timeSeparator}>:</span>
-                <div className={styles.flashSaleTimeBox}>
-                  <span>{flashSaleCountdown.minutes}</span>
-                </div>
-                <span className={styles.timeSeparator}>:</span>
-                <div className={styles.flashSaleTimeBox}>
-                  <span>{flashSaleCountdown.seconds}</span>
-                </div>
-              </div>
-            </div>
-            <div className={styles.flashSaleActions}>
-              <button
-                type="button"
-                className={styles.flashSaleSeeAll}
-                onClick={() => setShowFlashSaleModal(true)}
-              >
-                Xem tat ca
-              </button>
-            </div>
-          </div>
-          <div className={styles.flashSaleCarousel}>
-            <button
-              className={`${styles.flashSaleControl} ${styles.flashSaleControlPrev}`}
-              onClick={handleFlashSalePrev}
-              disabled={!flashSaleHasMultipleSlides}
-              aria-label="Flash sale previous"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <div className={styles.flashSaleViewport}>
-              <div className={styles.flashSaleTrack} style={flashSaleTrackStyle}>
-                {flashSaleSlides.map((slide, slideIndex) => (
-                  <div className={styles.flashSaleSlide} key={`flash-sale-slide-${slideIndex}`}>
-                    {slide.map((item, cardIndex) => {
-                      const sold = item.soldQuantity ?? 0;
-                      const stock = item.stockQuantity ?? 0;
-                      const totalUnits = sold + stock;
-                      const progress =
-                        totalUnits > 0
-                          ? Math.min(100, Math.round((sold / totalUnits) * 100))
-                          : sold > 0
-                          ? 100
-                          : 0;
-                      const soldText =
-                        sold > 0
-                          ? `Da ban ${sold}`
-                          : stock === 0
-                          ? 'Sap het'
-                          : 'Vua mo ban';
-                      const card = (
-                        <div className={styles.flashSaleCard}>
-                          <div className={styles.flashSaleImageWrap}>
-                            <img
-                              src={item.imageUrl}
-                              alt={item.title}
-                              className={styles.flashSaleImage}
-                            />
-                            {item.badge && (
-                              <span className={styles.flashSaleDiscount}>
-                                {item.badge}
-                              </span>
-                            )}
-                          </div>
-                          <p className={styles.flashSaleTitle}>{item.title}</p>
-                          <div className={styles.flashSalePrices}>
-                            <span className={styles.flashSalePrice}>{item.finalPrice}</span>
-                            {item.oldPrice && (
-                              <span className={styles.flashSaleOldPrice}>{item.oldPrice}</span>
-                            )}
-                          </div>
-                          <div className={styles.flashSaleProgress}>
-                            <div className={styles.flashSaleProgressBar}>
-                              <span
-                                className={styles.flashSaleProgressFill}
-                                style={{ width: `${progress}%` }}
-                              ></span>
-                            </div>
-                            <span className={styles.flashSaleSoldText}>{soldText}</span>
-                          </div>
-                        </div>
-                      );
-                      const key = item.id ?? `fallback-${slideIndex}-${cardIndex}`;
-                      return item.id ? (
-                        <a key={key} href={`/product/${item.id}`} className={styles.flashSaleLink}>
-                          {card}
-                        </a>
-                      ) : (
-                        <div
-                          key={key}
-                          className={`${styles.flashSaleLink} ${styles.flashSaleLinkDisabled}`}
-                        >
-                          {card}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <button
-              className={`${styles.flashSaleControl} ${styles.flashSaleControlNext}`}
-              onClick={handleFlashSaleNext}
-              disabled={!flashSaleHasMultipleSlides}
-              aria-label="Flash sale next"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
+        {!selectedCategoryId && (
+          <FlashSaleSection title="FLASH SALE" />
+        )}
             {/* --- MỤC: SÁCH MỚI CẬP NHẬT (Lấy từ API) --- */}
+          {!selectedCategoryId && (
           <div className={styles.productSection}>
             <h3 className={styles.sectionTitle}>Sách mới cập nhật (từ API)</h3>
             <div className={styles.productGrid}>
@@ -1187,7 +1215,9 @@ export default function MainPage() {
               onChange={setNewSectionPage}
             />
           </div>
+          )}
 
+          {!selectedCategoryId && (
           <div className={styles.rankingSection}>
             <div className={styles.rankingHeader}>
               <h3 className={styles.rankingTitle}>Bảng xếp hạng bán chạy tuần</h3>
@@ -1326,9 +1356,13 @@ export default function MainPage() {
               </button>
             </div>
           </div>
+          )}
 
           {/* --- PHẦN SÁCH THEO TỪNG DANH MỤC (từ API /api/categories) --- */}
           {apiCategories.map((cat) => {
+            if (selectedCategoryId && cat.id !== selectedCategoryId) {
+              return null;
+            }
             if (!cat.bookIds || cat.bookIds.length === 0) return null;
             const booksInCategory = books.filter((b) =>
               cat.bookIds.includes(b.id)
@@ -1350,10 +1384,19 @@ export default function MainPage() {
             );
             const handleCategoryPageChange = (page) =>
               setCategoryPages((prev) => ({ ...prev, [cat.id]: page }));
+            const isActiveCategory = selectedCategoryId === cat.id;
 
             return (
               <div key={cat.id} className={styles.productSection}>
                 <h3 className={styles.sectionTitle}>{cat.name}</h3>
+                {isActiveCategory && (
+                  <div className={styles.categoryFlashSaleWrapper}>
+                    <FlashSaleSection
+                      title={`Flash Sale - ${cat.name}`}
+                      showSeeAll={false}
+                    />
+                  </div>
+                )}
                 <div className={styles.productGrid}>
                   {displayedCategoryBooks.map((book) => {
                     const discount = discounts[book.id];

@@ -165,6 +165,10 @@
   justify-content: center;
 }
 
+.categoryFlashSaleWrapper {
+  margin: 20px 0;
+}
+
 .arrow {
   width: 15px;
   text-align: right;
