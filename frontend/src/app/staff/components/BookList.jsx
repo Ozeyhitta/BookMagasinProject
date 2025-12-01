@@ -3,6 +3,77 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axiosClient from "../../../utils/axiosClient";
 
+const BookDetailModal = ({ book, onClose }) => {
+  if (!book) return null;
+
+  const detail = book.bookDetail || {};
+  const categories = book.categories?.map((c) => c.name).join(", ") || "Chua cap nhat";
+
+  return (
+    <div className="book-modal" onClick={onClose}>
+      <div className="book-modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="book-modal-header">
+          <div>
+            <p className="book-modal-eyebrow">Chi tiet sach</p>
+            <h2>{book.title}</h2>
+          </div>
+          <button className="book-modal-close" onClick={onClose} aria-label="Dong chi tiet sach">
+            &times;
+          </button>
+        </div>
+
+        <div className="book-meta-grid">
+          <div>
+            <p className="book-detail-label">Tac gia</p>
+            <p className="book-detail-value">{book.author || "Dang cap nhat"}</p>
+          </div>
+          <div>
+            <p className="book-detail-label">Gia ban</p>
+            <p className="book-detail-value">
+              {book.sellingPrice?.toLocaleString("vi-VN")} VND
+            </p>
+          </div>
+          <div>
+            <p className="book-detail-label">Danh muc</p>
+            <p className="book-detail-value">{categories}</p>
+          </div>
+          {detail.publisher && (
+            <div>
+              <p className="book-detail-label">Nha xuat ban</p>
+              <p className="book-detail-value">{detail.publisher}</p>
+            </div>
+          )}
+          {detail.pages && (
+            <div>
+              <p className="book-detail-label">So trang</p>
+              <p className="book-detail-value">{detail.pages}</p>
+            </div>
+          )}
+          {detail.language && (
+            <div>
+              <p className="book-detail-label">Ngon ngu</p>
+              <p className="book-detail-value">{detail.language}</p>
+            </div>
+          )}
+        </div>
+
+        {detail.description && (
+          <div className="book-description-block">
+            <p className="book-detail-label">Mo ta</p>
+            <p className="book-detail-description">{detail.description}</p>
+          </div>
+        )}
+
+        <div className="book-modal-actions">
+          <button className="book-modal-closeBtn" onClick={onClose}>
+            Dong
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function BookList() {
   const [categories, setCategories] = useState([]);
   const [books, setBooks] = useState([]);
@@ -113,35 +184,7 @@ export default function BookList() {
         </div>
       )}
 
-      {selectedBook && (
-        <div className="book-modal" onClick={() => setSelectedBook(null)}>
-          <div className="book-modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>{selectedBook.title}</h2>
-            <p>
-              <strong>Tac gia:</strong> {selectedBook.author}
-            </p>
-            <p>
-              <strong>Gia:</strong> {selectedBook.sellingPrice.toLocaleString("vi-VN")} VND
-            </p>
-
-            {selectedBook.bookDetail && (
-              <>
-                <p>
-                  <strong>Nha xuat ban:</strong> {selectedBook.bookDetail.publisher}
-                </p>
-                <p>
-                  <strong>So trang:</strong> {selectedBook.bookDetail.pages}
-                </p>
-                <p>
-                  <strong>Mo ta:</strong> {selectedBook.bookDetail.description}
-                </p>
-              </>
-            )}
-
-            <button onClick={() => setSelectedBook(null)}>Dong</button>
-          </div>
-        </div>
-      )}
+      <BookDetailModal book={selectedBook} onClose={() => setSelectedBook(null)} />
     </div>
   );
 }
