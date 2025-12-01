@@ -211,9 +211,10 @@
   border: 1px solid #e0e0e0;
 }
 
-.partner-logo.vinabook {
-  background: #e31e24;
-  color: white;
+.partner-logo.vbook {
+  background: linear-gradient(135deg, #1d7b3a, #51c66b);
+  color: #fff;
+  letter-spacing: 0.5px;
 }
 .partner-logo.vnpost {
   background: #ff6600;

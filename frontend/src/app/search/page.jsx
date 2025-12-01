@@ -22,15 +22,25 @@ const BOOKS_PER_PAGE = 12;
 export default function SearchPage() {
     const searchParams = useSearchParams();
     const keyword = (searchParams.get("keyword") || "").trim();
+    const categoryParam = searchParams.get("categoryId");
+    const normalizedInitialCategory =
+        categoryParam && categoryParam !== "null" ? categoryParam : "all";
 
     const [filters, setFilters] = useState({
-        category: "all",
+        category: normalizedInitialCategory,
         author: "all", 
         publisher: "all",
         supplier: "all",
         priceMax: "all", 
         sort: "default",
     });
+
+    useEffect(() => {
+        setFilters((prev) => ({
+            ...prev,
+            category: normalizedInitialCategory,
+        }));
+    }, [normalizedInitialCategory]);
 
     const [filteredBooks, setFilteredBooks] = useState([]); 
     const [booksToFilter, setBooksToFilter] = useState([]); 
@@ -266,13 +276,21 @@ export default function SearchPage() {
             setFilteredBooks([]);
             return;
         }
-        // ... (Logic lọc và sắp xếp giữ nguyên)
         const lower = keyword.toLowerCase();
         let initialFilteredBooks = booksToFilter;
         if (keyword) {
             initialFilteredBooks = booksToFilter.filter((b) =>
                 b.title.toLowerCase().includes(lower)
             );
+        }
+        if (filters.category !== "all") {
+            const targetCategoryId = parseInt(filters.category, 10);
+            if (!Number.isNaN(targetCategoryId)) {
+                initialFilteredBooks = initialFilteredBooks.filter((b) =>
+                    Array.isArray(b.categoryIds) &&
+                    b.categoryIds.includes(targetCategoryId)
+                );
+            }
         }
         
         let defaultSortedBooks = [...initialFilteredBooks].sort((a, b) => {
@@ -284,7 +302,7 @@ export default function SearchPage() {
         setFilteredBooks(defaultSortedBooks);
         setCurrentPage(1); 
 
-    }, [keyword, booksToFilter, filters.sort]); 
+    }, [keyword, booksToFilter, filters.sort, filters.category]); 
 
 
     // 🆕 Component Phân Trang (Giữ nguyên)

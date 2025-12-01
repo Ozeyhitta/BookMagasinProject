@@ -179,8 +179,8 @@ export default function Footer() {
                     <PartnerLogo
                       href="#"
                       imgSrc="https://i.pinimg.com/280x280_RS/07/bb/eb/07bbeb771bd5a33c882a4b4a8a69b0eb.jpg"
-                      name="vinabook.com"
-                      className="vinabook"
+                      name="VBook"
+                      className="vbook"
                     />
                     <PartnerLogo
                       href="#"
@@ -271,7 +271,7 @@ export default function Footer() {
               <p>
                 <Phone size={16} className="inline-icon" />
                 Tel: 028.73008182 - Fax: 028.39733234 - Email:{" "}
-                <a href="mailto:hotro@vinabook.com">hotro@vinabook.com</a>
+                <a href="mailto:hotro@vbook.com">hotro@vbook.com</a>
               </p>
             </div>
           </div>
