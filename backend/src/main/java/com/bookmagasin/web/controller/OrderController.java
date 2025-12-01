@@ -2,6 +2,7 @@ package com.bookmagasin.web.controller;
 
 import com.bookmagasin.service.OrderService;
 import com.bookmagasin.service.ReturnRequestService;
+import com.bookmagasin.web.dto.MultiReturnRequestDto;
 import com.bookmagasin.web.dto.OrderDto;
 import com.bookmagasin.web.dtoResponse.OrderResponseDto;
 import com.bookmagasin.web.dtoResponse.ReturnRequestResponseDto;
@@ -115,6 +116,31 @@ public class OrderController {
                     orderId, orderItemId, quantity, reason.trim()
             );
             return ResponseEntity.ok(returnRequest);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
+    }
+
+    // MULTI-RETURN BOOK REQUEST – Tạo yêu cầu trả nhiều sách cùng lúc
+    @PutMapping("/{orderId}/return-multi")
+    public ResponseEntity<?> createMultiReturnRequest(
+            @PathVariable Integer orderId,
+            @RequestBody MultiReturnRequestDto request
+    ) {
+        try {
+            if (request == null || request.getItems() == null || request.getItems().isEmpty()) {
+                return ResponseEntity.badRequest().body("Phải chọn ít nhất một sản phẩm để trả");
+            }
+
+            String reason = request.getReason();
+            if (reason == null || reason.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Lý do trả hàng là bắt buộc");
+            }
+
+            List<ReturnRequestResponseDto> returnRequests = returnRequestService.createMultiReturnRequest(
+                    orderId, request.getItems(), reason.trim()
+            );
+            return ResponseEntity.ok(returnRequests);
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(ex.getMessage());
         }

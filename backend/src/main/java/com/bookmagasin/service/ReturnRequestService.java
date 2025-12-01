@@ -7,6 +7,7 @@ import java.util.Optional;
 
 public interface ReturnRequestService {
     ReturnRequestResponseDto createReturnRequest(Integer orderId, Integer orderItemId, Integer quantity, String reason);
+    List<ReturnRequestResponseDto> createMultiReturnRequest(Integer orderId, List<com.bookmagasin.web.dto.ReturnItemDto> items, String reason);
     List<ReturnRequestResponseDto> getAllReturnRequests();
     List<ReturnRequestResponseDto> getReturnRequestsByStatus(String status);
     Optional<ReturnRequestResponseDto> getReturnRequestById(Integer id);

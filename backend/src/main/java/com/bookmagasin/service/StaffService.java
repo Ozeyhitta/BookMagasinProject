@@ -1,7 +1,5 @@
 package com.bookmagasin.service;
 
-import com.bookmagasin.dto.StaffListDTO;
-import com.bookmagasin.entity.Account;
 import com.bookmagasin.web.dto.StaffRequestDto;
 import com.bookmagasin.web.dtoResponse.StaffResponseDto;
 

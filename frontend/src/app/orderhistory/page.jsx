@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./orderhistory.module.css";
 
@@ -17,18 +17,146 @@ export default function OrderHistory() {
     submitting: false,
   });
   const [returnModal, setReturnModal] = useState(false);
-  const [returnItem, setReturnItem] = useState(null);
-  const [returnQuantity, setReturnQuantity] = useState(1);
+  const [returnItem, setReturnItem] = useState(null); // Keep for backward compatibility
+  const [returnQuantity, setReturnQuantity] = useState(1); // Keep for backward compatibility
   const [returnReason, setReturnReason] = useState("");
   const [returnLoading, setReturnLoading] = useState(false);
+
+  // Multi-return state
+  const [selectedReturnItems, setSelectedReturnItems] = useState({}); // { orderItemId: quantity }
+  const [multiReturnMode, setMultiReturnMode] = useState(false);
   const [processingReturns, setProcessingReturns] = useState(new Set()); // Track các item đang xử lý trả hàng
   const [returnRequests, setReturnRequests] = useState({}); // Map orderId -> returnRequests
   const [reviewModal, setReviewModal] = useState(false); // Modal riêng cho đánh giá
   const [returnSelectModal, setReturnSelectModal] = useState(false); // Modal riêng để chọn item trả hàng
+  const [orderDetailModal, setOrderDetailModal] = useState(false); // Separate state for order details modal
+  const [reviewOrder, setReviewOrder] = useState(null); // Separate state for review modal
+  const [returnCountdowns, setReturnCountdowns] = useState({}); // Countdown còn lại cho mỗi order: map { orderId: "12h 20m 10s" }
+
+  // Memoized sorted order status history for performance
+  const sortedOrderHistory = useMemo(() => {
+    if (!selectedOrder?.orderStatusHistories?.length) return [];
+
+    return [...selectedOrder.orderStatusHistories].sort(
+      (a, b) => new Date(b.statusChangeDate) - new Date(a.statusChangeDate)
+    );
+  }, [selectedOrder?.orderStatusHistories]);
+
+  // Helper function to render history item
+  const renderHistoryItem = (history, idx) => {
+    const historyStatus = history.eOrderHistory || history.eorderHistory; // Support both key formats
+
+    return (
+      <div key={history.id || idx} className={styles.historyRow}>
+        <div className={styles.historyInfo}>
+          <div className={styles.historyStatus}>
+            {getStatusText(historyStatus)}
+          </div>
+          <div className={styles.historyDate}>
+            {formatDateTime(history.statusChangeDate)}
+          </div>
+        </div>
+        <div
+          className={styles.historyBadge}
+          style={{
+            backgroundColor: getStatusColor(historyStatus),
+          }}
+        >
+          {historyStatus}
+        </div>
+      </div>
+    );
+  };
 
   const canReviewStatus = (status) => {
     const s = status?.toString().toUpperCase();
     return s === "DELIVERED" || s === "COMPLETED";
+  };
+
+  // Check if order is within return window (24 hours after delivery/completion)
+  const isWithinReturnWindow = (order) => {
+    if (!canReviewStatus(order.status)) return false;
+
+    if (
+      !order.orderStatusHistories ||
+      order.orderStatusHistories.length === 0
+    ) {
+      console.log("⛔ No history array on order", order.id);
+      return false;
+    }
+
+    const deliveredHistory = order.orderStatusHistories.find((h) => {
+      const raw = h.eorderHistory || h.eOrderHistory; // 💥 hỗ trợ cả 2 key
+      const historyType =
+        typeof raw === "string"
+          ? raw.toUpperCase()
+          : raw?.name?.toUpperCase() || String(raw).toUpperCase();
+      return historyType === "DELIVERED" || historyType === "COMPLETED";
+    });
+
+    console.log("✅ Order", order.id, "deliveredHistory =", deliveredHistory);
+
+    if (!deliveredHistory?.statusChangeDate) {
+      console.log(
+        "⛔ No delivered/completed timestamp found for order",
+        order.id
+      );
+      return false;
+    }
+
+    const deliveredTime = new Date(deliveredHistory.statusChangeDate);
+    const now = new Date();
+    const diffMs = now - deliveredTime;
+    const hoursDiff = diffMs / (1000 * 60 * 60);
+
+    console.log(
+      "⏱ Order",
+      order.id,
+      "delivered at",
+      deliveredTime.toISOString(),
+      "diff hours =",
+      hoursDiff
+    );
+
+    return hoursDiff <= 24;
+  };
+
+  // Fallback function: if order is DELIVERED/COMPLETED but no status history found,
+  // assume it's within return window (staff just completed it)
+  const isOrderEligibleForReturn = (order) => {
+    const status = order.status?.toString().toUpperCase();
+    if (status === "DELIVERED" || status === "COMPLETED") {
+      // If we have status history and it's within window, use that
+      if (order.orderStatusHistories?.length > 0) {
+        return isWithinReturnWindow(order);
+      }
+      // Otherwise, assume newly completed orders are within return window
+      return true;
+    }
+    return false;
+  };
+
+  const calculateReturnCountdown = (order) => {
+    const deliveredHistory = order.orderStatusHistories?.find((h) => {
+      const historyType = String(h.eorderHistory)?.toUpperCase();
+
+      return historyType === "DELIVERED" || historyType === "COMPLETED";
+    });
+
+    if (!deliveredHistory?.statusChangeDate) return null;
+
+    const deliveredTime = new Date(deliveredHistory.statusChangeDate).getTime();
+    const expireTime = deliveredTime + 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const diff = expireTime - now;
+    if (diff <= 0) return "expired";
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+    return `${hours}h ${mins}m ${secs}s`;
   };
 
   // fetchOrders moved to top-level so other handlers can refresh list
@@ -50,6 +178,18 @@ export default function OrderHistory() {
       setLoading(false);
     }
   };
+  // Auto update countdown mỗi giây
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const updated = {};
+      orders.forEach((order) => {
+        updated[order.id] = calculateReturnCountdown(order);
+      });
+      setReturnCountdowns(updated);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [orders]);
 
   const fetchReturnRequestsForOrder = async (orderId) => {
     try {
@@ -113,7 +253,16 @@ export default function OrderHistory() {
       fetchOrders();
     };
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+
+    // Auto-refresh orders every 30 seconds to catch status updates from staff
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 30000);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      clearInterval(interval);
+    };
   }, [router]);
 
   // Fetch return requests khi orders thay đổi
@@ -188,13 +337,130 @@ export default function OrderHistory() {
     }
   };
 
-  // Open return modal for specific item
+  // Open return modal for specific item (legacy single-item mode)
   const openReturnModal = (order, item) => {
+    // Check if return window is still open
+    if (!isOrderEligibleForReturn(order)) {
+      alert(
+        "Our return policy allows returns only within 1 day after the order is delivered or completed. Unfortunately, this order is no longer eligible for return.\n\nPlease contact our support team if you need further assistance."
+      );
+      return;
+    }
+
+    setMultiReturnMode(false);
     setSelectedOrder(order);
     setReturnItem(item);
     setReturnQuantity(1);
     setReturnReason("");
+    setSelectedReturnItems({});
     setReturnModal(true);
+  };
+
+  // Open multi-return modal for selecting multiple items
+  const openMultiReturnModal = (order) => {
+    // Check if return window is still open
+    if (!isOrderEligibleForReturn(order)) {
+      alert(
+        "Our return policy allows returns only within 1 day after the order is delivered or completed. Unfortunately, this order is no longer eligible for return.\n\nPlease contact our support team if you need further assistance."
+      );
+      return;
+    }
+
+    setMultiReturnMode(true);
+    setSelectedOrder(order);
+    setReturnItem(null);
+    setReturnQuantity(1);
+    setReturnReason("");
+    setSelectedReturnItems({});
+    setReturnModal(true);
+  };
+
+  // Handle item selection for multi-return
+  const toggleItemSelection = (orderItemId, maxQuantity) => {
+    setSelectedReturnItems((prev) => {
+      const newItems = { ...prev };
+      if (newItems[orderItemId]) {
+        // Remove item if already selected
+        delete newItems[orderItemId];
+      } else {
+        // Add item with default quantity of 1
+        newItems[orderItemId] = 1;
+      }
+      return newItems;
+    });
+  };
+
+  // Update quantity for selected item
+  const updateItemQuantity = (orderItemId, quantity, maxQuantity) => {
+    const validQuantity = Math.min(Math.max(1, quantity), maxQuantity);
+    setSelectedReturnItems((prev) => ({
+      ...prev,
+      [orderItemId]: validQuantity,
+    }));
+  };
+
+  // Submit multi-return request
+  const handleMultiReturnSubmit = async () => {
+    if (!selectedOrder) return;
+
+    const selectedItems = Object.entries(selectedReturnItems);
+    if (selectedItems.length === 0) {
+      alert("Vui lòng chọn ít nhất một sản phẩm để trả");
+      return;
+    }
+
+    if (!returnReason.trim()) {
+      alert("Vui lòng nhập lý do trả hàng");
+      return;
+    }
+
+    setReturnLoading(true);
+    try {
+      const returnItems = selectedItems.map(([orderItemId, quantity]) => ({
+        orderItemId: parseInt(orderItemId),
+        quantity: quantity,
+      }));
+
+      const response = await fetch(
+        `http://localhost:8080/api/orders/${selectedOrder.id}/return-multi`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            items: returnItems,
+            reason: returnReason.trim(),
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(
+          `Đã gửi yêu cầu trả ${selectedItems.length} sản phẩm. Nhân viên sẽ xử lý trong thời gian sớm nhất.`
+        );
+        setReturnModal(false);
+        setSelectedReturnItems({});
+        setReturnReason("");
+
+        // Refresh data
+        await fetchOrders();
+        const updatedReqs = await fetchReturnRequestsForOrder(selectedOrder.id);
+        setReturnRequests((prev) => ({
+          ...prev,
+          [selectedOrder.id]: updatedReqs,
+        }));
+      } else {
+        const errorText = await response.text();
+        alert(errorText || "Gửi yêu cầu trả hàng thất bại");
+      }
+    } catch (error) {
+      console.error("Multi-return error:", error);
+      alert("Không thể gửi yêu cầu trả hàng, thử lại sau");
+    } finally {
+      setReturnLoading(false);
+    }
   };
 
   // Kiểm tra xem item có đang được xử lý trả hàng không
@@ -522,6 +788,7 @@ export default function OrderHistory() {
                       className={styles.btnDetails}
                       onClick={async () => {
                         setSelectedOrder(order);
+                        setOrderDetailModal(true);
                         const reqs = await fetchReturnRequestsForOrder(
                           order.id
                         );
@@ -570,6 +837,10 @@ export default function OrderHistory() {
                           (req) => req.status === "PENDING"
                         );
 
+                        // Check if return window is still open
+                        const withinReturnWindow =
+                          isOrderEligibleForReturn(order);
+
                         return (
                           <div
                             style={{
@@ -582,7 +853,7 @@ export default function OrderHistory() {
                               className={styles.btnOutline}
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                setSelectedOrder(order);
+                                setReviewOrder(order); // Use separate state for review modal
                                 const reqs = await fetchReturnRequestsForOrder(
                                   order.id
                                 );
@@ -597,59 +868,72 @@ export default function OrderHistory() {
                             >
                               Đánh giá
                             </button>
-                            <button
-                              className={styles.btnReturn}
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (hasPendingReturn || hasApprovedReturn) {
-                                  // Nếu đã có return request, mở modal chi tiết để xem
+
+                            {!withinReturnWindow ? (
+                              // Return window expired
+                              <div
+                                style={{
+                                  backgroundColor: "#f3f4f6",
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: "6px",
+                                  padding: "8px 12px",
+                                  fontSize: "12px",
+                                  color: "#6b7280",
+                                  minWidth: "90px",
+                                  textAlign: "center",
+                                }}
+                                title="Return window has expired"
+                              >
+                                <div
+                                  style={{
+                                    fontWeight: "600",
+                                    marginBottom: "2px",
+                                  }}
+                                >
+                                  Return Expired
+                                </div>
+                                <div style={{ fontSize: "11px" }}>
+                                  &gt;24h since delivery
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                className={styles.btnReturn}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  // Set order data for the return select modal
                                   setSelectedOrder(order);
-                                  const reqs =
-                                    await fetchReturnRequestsForOrder(order.id);
-                                  setReturnRequests((prev) => ({
-                                    ...prev,
-                                    [order.id]: reqs,
-                                  }));
-                                } else {
-                                  // Nếu chưa có return request, mở modal chọn item trả hàng
-                                  setSelectedOrder(order);
-                                  const reqs =
-                                    await fetchReturnRequestsForOrder(order.id);
-                                  setReturnRequests((prev) => ({
-                                    ...prev,
-                                    [order.id]: reqs,
-                                  }));
+                                  // Always open the return selection modal - never the order details modal
                                   setReturnSelectModal(true);
+                                }}
+                                disabled={
+                                  hasPendingReturn ||
+                                  hasApprovedReturn ||
+                                  returnCountdowns[order.id] === "expired"
                                 }
-                              }}
-                              title={
-                                hasApprovedReturn
-                                  ? "Yêu cầu trả hàng đã được chấp nhận"
-                                  : hasRejectedReturn
-                                  ? "Yêu cầu trả hàng bị từ chối - Có thể yêu cầu lại"
-                                  : hasPendingReturn
-                                  ? "Yêu cầu trả hàng đang chờ duyệt"
-                                  : "Yêu cầu trả hàng"
-                              }
-                              disabled={hasPendingReturn || hasApprovedReturn}
-                              style={{
-                                minWidth: "90px",
-                                opacity:
-                                  hasPendingReturn || hasApprovedReturn
-                                    ? 0.6
-                                    : 1,
-                                cursor:
-                                  hasPendingReturn || hasApprovedReturn
-                                    ? "not-allowed"
-                                    : "pointer",
-                              }}
-                            >
-                              {hasPendingReturn
-                                ? "Chờ duyệt"
-                                : hasApprovedReturn
-                                ? "Đã duyệt"
-                                : "Trả hàng"}
-                            </button>
+                                style={{
+                                  minWidth: "90px",
+                                  opacity:
+                                    hasPendingReturn ||
+                                    hasApprovedReturn ||
+                                    returnCountdowns[order.id] === "expired"
+                                      ? 0.6
+                                      : 1,
+                                  cursor:
+                                    hasPendingReturn ||
+                                    hasApprovedReturn ||
+                                    returnCountdowns[order.id] === "expired"
+                                      ? "not-allowed"
+                                      : "pointer",
+                                }}
+                              >
+                                {returnCountdowns[order.id] === "expired"
+                                  ? "Hết hạn"
+                                  : `Trả hàng (${
+                                      returnCountdowns[order.id] || "..."
+                                    })`}
+                              </button>
+                            )}
                           </div>
                         );
                       } else {
@@ -673,8 +957,14 @@ export default function OrderHistory() {
         </table>
       </div>
 
-      {selectedOrder && (
-        <div className={styles.modal} onClick={() => setSelectedOrder(null)}>
+      {orderDetailModal && selectedOrder && (
+        <div
+          className={styles.modal}
+          onClick={() => {
+            setSelectedOrder(null);
+            setOrderDetailModal(false);
+          }}
+        >
           <div
             className={styles.modalContent}
             onClick={(e) => e.stopPropagation()}
@@ -683,7 +973,10 @@ export default function OrderHistory() {
               <h2>Chi tiết đơn hàng #{selectedOrder.id}</h2>
               <button
                 className={styles.closeBtn}
-                onClick={() => setSelectedOrder(null)}
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setOrderDetailModal(false);
+                }}
               >
                 x
               </button>
@@ -767,365 +1060,17 @@ export default function OrderHistory() {
                             {item.price?.toLocaleString("vi-VN") || "0"}đ
                           </div>
                         </div>
-
-                        {/* Nút trả hàng cho đơn hàng đã hoàn thành */}
-                        {canReviewStatus(selectedOrder.status) &&
-                          true &&
-                          (() => {
-                            const orderRequests =
-                              returnRequests[selectedOrder.id] || [];
-                            const itemRequest = orderRequests.find((req) => {
-                              const reqItemId = Number(req.orderItemId);
-                              const currentItemId = Number(item.id);
-                              const match = reqItemId === currentItemId;
-                              if (match) {
-                                console.log(
-                                  `[Match Found] Item ${item.id} matches return request:`,
-                                  req
-                                );
-                              }
-                              return match;
-                            });
-                            const requestStatus =
-                              itemRequest?.status?.toUpperCase();
-
-                            // Debug log
-                            console.log(
-                              `[Return Status Check] Item ${item.id}:`,
-                              {
-                                orderId: selectedOrder.id,
-                                itemId: item.id,
-                                itemIdType: typeof item.id,
-                                orderRequestsCount: orderRequests.length,
-                                orderRequests: orderRequests.map((r) => ({
-                                  id: r.returnRequestId || r.id,
-                                  orderItemId: r.orderItemId,
-                                  orderItemIdType: typeof r.orderItemId,
-                                  status: r.status,
-                                  rejectionReason: r.rejectionReason,
-                                })),
-                                itemRequest: itemRequest,
-                                requestStatus: requestStatus,
-                                rejectionReason: itemRequest?.rejectionReason,
-                              }
-                            );
-
-                            // Debug: Log để kiểm tra
-                            console.log(
-                              `[Return Request Debug] Item ${item.id}:`,
-                              {
-                                orderId: selectedOrder.id,
-                                itemId: item.id,
-                                hasItemRequest: !!itemRequest,
-                                requestStatus: requestStatus,
-                                itemRequest: itemRequest,
-                                allOrderRequests: orderRequests,
-                                returnRequestsState: returnRequests,
-                              }
-                            );
-
-                            if (
-                              requestStatus === "PENDING" ||
-                              requestStatus === "PENDING"
-                            ) {
-                              return (
-                                <div
-                                  className={styles.reviewBox}
-                                  style={{ marginTop: 8 }}
-                                >
-                                  <button
-                                    className={styles.btnOutline}
-                                    disabled
-                                    style={{
-                                      marginRight: 8,
-                                      opacity: 0.6,
-                                      cursor: "not-allowed",
-                                      backgroundColor: "#fef3c7",
-                                      color: "#d97706",
-                                      borderColor: "#fde68a",
-                                    }}
-                                  >
-                                    ⏳ Chờ duyệt
-                                  </button>
-                                  <span
-                                    style={{
-                                      color: "#d97706",
-                                      fontSize: "11px",
-                                      marginLeft: 8,
-                                      fontStyle: "italic",
-                                    }}
-                                  >
-                                    Yêu cầu trả hàng đang chờ nhân viên xử lý
-                                  </span>
-                                </div>
-                              );
-                            }
-
-                            if (isProcessingReturn(selectedOrder.id, item.id)) {
-                              return (
-                                <div
-                                  className={styles.reviewBox}
-                                  style={{ marginTop: 8 }}
-                                >
-                                  <button
-                                    className={styles.btnOutline}
-                                    disabled
-                                    style={{
-                                      marginRight: 8,
-                                      opacity: 0.6,
-                                      cursor: "not-allowed",
-                                    }}
-                                  >
-                                    Đang xử lý
-                                  </button>
-                                </div>
-                              );
-                            }
-
-                            if (
-                              requestStatus === "APPROVED" ||
-                              requestStatus === "REJECTED"
-                            ) {
-                              console.log(
-                                `[Display Status] Showing ${requestStatus} status for item ${item.id}`
-                              );
-                              return (
-                                <div
-                                  className={styles.reviewBox}
-                                  style={{ marginTop: 8 }}
-                                >
-                                  <div
-                                    style={{
-                                      padding: "8px 12px",
-                                      borderRadius: "6px",
-                                      backgroundColor:
-                                        requestStatus === "APPROVED"
-                                          ? "#d1fae5"
-                                          : "#fee2e2",
-                                      border:
-                                        requestStatus === "APPROVED"
-                                          ? "1px solid #34C759"
-                                          : "1px solid #EF4444",
-                                      display: "flex",
-                                      flexDirection: "column",
-                                      gap: 4,
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        color:
-                                          requestStatus === "APPROVED"
-                                            ? "#34C759"
-                                            : "#EF4444",
-                                        fontSize: "13px",
-                                        fontWeight: 600,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                      }}
-                                    >
-                                      {requestStatus === "APPROVED" ? (
-                                        <>
-                                          <span>✓</span>
-                                          <span>
-                                            Yêu cầu trả hàng đã được chấp nhận
-                                          </span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <span>✗</span>
-                                          <span>
-                                            Yêu cầu trả hàng bị từ chối
-                                          </span>
-                                        </>
-                                      )}
-                                    </span>
-                                    {requestStatus === "APPROVED" && (
-                                      <span
-                                        style={{
-                                          fontSize: "11px",
-                                          color: "#059669",
-                                          fontStyle: "italic",
-                                        }}
-                                      >
-                                        Sản phẩm đã được trả thành công. Số
-                                        lượng đã được cập nhật.
-                                      </span>
-                                    )}
-                                    {requestStatus === "REJECTED" &&
-                                      itemRequest?.rejectionReason && (
-                                        <div
-                                          style={{
-                                            marginTop: 4,
-                                            fontSize: "11px",
-                                            color: "#991b1b",
-                                            padding: "6px 8px",
-                                            backgroundColor: "#fef2f2",
-                                            borderRadius: "4px",
-                                            border: "1px solid #fecaca",
-                                          }}
-                                        >
-                                          <strong>Lý do từ chối:</strong>{" "}
-                                          {itemRequest.rejectionReason}
-                                        </div>
-                                      )}
-                                  </div>
-                                </div>
-                              );
-                            }
-
-                            return (
-                              <div
-                                className={styles.reviewBox}
-                                style={{ marginTop: 8 }}
-                              >
-                                <button
-                                  className={styles.btnOutline}
-                                  onClick={() =>
-                                    openReturnModal(selectedOrder, item)
-                                  }
-                                  style={{ marginRight: 8 }}
-                                >
-                                  Trả hàng
-                                </button>
-                              </div>
-                            );
-                          })()}
-
-                        {canReviewStatus(selectedOrder.status) && (
-                          <div className={styles.reviewBox}>
-                            {reviewForm.bookId === item.bookId ? (
-                              <div className={styles.reviewCard}>
-                                <div className={styles.reviewHeader}>
-                                  <div className={styles.reviewHeader__labels}>
-                                    <p className={styles.reviewEyebrow}>
-                                      Đánh giá sản phẩm
-                                    </p>
-                                    <p className={styles.reviewTitle}>
-                                      {item.bookTitle}
-                                    </p>
-                                  </div>
-                                  <div className={styles.starSelector}>
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                      <button
-                                        key={star}
-                                        type="button"
-                                        className={`${styles.starButton} ${
-                                          reviewForm.rating >= star
-                                            ? styles.starButtonActive
-                                            : ""
-                                        }`}
-                                        onClick={() =>
-                                          setReviewForm((f) => ({
-                                            ...f,
-                                            rating: star,
-                                          }))
-                                        }
-                                      >
-                                        ★
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <div className={styles.reviewBody}>
-                                  <textarea
-                                    className={styles.reviewTextarea}
-                                    placeholder="Chia sẻ cảm nhận ngắn gọn (chất lượng, gói hàng, thời gian giao)..."
-                                    value={reviewForm.comment}
-                                    onChange={(e) =>
-                                      setReviewForm((f) => ({
-                                        ...f,
-                                        comment: e.target.value,
-                                      }))
-                                    }
-                                  />
-                                  <div className={styles.reviewFooter}>
-                                    <span className={styles.reviewHint}>
-                                      Lời nhận xét lịch sự giúp shop cải thiện
-                                      tốt hơn.
-                                    </span>
-                                    <div className={styles.reviewActions}>
-                                      <button
-                                        className={styles.btnGhost}
-                                        onClick={() =>
-                                          setReviewForm({
-                                            bookId: null,
-                                            rating: 0,
-                                            comment: "",
-                                            submitting: false,
-                                          })
-                                        }
-                                        disabled={reviewForm.submitting}
-                                      >
-                                        Hủy
-                                      </button>
-                                      <button
-                                        className={styles.btnSubmit}
-                                        onClick={() =>
-                                          submitReview(item.bookId)
-                                        }
-                                        disabled={reviewForm.submitting}
-                                      >
-                                        {reviewForm.submitting
-                                          ? "Đang gửi..."
-                                          : "Gửi đánh giá"}
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <button
-                                className={styles.btnOutline}
-                                onClick={() => startReview(item.bookId)}
-                              >
-                                Đánh giá
-                              </button>
-                            )}
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {selectedOrder.orderStatusHistories?.length > 0 && (
+              {sortedOrderHistory.length > 0 && (
                 <div className={styles.orderStatusHistory}>
                   <h3>Lịch sử trạng thái đơn hàng</h3>
                   <div className={styles.historyList}>
-                    {selectedOrder.orderStatusHistories
-                      .sort(
-                        (a, b) =>
-                          new Date(b.statusChangeDate) -
-                          new Date(a.statusChangeDate)
-                      )
-                      .map((history, idx) => (
-                        <div
-                          key={history.id || idx}
-                          className={styles.historyRow}
-                        >
-                          <div className={styles.historyInfo}>
-                            <div className={styles.historyStatus}>
-                              {getStatusText(history.eOrderHistory)}
-                            </div>
-                            <div className={styles.historyDate}>
-                              {formatDateTime(history.statusChangeDate)}
-                            </div>
-                          </div>
-                          <div
-                            className={styles.historyBadge}
-                            style={{
-                              backgroundColor: getStatusColor(
-                                history.eOrderHistory
-                              ),
-                            }}
-                          >
-                            {history.eOrderHistory}
-                          </div>
-                        </div>
-                      ))}
+                    {sortedOrderHistory.map(renderHistoryItem)}
                   </div>
                 </div>
               )}
@@ -1135,29 +1080,38 @@ export default function OrderHistory() {
       )}
 
       {/* Modal đánh giá sản phẩm */}
-      {reviewModal && selectedOrder && (
-        <div className={styles.modal} onClick={() => setReviewModal(false)}>
+      {reviewModal && reviewOrder && (
+        <div
+          className={styles.modal}
+          onClick={() => {
+            setReviewModal(false);
+            setReviewOrder(null);
+          }}
+        >
           <div
             className={styles.modalContent}
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: "600px" }}
           >
             <div className={styles.modalHeader}>
-              <h2>Đánh giá sản phẩm - Đơn hàng #{selectedOrder.id}</h2>
+              <h2>Đánh giá sản phẩm - Đơn hàng #{reviewOrder.id}</h2>
               <button
                 className={styles.closeBtn}
-                onClick={() => setReviewModal(false)}
+                onClick={() => {
+                  setReviewModal(false);
+                  setReviewOrder(null);
+                }}
               >
                 x
               </button>
             </div>
 
             <div className={styles.modalBody}>
-              {selectedOrder.items?.length > 0 ? (
+              {reviewOrder.items?.length > 0 ? (
                 <div className={styles.orderItems}>
                   <h3>Chọn sản phẩm để đánh giá</h3>
                   <div className={styles.itemsList}>
-                    {selectedOrder.items.map((item, idx) => (
+                    {reviewOrder.items.map((item, idx) => (
                       <div key={idx} className={styles.itemRow}>
                         <div className={styles.itemTop}>
                           <div className={styles.itemTitleLine}>
@@ -1178,7 +1132,7 @@ export default function OrderHistory() {
                           </div>
                         </div>
 
-                        {canReviewStatus(selectedOrder.status) && (
+                        {canReviewStatus(reviewOrder.status) && (
                           <div className={styles.reviewBox}>
                             {reviewForm.bookId === item.bookId ? (
                               <div className={styles.reviewCard}>
@@ -1234,14 +1188,16 @@ export default function OrderHistory() {
                                     <div className={styles.reviewActions}>
                                       <button
                                         className={styles.btnGhost}
-                                        onClick={() =>
+                                        onClick={() => {
                                           setReviewForm({
                                             bookId: null,
                                             rating: 0,
                                             comment: "",
                                             submitting: false,
-                                          })
-                                        }
+                                          });
+                                          setReviewModal(false);
+                                          setReviewOrder(null);
+                                        }}
                                         disabled={reviewForm.submitting}
                                       >
                                         Hủy
@@ -1251,6 +1207,7 @@ export default function OrderHistory() {
                                         onClick={() => {
                                           submitReview(item.bookId);
                                           setReviewModal(false);
+                                          setReviewOrder(null);
                                         }}
                                         disabled={reviewForm.submitting}
                                       >
@@ -1290,7 +1247,12 @@ export default function OrderHistory() {
       {returnSelectModal && selectedOrder && (
         <div
           className={styles.modal}
-          onClick={() => setReturnSelectModal(false)}
+          onClick={() => {
+            setReturnSelectModal(false);
+            setSelectedOrder(null);
+            setSelectedReturnItems({});
+            setReturnReason("");
+          }}
         >
           <div
             className={styles.modalContent}
@@ -1301,106 +1263,315 @@ export default function OrderHistory() {
               <h2>Chọn sản phẩm cần trả - Đơn hàng #{selectedOrder.id}</h2>
               <button
                 className={styles.closeBtn}
-                onClick={() => setReturnSelectModal(false)}
+                onClick={() => {
+                  setReturnSelectModal(false);
+                  setSelectedOrder(null);
+                  setSelectedReturnItems({});
+                  setReturnReason("");
+                }}
               >
                 x
               </button>
             </div>
 
             <div className={styles.modalBody}>
-              {selectedOrder.items?.length > 0 ? (
-                <div className={styles.orderItems}>
-                  <h3>Chọn sản phẩm muốn trả</h3>
-                  <div className={styles.itemsList}>
-                    {selectedOrder.items.map((item, idx) => {
-                      const orderRequests =
-                        returnRequests[selectedOrder.id] || [];
-                      const itemRequest = orderRequests.find(
-                        (req) => Number(req.orderItemId) === Number(item.id)
-                      );
-                      const hasReturnRequest = !!itemRequest;
-
-                      return (
-                        <div key={idx} className={styles.itemRow}>
-                          <div className={styles.itemTop}>
-                            <div className={styles.itemTitleLine}>
-                              <div className={styles.itemTitle}>
-                                {item.bookTitle ||
-                                  `Sản phẩm #${item.bookId || idx + 1}`}
-                              </div>
-                              <div className={styles.itemTotal}>
-                                {(
-                                  item.quantity * (item.price || 0)
-                                ).toLocaleString("vi-VN")}
-                                đ
-                              </div>
-                            </div>
-                            <div className={styles.itemMeta}>
-                              Số lượng: {item.quantity} ×{" "}
-                              {item.price?.toLocaleString("vi-VN") || "0"}đ
-                            </div>
-                          </div>
-
-                          {canReviewStatus(selectedOrder.status) &&
-                            item.quantity > 0 && (
-                              <div className={styles.reviewBox}>
-                                {hasReturnRequest ? (
-                                  <div
-                                    style={{
-                                      padding: "8px 12px",
-                                      borderRadius: "6px",
-                                      backgroundColor:
-                                        itemRequest.status === "APPROVED"
-                                          ? "#d1fae5"
-                                          : itemRequest.status === "REJECTED"
-                                          ? "#fee2e2"
-                                          : "#fef3c7",
-                                      border:
-                                        itemRequest.status === "APPROVED"
-                                          ? "1px solid #34C759"
-                                          : itemRequest.status === "REJECTED"
-                                          ? "1px solid #EF4444"
-                                          : "1px solid #f59e0b",
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        color:
-                                          itemRequest.status === "APPROVED"
-                                            ? "#34C759"
-                                            : itemRequest.status === "REJECTED"
-                                            ? "#EF4444"
-                                            : "#f59e0b",
-                                        fontSize: "13px",
-                                        fontWeight: 600,
-                                      }}
-                                    >
-                                      {itemRequest.status === "APPROVED"
-                                        ? "✓ Đã được duyệt"
-                                        : itemRequest.status === "REJECTED"
-                                        ? "✗ Đã bị từ chối"
-                                        : "⏳ Chờ duyệt"}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <button
-                                    className={styles.btnReturn}
-                                    onClick={() => {
-                                      openReturnModal(selectedOrder, item);
-                                      setReturnSelectModal(false);
-                                    }}
-                                    style={{ minWidth: "100px" }}
-                                  >
-                                    Trả hàng
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                        </div>
-                      );
-                    })}
+              {!isOrderEligibleForReturn(selectedOrder) ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "40px 20px",
+                    backgroundColor: "#f9fafb",
+                    borderRadius: "8px",
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "48px",
+                      marginBottom: "16px",
+                      color: "#9ca3af",
+                    }}
+                  >
+                    ⏰
+                  </div>
+                  <h3
+                    style={{
+                      color: "#374151",
+                      marginBottom: "12px",
+                      fontSize: "18px",
+                    }}
+                  >
+                    Return Window Expired
+                  </h3>
+                  <p
+                    style={{
+                      color: "#6b7280",
+                      marginBottom: "20px",
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    Our return policy allows returns only within 1 day after the
+                    order is delivered or completed. Unfortunately, this order
+                    is no longer eligible for return.
+                  </p>
+                  <div
+                    style={{
+                      backgroundColor: "#eff6ff",
+                      border: "1px solid #dbeafe",
+                      borderRadius: "6px",
+                      padding: "12px",
+                      textAlign: "left",
+                    }}
+                  >
+                    <p
+                      style={{
+                        color: "#1e40af",
+                        fontSize: "14px",
+                        margin: "0",
+                        fontWeight: "500",
+                      }}
+                    >
+                      💡 What you can do next:
+                    </p>
+                    <ul
+                      style={{
+                        color: "#3730a3",
+                        fontSize: "14px",
+                        margin: "8px 0 0 0",
+                        paddingLeft: "20px",
+                      }}
+                    >
+                      <li>
+                        Contact our support team using the chat button in the
+                        bottom-left corner
+                      </li>
+                      <li>Check our FAQ for more information about returns</li>
+                      <li>Consider leaving a review for this order</li>
+                    </ul>
                   </div>
                 </div>
+              ) : selectedOrder.items?.length > 0 ? (
+                <>
+                  <div className={styles.orderItems}>
+                    <h3>Chọn sản phẩm muốn trả</h3>
+                    <div className={styles.itemsList}>
+                      {selectedOrder.items.map((item, idx) => {
+                        const orderRequests =
+                          returnRequests[selectedOrder.id] || [];
+                        const itemRequest = orderRequests.find(
+                          (req) => Number(req.orderItemId) === Number(item.id)
+                        );
+                        const hasReturnRequest = !!itemRequest;
+                        const isSelected = selectedReturnItems[item.id];
+                        const maxQuantity = item.quantity;
+
+                        return (
+                          <div key={idx} className={styles.itemRow}>
+                            <div className={styles.itemTop}>
+                              <div className={styles.itemTitleLine}>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "12px",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={!!isSelected}
+                                    onChange={() =>
+                                      toggleItemSelection(item.id, maxQuantity)
+                                    }
+                                    disabled={
+                                      hasReturnRequest ||
+                                      !canReviewStatus(selectedOrder.status) ||
+                                      !isOrderEligibleForReturn(
+                                        selectedOrder
+                                      ) ||
+                                      item.quantity <= 0
+                                    }
+                                    style={{ width: "16px", height: "16px" }}
+                                  />
+                                  <div className={styles.itemTitle}>
+                                    {item.bookTitle ||
+                                      `Sản phẩm #${item.bookId || idx + 1}`}
+                                  </div>
+                                </div>
+                                <div className={styles.itemTotal}>
+                                  {(
+                                    item.quantity * (item.price || 0)
+                                  ).toLocaleString("vi-VN")}
+                                  đ
+                                </div>
+                              </div>
+                              <div className={styles.itemMeta}>
+                                Số lượng: {item.quantity} ×{" "}
+                                {item.price?.toLocaleString("vi-VN") || "0"}đ
+                              </div>
+
+                              {isSelected && (
+                                <div
+                                  style={{
+                                    marginTop: "8px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                  }}
+                                >
+                                  <label
+                                    style={{
+                                      fontSize: "14px",
+                                      fontWeight: "500",
+                                    }}
+                                  >
+                                    Số lượng trả:
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max={maxQuantity}
+                                    value={selectedReturnItems[item.id] || 1}
+                                    onChange={(e) =>
+                                      updateItemQuantity(
+                                        item.id,
+                                        parseInt(e.target.value) || 1,
+                                        maxQuantity
+                                      )
+                                    }
+                                    style={{
+                                      width: "60px",
+                                      padding: "4px 8px",
+                                      border: "1px solid #d1d5db",
+                                      borderRadius: "4px",
+                                      fontSize: "14px",
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: "12px",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    (tối đa: {maxQuantity})
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {hasReturnRequest && (
+                              <div className={styles.reviewBox}>
+                                <div
+                                  style={{
+                                    padding: "8px 12px",
+                                    borderRadius: "6px",
+                                    backgroundColor:
+                                      itemRequest.status === "APPROVED"
+                                        ? "#d1fae5"
+                                        : itemRequest.status === "REJECTED"
+                                        ? "#fee2e2"
+                                        : "#fef3c7",
+                                    border:
+                                      itemRequest.status === "APPROVED"
+                                        ? "1px solid #34C759"
+                                        : itemRequest.status === "REJECTED"
+                                        ? "1px solid #EF4444"
+                                        : "1px solid #f59e0b",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color:
+                                        itemRequest.status === "APPROVED"
+                                          ? "#34C759"
+                                          : itemRequest.status === "REJECTED"
+                                          ? "#EF4444"
+                                          : "#f59e0b",
+                                      fontSize: "13px",
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    {itemRequest.status === "APPROVED"
+                                      ? "✓ Đã được duyệt"
+                                      : itemRequest.status === "REJECTED"
+                                      ? "✗ Đã bị từ chối"
+                                      : "⏳ Chờ duyệt"}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Return reason input */}
+                  {Object.keys(selectedReturnItems).length > 0 && (
+                    <div style={{ marginTop: "20px" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "16px",
+                          fontWeight: "600",
+                          marginBottom: "8px",
+                          color: "#374151",
+                        }}
+                      >
+                        Lý do trả hàng *
+                      </label>
+                      <textarea
+                        className={styles.returnReasonInput}
+                        value={returnReason}
+                        onChange={(e) => setReturnReason(e.target.value)}
+                        placeholder="Vui lòng nhập lý do trả hàng..."
+                        rows={3}
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "6px",
+                          fontSize: "14px",
+                          resize: "vertical",
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div
+                    className={styles.returnActions}
+                    style={{ marginTop: "24px" }}
+                  >
+                    <button
+                      className={styles.btnCancelReturn}
+                      onClick={() => {
+                        setReturnSelectModal(false);
+                        setSelectedOrder(null);
+                        setSelectedReturnItems({});
+                        setReturnReason("");
+                      }}
+                      disabled={returnLoading}
+                    >
+                      Hủy
+                    </button>
+
+                    <button
+                      className={styles.btnConfirmReturn}
+                      onClick={handleMultiReturnSubmit}
+                      disabled={
+                        returnLoading ||
+                        Object.keys(selectedReturnItems).length === 0 ||
+                        !returnReason.trim()
+                      }
+                    >
+                      {returnLoading
+                        ? "Đang xử lý..."
+                        : `Trả ${
+                            Object.keys(selectedReturnItems).length
+                          } sản phẩm`}
+                    </button>
+                  </div>
+                </>
               ) : (
                 <p style={{ textAlign: "center", padding: 40 }}>
                   Không có sản phẩm để trả
@@ -1432,87 +1603,170 @@ export default function OrderHistory() {
             </div>
 
             <div className={styles.modalBody}>
-              <div className={styles.orderInfo}>
-                <h3>Thông tin sản phẩm</h3>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Tên sách:</span>
-                  <span className={styles.infoValue}>
-                    {returnItem.bookTitle}
-                  </span>
-                </div>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Số lượng hiện có:</span>
-                  <span className={styles.infoValue}>
-                    {returnItem.quantity} quyển
-                  </span>
-                </div>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Giá mỗi quyển:</span>
-                  <span className={styles.infoValue}>
-                    {returnItem.price?.toLocaleString("vi-VN") || "0"}đ
-                  </span>
-                </div>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Đơn hàng:</span>
-                  <span className={styles.infoValue}>#{selectedOrder.id}</span>
-                </div>
-              </div>
-
-              <div className={styles.orderInfo} style={{ marginTop: 20 }}>
-                <h3>Số lượng muốn trả</h3>
-                <div style={{ marginTop: 12 }}>
-                  <input
-                    type="number"
-                    min="1"
-                    max={returnItem.quantity}
-                    value={returnQuantity}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value) || 1;
-                      setReturnQuantity(
-                        Math.min(Math.max(1, val), returnItem.quantity)
-                      );
+              {!isOrderEligibleForReturn(selectedOrder) ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "40px 20px",
+                    backgroundColor: "#f9fafb",
+                    borderRadius: "8px",
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "48px",
+                      marginBottom: "16px",
+                      color: "#9ca3af",
                     }}
-                    className={styles.returnQuantityInput}
-                  />
-                  <p className={styles.returnHint}>
-                    Nhập số lượng sách muốn trả (tối đa: {returnItem.quantity}{" "}
-                    quyển)
+                  >
+                    ⏰
+                  </div>
+                  <h3
+                    style={{
+                      color: "#374151",
+                      marginBottom: "12px",
+                      fontSize: "18px",
+                    }}
+                  >
+                    Return Window Expired
+                  </h3>
+                  <p
+                    style={{
+                      color: "#6b7280",
+                      marginBottom: "20px",
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    Our return policy allows returns only within 1 day after the
+                    order is delivered or completed. Unfortunately, this order
+                    is no longer eligible for return.
                   </p>
+                  <div
+                    style={{
+                      backgroundColor: "#eff6ff",
+                      border: "1px solid #dbeafe",
+                      borderRadius: "6px",
+                      padding: "12px",
+                      textAlign: "left",
+                    }}
+                  >
+                    <p
+                      style={{
+                        color: "#1e40af",
+                        fontSize: "14px",
+                        margin: "0",
+                        fontWeight: "500",
+                      }}
+                    >
+                      💡 What you can do next:
+                    </p>
+                    <ul
+                      style={{
+                        color: "#3730a3",
+                        fontSize: "14px",
+                        margin: "8px 0 0 0",
+                        paddingLeft: "20px",
+                      }}
+                    >
+                      <li>
+                        Contact our support team using the chat button in the
+                        bottom-left corner
+                      </li>
+                      <li>Check our FAQ for more information about returns</li>
+                      <li>Consider leaving a review for this order</li>
+                    </ul>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className={styles.orderInfo}>
+                    <h3>Thông tin sản phẩm</h3>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Tên sách:</span>
+                      <span className={styles.infoValue}>
+                        {returnItem.bookTitle}
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>
+                        Số lượng hiện có:
+                      </span>
+                      <span className={styles.infoValue}>
+                        {returnItem.quantity} quyển
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Giá mỗi quyển:</span>
+                      <span className={styles.infoValue}>
+                        {returnItem.price?.toLocaleString("vi-VN") || "0"}đ
+                      </span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Đơn hàng:</span>
+                      <span className={styles.infoValue}>
+                        #{selectedOrder.id}
+                      </span>
+                    </div>
+                  </div>
 
-              <div className={styles.orderInfo} style={{ marginTop: 20 }}>
-                <h3>Lý do trả hàng</h3>
-                <div style={{ marginTop: 12 }}>
-                  <textarea
-                    className={styles.returnReasonInput}
-                    value={returnReason}
-                    onChange={(e) => setReturnReason(e.target.value)}
-                    placeholder="Vui lòng nhập lý do trả hàng..."
-                  />
-                  <p className={styles.returnHint}>
-                    Lý do trả hàng là bắt buộc
-                  </p>
-                </div>
-              </div>
+                  <div className={styles.orderInfo} style={{ marginTop: 20 }}>
+                    <h3>Số lượng muốn trả</h3>
+                    <div style={{ marginTop: 12 }}>
+                      <input
+                        type="number"
+                        min="1"
+                        max={returnItem.quantity}
+                        value={returnQuantity}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 1;
+                          setReturnQuantity(
+                            Math.min(Math.max(1, val), returnItem.quantity)
+                          );
+                        }}
+                        className={styles.returnQuantityInput}
+                      />
+                      <p className={styles.returnHint}>
+                        Nhập số lượng sách muốn trả (tối đa:{" "}
+                        {returnItem.quantity} quyển)
+                      </p>
+                    </div>
+                  </div>
 
-              <div className={styles.returnActions}>
-                <button
-                  className={styles.btnCancelReturn}
-                  onClick={() => setReturnModal(false)}
-                  disabled={returnLoading}
-                >
-                  Hủy
-                </button>
+                  <div className={styles.orderInfo} style={{ marginTop: 20 }}>
+                    <h3>Lý do trả hàng</h3>
+                    <div style={{ marginTop: 12 }}>
+                      <textarea
+                        className={styles.returnReasonInput}
+                        value={returnReason}
+                        onChange={(e) => setReturnReason(e.target.value)}
+                        placeholder="Vui lòng nhập lý do trả hàng..."
+                      />
+                      <p className={styles.returnHint}>
+                        Lý do trả hàng là bắt buộc
+                      </p>
+                    </div>
+                  </div>
 
-                <button
-                  className={styles.btnConfirmReturn}
-                  onClick={handleReturn}
-                  disabled={returnLoading}
-                >
-                  {returnLoading ? "Đang xử lý..." : "Xác nhận trả hàng"}
-                </button>
-              </div>
+                  <div className={styles.returnActions}>
+                    <button
+                      className={styles.btnCancelReturn}
+                      onClick={() => setReturnModal(false)}
+                      disabled={returnLoading}
+                    >
+                      Hủy
+                    </button>
+
+                    <button
+                      className={styles.btnConfirmReturn}
+                      onClick={handleReturn}
+                      disabled={returnLoading}
+                    >
+                      {returnLoading ? "Đang xử lý..." : "Xác nhận trả hàng"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

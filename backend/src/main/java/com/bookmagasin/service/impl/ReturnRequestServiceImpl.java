@@ -18,6 +18,7 @@ import com.bookmagasin.repository.UserNotificationRepository;
 import com.bookmagasin.repository.UserRepository;
 import com.bookmagasin.service.OrderService;
 import com.bookmagasin.service.ReturnRequestService;
+import com.bookmagasin.web.dto.ReturnItemDto;
 import com.bookmagasin.web.dtoResponse.ReturnRequestResponseDto;
 import com.bookmagasin.web.mapper.ReturnRequestMapper;
 import jakarta.persistence.EntityManager;
@@ -66,6 +67,17 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
     public ReturnRequestResponseDto createReturnRequest(Integer orderId, Integer orderItemId, Integer quantity, String reason) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+        // 🔥 Check return allowed within 1 day
+        Date deliveredAt = getDeliveredTime(order);
+
+        if (deliveredAt == null) {
+            throw new RuntimeException("Đơn hàng chưa được giao nên không thể trả hàng");
+        }
+
+        if (!isWithinOneDay(deliveredAt)) {
+            throw new RuntimeException("Chỉ được trả hàng trong vòng 1 ngày sau khi giao");
+        }
+
 
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
                 .orElseThrow(() -> new RuntimeException("Order item not found"));
@@ -97,6 +109,69 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
 
         ReturnRequest saved = returnRequestRepository.save(returnRequest);
         return ReturnRequestMapper.toResponseDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public List<ReturnRequestResponseDto> createMultiReturnRequest(Integer orderId, List<ReturnItemDto> items, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // 🔥 Check return allowed within 1 day
+        Date deliveredAt = getDeliveredTime(order);
+        if (deliveredAt == null) {
+            throw new RuntimeException("Đơn hàng chưa được giao nên không thể trả hàng");
+        }
+        if (!isWithinOneDay(deliveredAt)) {
+            throw new RuntimeException("Chỉ được trả hàng trong vòng 1 ngày sau khi giao");
+        }
+
+        // Validate that we have items to return
+        if (items == null || items.isEmpty()) {
+            throw new RuntimeException("Phải chọn ít nhất một sản phẩm để trả");
+        }
+
+        List<ReturnRequest> createdRequests = new java.util.ArrayList<>();
+
+        for (ReturnItemDto item : items) {
+            Integer orderItemId = item.getOrderItemId();
+            Integer quantity = item.getQuantity();
+
+            OrderItem orderItem = orderItemRepository.findById(orderItemId)
+                    .orElseThrow(() -> new RuntimeException("Order item not found: " + orderItemId));
+
+            // Check if already has pending return request for this item
+            Optional<ReturnRequest> existingRequest = returnRequestRepository
+                    .findByOrder_IdAndOrderItem_Id(orderId, orderItemId);
+
+            if (existingRequest.isPresent() && existingRequest.get().getStatus() == RequestStatus.PENDING) {
+                throw new RuntimeException("Đã có yêu cầu trả hàng đang chờ xử lý cho sản phẩm: " + orderItem.getBook().getTitle());
+            }
+
+            // Validate quantity
+            if (quantity == null || quantity <= 0) {
+                throw new RuntimeException("Số lượng phải lớn hơn 0 cho sản phẩm: " + orderItem.getBook().getTitle());
+            }
+
+            if (quantity > orderItem.getQuantity()) {
+                throw new RuntimeException("Số lượng trả không được vượt quá số lượng đã mua cho sản phẩm: " + orderItem.getBook().getTitle() + ". Còn lại: " + orderItem.getQuantity());
+            }
+
+            ReturnRequest returnRequest = new ReturnRequest();
+            returnRequest.setOrder(order);
+            returnRequest.setOrderItem(orderItem);
+            returnRequest.setQuantity(quantity);
+            returnRequest.setReason(reason);
+            returnRequest.setStatus(RequestStatus.PENDING);
+            returnRequest.setRequestDate(new Date());
+
+            ReturnRequest saved = returnRequestRepository.save(returnRequest);
+            createdRequests.add(saved);
+        }
+
+        return createdRequests.stream()
+                .map(ReturnRequestMapper::toResponseDto)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -270,6 +345,23 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
                 .stream()
                 .map(ReturnRequestMapper::toResponseDto)
                 .collect(Collectors.toList());
+    }
+    private Date getDeliveredTime(Order order) {
+        return order.getOrderStatusHistories().stream()
+                .filter(h -> h.getEOrderHistory().name().equals("DELIVERED"))
+                .map(h -> h.getStatusChangeDate())
+                .sorted((d1, d2) -> d2.compareTo(d1)) // newest first
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean isWithinOneDay(Date deliveredDate) {
+        if (deliveredDate == null) return false;
+
+        long diff = System.currentTimeMillis() - deliveredDate.getTime();
+        long oneDayMs = 24L * 60 * 60 * 1000;
+
+        return diff <= oneDayMs;
     }
 
 

@@ -5,6 +5,7 @@ public enum EOrderHistory {
     PROCESSING,
     SHIPPED,
     DELIVERED,
+    COMPLETED,
     CANCELLED,
     RETURNED
 }

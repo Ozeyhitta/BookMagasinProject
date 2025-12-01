@@ -12,6 +12,20 @@ import {
   BadgePercent,
 } from "lucide-react";
 
+const MAIN_CATEGORY_NAMES = [
+  "Văn học",
+  "Khoa học",
+  "Lịch sử",
+  "Triết học",
+  "Nghệ thuật",
+  "Giáo dục",
+  "Kinh tế",
+  "Y học",
+  "Công nghệ",
+  "Thể thao",
+  "Thiếu nhi"
+];
+
 const normalize = (str) => str?.trim().toLowerCase();
 
 const createEmptyBook = () => ({
@@ -226,6 +240,7 @@ export default function ManageBooks() {
       author: bookForm.author,
       imageUrl: bookForm.imageUrl,
       categoryIds: (bookForm.categoryIds || []).map(Number),
+      bookDetailId: Number(bookForm.bookDetail?.id || 0),
 
       bookDetail: {
         ...(isEdit && bookForm.bookDetail?.id

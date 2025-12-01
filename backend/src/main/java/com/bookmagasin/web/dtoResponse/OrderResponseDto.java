@@ -15,7 +15,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderResponseDto {
+public class    OrderResponseDto {
     private int id;
     private String userFullName;
     private String serviceName;
