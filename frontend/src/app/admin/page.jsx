@@ -208,21 +208,6 @@ export default function AdminPage() {
             <p className={styles.pageSubtitle}>Overview</p>
             <h1 className={styles.pageTitle}>{getPageTitle()}</h1>
           </div>
-          <div className={styles.topBarActions}>
-            <input
-              type="search"
-              className={styles.search}
-              placeholder="Search modules, orders, users..."
-            />
-            <button className={styles.actionGhost}>
-              <Download size={16} />
-              Export report
-            </button>
-            <button className={styles.actionPrimary}>
-              <Plus size={16} />
-              Quick create
-            </button>
-          </div>
         </header>
 
         <section className={styles.statsGrid}>

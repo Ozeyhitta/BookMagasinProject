@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, ShoppingCart, FileClock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import "../components/header.css";
@@ -11,7 +11,13 @@ export default function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [notifCount, setNotifCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [suggestionPool, setSuggestionPool] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
+  const [isSuggestionLoading, setIsSuggestionLoading] = useState(false);
+  const [suggestionError, setSuggestionError] = useState("");
   const router = useRouter();
+  const searchWrapperRef = useRef(null);
 
   useEffect(() => {
     const handleCartUpdate = () => {
@@ -96,6 +102,58 @@ export default function Header() {
   const goToMainPage = () => router.push("/mainpage");
   const goToCart = () => router.push("/cart");
 
+  const formatPrice = (amount) => {
+    if (typeof amount !== "number") return "";
+    return amount.toLocaleString("vi-VN") + " ₫";
+  };
+
+  const escapeRegExp = (string) =>
+    string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const highlightMatch = (text) => {
+    const query = searchTerm.trim();
+    if (!query) return text;
+    const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
+    return text.split(regex).map((part, index) =>
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark key={`${part}-${index}`}>{part}</mark>
+      ) : (
+        <span key={`${part}-${index}`}>{part}</span>
+      )
+    );
+  };
+
+  const loadSuggestionCatalog = useCallback(async () => {
+    if (isSuggestionLoading || suggestionPool.length) return;
+    try {
+      setSuggestionError("");
+      setIsSuggestionLoading(true);
+      const res = await fetch(buildApiUrl("/api/books"));
+      if (!res.ok) throw new Error("Failed to fetch books");
+      const data = await res.json();
+      const mapped = data.map((book) => ({
+        id: book.id,
+        title: book.title || "Sản phẩm mới",
+        author: book.author || book.bookDetail?.author || "",
+        price: book.sellingPrice,
+        image: book.bookDetail?.imageUrl || "",
+      }));
+      setSuggestionPool(mapped);
+    } catch (error) {
+      console.error("Failed to load quick search suggestions", error);
+      setSuggestionError("Không thể tải gợi ý nhanh. Vui lòng thử lại.");
+    } finally {
+      setIsSuggestionLoading(false);
+    }
+  }, [isSuggestionLoading, suggestionPool.length]);
+
+  const handleSuggestionSelect = (keyword) => {
+    if (!keyword) return;
+    setSearchTerm(keyword);
+    setIsSuggestionOpen(false);
+    router.push(`/search?keyword=${encodeURIComponent(keyword)}`);
+  };
+
   // Refresh unread count when tab gains focus (simple live update)
   useEffect(() => {
     const onFocus = () => {
@@ -113,6 +171,53 @@ export default function Header() {
     const timer = setInterval(() => fetchUnreadCount(userId), 30000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        searchWrapperRef.current &&
+        !searchWrapperRef.current.contains(event.target)
+      ) {
+        setIsSuggestionOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (searchTerm.trim() && !suggestionPool.length && !isSuggestionLoading) {
+      loadSuggestionCatalog();
+    }
+  }, [searchTerm, suggestionPool.length, isSuggestionLoading, loadSuggestionCatalog]);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    if (!suggestionPool.length) return;
+
+    const timeout = setTimeout(() => {
+      const query = searchTerm.trim().toLowerCase();
+      const matched = suggestionPool
+        .filter((item) => {
+          const titleMatch = item.title?.toLowerCase().includes(query);
+          const authorMatch = item.author
+            ? item.author.toLowerCase().includes(query)
+            : false;
+          return titleMatch || authorMatch;
+        })
+        .slice(0, 6);
+      setSuggestions(matched);
+    }, 180);
+
+    return () => clearTimeout(timeout);
+  }, [searchTerm, suggestionPool]);
+
+  const trimmedSearch = searchTerm.trim();
+  const shouldShowSuggestionPanel =
+    isSuggestionOpen && trimmedSearch.length > 0;
 
   const handleLogout = async () => {
     const token = localStorage.getItem("token");
@@ -146,9 +251,10 @@ export default function Header() {
   };
 
   const handleSearch = () => {
-    const keyword = searchTerm.trim();
-    if (!keyword) return;
-    router.push(`/search?keyword=${encodeURIComponent(keyword)}`);
+    if (!trimmedSearch) return;
+    setIsSuggestionOpen(false);
+    setSuggestions([]);
+    router.push(`/search?keyword=${encodeURIComponent(trimmedSearch)}`);
   };
 
   const handleKeyDown = (e) => {
@@ -157,12 +263,24 @@ export default function Header() {
     }
   };
 
+  const handleSearchFocus = () => {
+    setIsSuggestionOpen(true);
+    loadSuggestionCatalog();
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    if (!isSuggestionOpen) {
+      setIsSuggestionOpen(true);
+    }
+  };
+
   return (
     <header className="header">
       <div className="header-top">
         <div className="contact-info">
           <span>☎ 028.73008182</span>
-          <span>✉ hotro@vinabook.com</span>
+          <span>✉ hotro@vbook.com</span>
           <span>📍 1 Võ Văn Ngân, Phường Thủ Đức, TP Hồ Chí Minh</span>
         </div>
 
@@ -189,20 +307,81 @@ export default function Header() {
           onClick={goToMainPage}
           style={{ cursor: "pointer" }}
         >
-          <span className="green">vina</span>
-          <span className="red">book</span>
-          <span className="green">.com</span>
+          <span className="logo-mark">V</span>
+          <span className="logo-type">Book</span>
         </div>
 
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Tìm kiếm sản phẩm..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
+        <div className="search-bar" ref={searchWrapperRef}>
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              placeholder="Tìm kiếm sản phẩm..."
+              value={searchTerm}
+              autoComplete="off"
+              onFocus={handleSearchFocus}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            {isSuggestionLoading && (
+              <span className="search-loading-dot" aria-hidden="true" />
+            )}
+          </div>
           <button onClick={handleSearch}>Tìm kiếm</button>
+
+          {shouldShowSuggestionPanel && (
+            <div className="search-suggestions" role="listbox">
+              <div className="suggestions-header">
+                <p>Gợi ý cho “{trimmedSearch}”</p>
+                <span>Nhấn Enter để xem tất cả kết quả</span>
+              </div>
+              <div className="suggestions-body">
+                {isSuggestionLoading && (
+                  <div className="suggestion-empty">Đang tải gợi ý...</div>
+                )}
+                {!isSuggestionLoading && suggestionError && (
+                  <div className="suggestion-empty">{suggestionError}</div>
+                )}
+                {!isSuggestionLoading &&
+                  !suggestionError &&
+                  suggestions.length === 0 && (
+                    <div className="suggestion-empty">
+                      Không tìm thấy kết quả phù hợp.
+                    </div>
+                  )}
+                {!isSuggestionLoading &&
+                  !suggestionError &&
+                  suggestions.map((item) => (
+                    <div
+                      key={item.id}
+                      className="suggestion-item"
+                      role="option"
+                      tabIndex={0}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleSuggestionSelect(item.title)}
+                    >
+                      {item.image && (
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="suggestion-thumb"
+                        />
+                      )}
+                      <div className="suggestion-content">
+                        <p className="suggestion-title">
+                          {highlightMatch(item.title)}
+                        </p>
+                        <span className="suggestion-meta">
+                          {item.author || "Tác giả đang cập nhật"}
+                          {typeof item.price === "number"
+                            ? ` • ${formatPrice(item.price)}`
+                            : ""}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="right-section">

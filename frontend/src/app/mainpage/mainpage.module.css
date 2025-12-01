@@ -1,7 +1,8 @@
 
 .mainWrapper {
-  background-color: #fff;
+  background-color: #f7ecda; /* warm beige backdrop for entire page */
   padding-bottom: 40px;
+  min-height: 100vh;
 }
 
 .layout {
