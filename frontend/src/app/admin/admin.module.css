@@ -5,6 +5,35 @@
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
+.loadingScreen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.loadingSpinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 4px solid rgba(226, 232, 240, 0.2);
+  border-top-color: #38bdf8;
+  animation: adminSpin 0.85s linear infinite;
+}
+
+@keyframes adminSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .sidebar {
   width: 260px;
   background: radial-gradient(circle at top, #2d2f55, #1a1c32 70%);

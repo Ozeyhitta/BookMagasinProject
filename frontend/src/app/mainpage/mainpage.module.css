@@ -246,6 +246,830 @@
   right: 10px;
 }
 
+.flashSaleSection {
+  margin: 25px 0 30px;
+  background: linear-gradient(90deg, #ff6f61, #ff9770);
+  border-radius: 18px;
+  padding: 22px 26px 28px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 14px 30px rgba(255, 126, 96, 0.35);
+}
+
+.flashSaleSection::after {
+  content: "";
+  position: absolute;
+  top: -30%;
+  right: -10%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  filter: blur(5px);
+}
+
+.flashSaleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 18px;
+}
+
+.flashSaleTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.flashSaleLabel {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flashSaleCountdownLabel {
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.flashSaleCountdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.flashSaleTimeBox {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.timeSeparator {
+  font-weight: 700;
+  font-size: 18px;
+  opacity: 0.85;
+}
+
+.flashSaleActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.flashSaleSeeAll {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.flashSaleSeeAll:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.flashSaleCarousel {
+  position: relative;
+  margin-top: 10px;
+  padding: 0 40px;
+}
+
+.flashSaleViewport {
+  overflow: hidden;
+}
+
+.flashSaleTrack {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.flashSaleSlide {
+  min-width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+  padding: 10px 0 5px;
+}
+
+.flashSaleLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.flashSaleLinkDisabled {
+  pointer-events: none;
+}
+
+.flashSaleCard {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px;
+  color: #333;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.flashSaleCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px rgba(255, 111, 97, 0.25);
+}
+
+.flashSaleImageWrap {
+  width: 100%;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff0f0;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.flashSaleImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.flashSaleDiscount {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: linear-gradient(120deg, #ff4d4d, #ff6b6b);
+  padding: 4px 8px;
+  color: #fff;
+  font-size: 12px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.flashSaleTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  min-height: 40px;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.flashSalePrices {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.flashSalePrice {
+  color: #e53935;
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.flashSaleOldPrice {
+  color: #999;
+  font-size: 13px;
+  text-decoration: line-through;
+}
+
+.flashSaleProgress {
+  margin-top: auto;
+}
+
+.flashSaleProgressBar {
+  width: 100%;
+  height: 8px;
+  background: #ffe0d6;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.flashSaleProgressFill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ff512f, #f09819);
+  border-radius: inherit;
+}
+
+.flashSaleSoldText {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d84315;
+}
+
+.flashSaleControl {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  color: #ff5e5b;
+}
+
+.flashSaleControl:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.flashSaleControl:hover:not(:disabled) {
+  transform: translateY(-50%) scale(1.05);
+}
+
+.flashSaleControlPrev {
+  left: 0;
+}
+
+.flashSaleControlNext {
+  right: 0;
+}
+
+.rankingSection {
+  margin-top: 30px;
+  background: linear-gradient(180deg, #fafdff, #ffffff);
+  border-radius: 18px;
+  box-shadow: 0 12px 35px rgba(8, 35, 72, 0.12);
+  border: 1px solid rgba(222, 231, 244, 0.8);
+  padding: 0;
+  overflow: hidden;
+}
+
+.rankingHeader {
+  background: linear-gradient(135deg, #172642, #223a61);
+  padding: 24px 30px 12px;
+  margin: 0;
+}
+
+.rankingTitle {
+  font-size: 21px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #fff;
+}
+
+.rankingTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rankingTabButton {
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.rankingTabButton:hover {
+  transform: translateY(-1px);
+}
+
+.activeRankingTab {
+  background: #fff;
+  color: #172642;
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.35);
+}
+
+.rankingContent {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 28px;
+  padding: 26px 30px 30px;
+}
+
+.rankingList {
+  border-right: 1px solid #edf1f7;
+  padding-right: 20px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.rankingListItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: transparent;
+  cursor: pointer;
+  transition: border 0.2s ease, background 0.2s ease;
+}
+
+.rankingListItem:hover {
+  border-color: rgba(22, 170, 87, 0.4);
+  background: rgba(22, 170, 87, 0.08);
+}
+
+.activeRankingItem {
+  border-color: #16aa57;
+  background: rgba(22, 170, 87, 0.12);
+}
+
+.rankingPosition {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0b8457;
+  width: 36px;
+  position: relative;
+}
+
+.rankingPosition::after {
+  content: "▲";
+  font-size: 11px;
+  color: #16aa57;
+  position: absolute;
+  left: 4px;
+  top: 26px;
+}
+
+.rankingThumbWrap {
+  width: 50px;
+  height: 70px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #eee;
+  background: linear-gradient(135deg, #f5f7fb, #fff);
+}
+
+.rankingThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rankingInfo {
+  flex: 1;
+  text-align: left;
+}
+
+.rankingBookTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 4px;
+}
+
+.rankingMeta {
+  font-size: 13px;
+  color: #777;
+}
+
+.rankingDetail {
+  display: flex;
+  gap: 18px;
+}
+
+.rankingDetailImage {
+  width: 180px;
+  height: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #edf1f7;
+  background: linear-gradient(135deg, #f5f7fb, #fff);
+}
+
+.rankingDetailImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rankingDetailInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.rankingDetailTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.rankingDetailMeta {
+  margin: 2px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.rankingDetailPriceWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.rankingDetailPrice {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e53b45;
+}
+
+.rankingDetailOldPrice {
+  text-decoration: line-through;
+  color: #999;
+  font-size: 14px;
+}
+
+.rankingDetailBadge {
+  background: #ffe3e3;
+  color: #d32f2f;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.rankingDetailDesc {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 14px;
+  max-height: 140px;
+  overflow: hidden;
+}
+
+.rankingDetailButton {
+  align-self: flex-start;
+  padding: 12px 28px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #ff6f61, #ff9472);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  transition: opacity 0.2s ease;
+}
+
+.rankingDetailButton:hover {
+  opacity: 0.85;
+}
+
+.rankingFooter {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 28px;
+}
+
+.rankingViewMore {
+  padding: 11px 32px;
+  border-radius: 999px;
+  border: 1px solid #1a3358;
+  color: #1a3358;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rankingViewMore:hover {
+  background: #1a3358;
+  color: #fff;
+}
+
+.rankingEmpty {
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+
+@media (max-width: 1024px) {
+  .rankingContent {
+    grid-template-columns: 1fr;
+  }
+
+  .rankingList {
+    border-right: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding-right: 0;
+    padding-bottom: 20px;
+    max-height: unset;
+  }
+
+  .rankingDetail {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .rankingDetailImage {
+    width: 200px;
+    height: 300px;
+  }
+
+  .rankingDetailButton {
+    align-self: center;
+  }
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+
+.modalContent {
+  background: #fff;
+  width: min(960px, 100%);
+  max-height: 85vh;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  background: linear-gradient(135deg, #172642, #223a61);
+  color: #fff;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.modalClose {
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modalTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 28px;
+  border-bottom: 1px solid #edf1f7;
+}
+
+.modalTab {
+  border: none;
+  border-radius: 999px;
+  background: #f0f3f9;
+  color: #1a1a1a;
+  font-weight: 600;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.modalTab:hover {
+  background: #e1e6f2;
+}
+
+.activeModalTab {
+  background: #1a3358;
+  color: #fff;
+}
+
+.modalList {
+  max-height: 55vh;
+  overflow-y: auto;
+  padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modalListItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #edf1f7;
+  border-radius: 12px;
+}
+
+.modalListItem img {
+  width: 50px;
+  height: 70px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #edf1f7;
+  background: #fff;
+}
+
+.modalIndex {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a3358;
+  width: 32px;
+}
+
+.modalBookTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 4px;
+}
+
+.modalBookMeta {
+  font-size: 13px;
+  color: #888;
+}
+
+.modalFooter {
+  padding: 16px 28px 24px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #edf1f7;
+}
+
+.modalCloseButton {
+  border: none;
+  background: #ff6f61;
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.modalCloseButton:hover {
+  opacity: 0.85;
+}
+
+.flashModalContent {
+  background: #fff;
+  width: min(1000px, 100%);
+  max-height: 85vh;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.flashModalList {
+  padding: 20px 28px;
+  max-height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.flashModalItem {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid #edf1f7;
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.flashModalIndex {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a3358;
+  width: 32px;
+}
+
+.flashModalItem img {
+  width: 60px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #edf1f7;
+  background: #fff;
+}
+
+.flashModalInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flashModalTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.flashModalTitleRow p {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.flashModalBadge {
+  background: #ffe3e3;
+  color: #d32f2f;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.flashModalPriceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.flashModalPrice {
+  color: #e53935;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.flashModalOldPrice {
+  color: #999;
+  text-decoration: line-through;
+  font-size: 13px;
+}
+
+.flashModalProgress {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #f6ccd2;
+  overflow: hidden;
+}
+
+.flashModalProgress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #ff512f, #f09819);
+}
+
+.flashModalMeta {
+  font-size: 12px;
+  color: #666;
+}
+
+.flashModalButton {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #ff6f61, #ff9472);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.flashModalButton:hover {
+  opacity: 0.85;
+}
 /* ==== SẢN PHẨM (ProductCard) ==== */
 .productSection {
   background-color: #fff;
@@ -261,10 +1085,118 @@
   padding-left: 10px;
 }
 
+.sectionDescription {
+  margin-top: -8px;
+  margin-bottom: 16px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.suggestionHighlight {
+  margin-top: 30px;
+  padding: 24px 26px 30px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 138, 59, 0.15);
+  background: linear-gradient(120deg, #f4fff7, #ffffff);
+  box-shadow: 0 14px 30px rgba(15, 138, 59, 0.15);
+}
+
+.suggestionHighlightHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.suggestionHighlightTitle h3 {
+  margin: 6px 0 4px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #0f8a3b;
+}
+
+.suggestionHighlightTitle p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.suggestionTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 138, 59, 0.08);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #0f8a3b;
+  font-weight: 600;
+}
+
+.suggestionHighlightSeeAll {
+  border: 1px solid rgba(15, 138, 59, 0.3);
+  border-radius: 999px;
+  padding: 8px 20px;
+  color: #0f8a3b;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.suggestionHighlightSeeAll:hover {
+  background: #0f8a3b;
+  color: #fff;
+}
+
+
+
+
+
+
+
+
+
+
+
 .productGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.paginationButton {
+  border: 1px solid #1a3358;
+  background: #fff;
+  color: #1a3358;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.paginationButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.paginationButton:not(:disabled):hover {
+  background: #1a3358;
+  color: #fff;
+}
+
+.paginationInfo {
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .productCard {
@@ -545,3 +1477,165 @@
   border-radius: 0 0 5px 0;
   z-index: 2;
 }
+
+
+
+
+.suggestionModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.suggestionModal {
+  background: radial-gradient(circle at top, #ffffff, #f0f4ff);
+  width: min(1200px, 95%);
+  max-height: 90vh;
+  border-radius: 28px;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.suggestionModalHeader {
+  padding: 24px 36px;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.suggestionModalHeader h3 {
+  margin: 6px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #4338ca;
+}
+
+.suggestionModalSubtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.suggestionModalClose {
+  border: none;
+  background: transparent;
+  color: #1f2937;
+  font-size: 30px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.suggestionModalClose:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.suggestionModalGrid {
+  padding: 26px 36px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.suggestionModalCard {
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 18px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 16px;
+  align-items: center;
+  position: relative;
+  background: #ffffff;
+  box-shadow: 0 12px 25px rgba(99, 102, 241, 0.1);
+}
+
+.suggestionModalCard img {
+  width: 80px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.suggestionModalIndex {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  font-weight: 700;
+  color: #4338ca;
+}
+
+.suggestionModalInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.suggestionModalTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #1f2937;
+}
+
+.suggestionModalAuthor {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.suggestionModalPriceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.suggestionModalPrice {
+  color: #e53935;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.suggestionModalOldPrice {
+  font-size: 13px;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.suggestionModalSold {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.suggestionModalButton {
+  grid-column: span 2;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  text-align: center;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 600;
+  margin-top: 10px;
+  background: linear-gradient(120deg, #6366f1, #8b5cf6);
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.suggestionModalButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px rgba(99, 102, 241, 0.35);
+}
+

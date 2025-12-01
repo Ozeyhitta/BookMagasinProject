@@ -29,6 +29,7 @@ export default function AdminPage() {
     pendingOrders: 0,
     pendingApprovals: 0,
   });
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const menuItems = [
     { id: "customers", label: "Manage Customers", icon: Users },
@@ -39,6 +40,10 @@ export default function AdminPage() {
     { id: "notifications", label: "Create Notifications", icon: Plus },
     { id: "services", label: "Manage Services", icon: Tag },
   ];
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -73,19 +78,36 @@ export default function AdminPage() {
   };
 
   const quickStats = useMemo(
-    () => [
-      {
-        title: "Monthly Revenue",
-        value: formatCurrency(metrics.monthlyRevenue),
-        trend: `${formatPercent(metrics.monthlyRevenueChangePercent)} vs last month`,
-      },
-      {
-        title: "Pending Orders",
-        value: metrics.pendingOrders.toLocaleString("vi-VN"),
-        trend: `${metrics.pendingApprovals.toLocaleString("vi-VN")} need approval`,
-      },
-    ],
-    [metrics]
+    () => {
+      if (!isHydrated) {
+        return [
+          {
+            title: "Monthly Revenue",
+            value: "Loading...",
+            trend: "Preparing latest numbers",
+          },
+          {
+            title: "Pending Orders",
+            value: "Loading...",
+            trend: "Preparing approval counts",
+          },
+        ];
+      }
+
+      return [
+        {
+          title: "Monthly Revenue",
+          value: formatCurrency(metrics.monthlyRevenue),
+          trend: `${formatPercent(metrics.monthlyRevenueChangePercent)} vs last month`,
+        },
+        {
+          title: "Pending Orders",
+          value: metrics.pendingOrders.toLocaleString("vi-VN"),
+          trend: `${metrics.pendingApprovals.toLocaleString("vi-VN")} need approval`,
+        },
+      ];
+    },
+    [isHydrated, metrics]
   );
 
   const getPageTitle = () => {
@@ -122,6 +144,15 @@ export default function AdminPage() {
     localStorage.removeItem("userId");
     window.location.replace("/login");
   };
+
+  if (!isHydrated) {
+    return (
+      <div className={styles.loadingScreen}>
+        <div className={styles.loadingSpinner} />
+        <p>Preparing admin workspace...</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.layout}>

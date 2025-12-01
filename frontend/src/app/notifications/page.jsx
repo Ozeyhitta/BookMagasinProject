@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./notifications.module.css";
 import { useRouter } from "next/navigation";
 
@@ -10,6 +10,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [error, setError] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -51,12 +52,11 @@ export default function NotificationsPage() {
     };
 
     loadData();
-    
-    // Polling để tự động refresh notifications mỗi 10 giây
+
     const interval = setInterval(() => {
       loadData();
-    }, 10000); // Refresh mỗi 10 giây
-    
+    }, 10000);
+
     const onFocus = () => loadData();
     window.addEventListener("focus", onFocus);
     return () => {
@@ -64,6 +64,17 @@ export default function NotificationsPage() {
       window.removeEventListener("focus", onFocus);
     };
   }, [router]);
+
+  useEffect(() => {
+    if (notifications.length === 0) {
+      setSelectedId(null);
+      return;
+    }
+    const alreadySelected = notifications.some((n) => n.id === selectedId);
+    if (!alreadySelected) {
+      setSelectedId(notifications[0]?.id ?? null);
+    }
+  }, [notifications, selectedId]);
 
   const markAsRead = async (id) => {
     const userId = localStorage.getItem("userId");
@@ -85,7 +96,32 @@ export default function NotificationsPage() {
   };
 
   const removeCard = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setNotifications((prev) => {
+      const filtered = prev.filter((n) => n.id !== id);
+      if (selectedId === id) {
+        setSelectedId(filtered[0]?.id ?? null);
+      }
+      return filtered;
+    });
+  };
+
+  const handleSelect = (notification) => {
+    setSelectedId(notification.id);
+    markAsRead(notification.id);
+  };
+
+  const selectedNotification = useMemo(
+    () => notifications.find((n) => n.id === selectedId) || null,
+    [notifications, selectedId]
+  );
+
+  const formatDateTime = (value) => {
+    if (!value) return "Không xác định";
+    try {
+      return new Date(value).toLocaleString("vi-VN");
+    } catch {
+      return value;
+    }
   };
 
   if (loading) {
@@ -104,78 +140,145 @@ export default function NotificationsPage() {
       {notifications.length === 0 ? (
         <p className={styles.empty}>Không có thông báo nào.</p>
       ) : (
-        <div className={styles.notificationsList}>
-          {notifications.map((n) => {
-            const isRead = Boolean(n.read);
-            return (
-              <div
-                key={n.id}
-                className={`${styles.notificationItem} ${isRead ? styles.read : styles.unread}`}
-                onClick={() => markAsRead(n.id)}
-              >
-                <button className={styles.closeBtn} onClick={(e) => { e.stopPropagation(); removeCard(n.id); }}>
-                  ×
-                </button>
-
-                <div className={styles.content}>
-                  <div className={styles.header}>
-                    <div className={styles.meta}>
-                      {!isRead && <span className={styles.unreadDot} />}
-                      <span className={styles.time}>
-                        {n.createAt ? new Date(n.createAt).toLocaleString("vi-VN") : "Không xác định"}
-                      </span>
-                    </div>
+        <div className={styles.layout}>
+          <div className={styles.listColumn}>
+            <div className={styles.notificationsList}>
+              {notifications.map((n) => {
+                const isRead = Boolean(n.read);
+                const isActive = selectedNotification?.id === n.id;
+                return (
+                  <div
+                    key={n.id}
+                    className={`${styles.notificationItem} ${isRead ? styles.read : styles.unread} ${
+                      isActive ? styles.activeItem : ""
+                    }`}
+                    onClick={() => handleSelect(n)}
+                  >
                     <button
-                      className={styles.markBtn}
-                      onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}
-                      disabled={isRead}
+                      className={styles.closeBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCard(n.id);
+                      }}
                     >
-                      {isRead ? "Đã đọc" : "Đánh dấu đã đọc"}
+                      ×
                     </button>
-                  </div>
 
-                  <h3 className={styles.notifTitle}>{n.title || "Không có tiêu đề"}</h3>
-                  <p className={styles.description}>{n.message || "Không có nội dung"}</p>
-                  {/* Hiển thị badge cho return request notifications */}
-                  {(n.title?.includes("trả hàng") || n.message?.includes("trả hàng")) && (
-                    <div style={{
-                      marginTop: 8,
-                      display: "flex",
-                      gap: 8,
-                      flexWrap: "wrap"
-                    }}>
-                      {n.message?.includes("đã được duyệt") && (
-                        <span style={{
-                          padding: "4px 8px",
-                          backgroundColor: "#d1fae5",
-                          color: "#059669",
-                          borderRadius: "4px",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          border: "1px solid #34C759"
-                        }}>
-                          ✓ Đã chấp nhận
-                        </span>
+                    <div className={styles.content}>
+                      <div className={styles.header}>
+                        <div className={styles.meta}>
+                          {!isRead && <span className={styles.unreadDot} />}
+                          <span className={styles.time}>{formatDateTime(n.createAt)}</span>
+                        </div>
+                        <button
+                          className={styles.markBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAsRead(n.id);
+                          }}
+                          disabled={isRead}
+                        >
+                          {isRead ? "Đã đọc" : "Đánh dấu đã đọc"}
+                        </button>
+                      </div>
+
+                      <h3 className={styles.notifTitle}>{n.title || "Không có tiêu đề"}</h3>
+                      <p className={styles.description}>{n.message || "Không có nội dung"}</p>
+                      {(n.title?.includes("trả hàng") || n.message?.includes("trả hàng")) && (
+                        <div
+                          style={{
+                            marginTop: 8,
+                            display: "flex",
+                            gap: 8,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          {n.message?.includes("đã được duyệt") && (
+                            <span
+                              style={{
+                                padding: "4px 8px",
+                                backgroundColor: "#d1fae5",
+                                color: "#059669",
+                                borderRadius: "4px",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                border: "1px solid #34C759",
+                              }}
+                            >
+                              Yêu cầu đã chấp nhận
+                            </span>
+                          )}
+                          {n.message?.includes("đã bị từ chối") && (
+                            <span
+                              style={{
+                                padding: "4px 8px",
+                                backgroundColor: "#fee2e2",
+                                color: "#991b1b",
+                                borderRadius: "4px",
+                                fontSize: "11px",
+                                fontWeight: 600,
+                                border: "1px solid #EF4444",
+                              }}
+                            >
+                              Yêu cầu bị từ chối
+                            </span>
+                          )}
+                        </div>
                       )}
-                      {n.message?.includes("đã bị từ chối") && (
-                        <span style={{
-                          padding: "4px 8px",
-                          backgroundColor: "#fee2e2",
-                          color: "#991b1b",
-                          borderRadius: "4px",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          border: "1px solid #EF4444"
-                        }}>
-                          ✗ Đã từ chối
-                        </span>
-                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className={styles.detailColumn}>
+            {selectedNotification ? (
+              <div className={styles.detailCard}>
+                <div className={styles.detailHeader}>
+                  <div>
+                    <p className={styles.detailEyebrow}>Chi tiết thông báo</p>
+                    <h2 className={styles.detailTitle}>{selectedNotification.title || "Không có tiêu đề"}</h2>
+                  </div>
+                  <span
+                    className={`${styles.statusBadge} ${
+                      selectedNotification.read ? styles.statusRead : styles.statusUnread
+                    }`}
+                  >
+                    {selectedNotification.read ? "ĐÃ ĐỌC" : "CHƯA ĐỌC"}
+                  </span>
+                </div>
+
+                <div className={styles.detailMetaGrid}>
+                  <div>
+                    <p className={styles.metaLabel}>Thời gian tạo</p>
+                    <p className={styles.metaValue}>{formatDateTime(selectedNotification.createAt)}</p>
+                  </div>
+                  <div>
+                    <p className={styles.metaLabel}>Thời gian đọc</p>
+                    <p className={styles.metaValue}>
+                      {selectedNotification.readAt ? formatDateTime(selectedNotification.readAt) : "Chưa có"}
+                    </p>
+                  </div>
+                  {selectedNotification.type && (
+                    <div>
+                      <p className={styles.metaLabel}>Loại thông báo</p>
+                      <p className={styles.metaValue}>{selectedNotification.type}</p>
                     </div>
                   )}
                 </div>
+
+                <div className={styles.detailMessage}>
+                  <p className={styles.metaLabel}>Nội dung</p>
+                  <p className={styles.messageText}>{selectedNotification.message || "Không có nội dung"}</p>
+                </div>
               </div>
-            );
-          })}
+            ) : (
+              <div className={styles.emptyDetail}>
+                <p>Chọn một thông báo để xem nội dung chi tiết.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
