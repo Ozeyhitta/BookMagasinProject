@@ -343,12 +343,12 @@ export default function MainPage() {
   const [activeRankingTab, setActiveRankingTab] = useState(RANKING_TABS[0].id);
   const [selectedRankingBook, setSelectedRankingBook] = useState(null);
   const [flashSaleSlide, setFlashSaleSlide] = useState(0);
-  const [flashSaleDeadline, setFlashSaleDeadline] = useState(() =>
-    createFlashSaleDeadline()
-  );
-  const [flashSaleCountdown, setFlashSaleCountdown] = useState(() =>
-    getCountdownFromDeadline(flashSaleDeadline)
-  );
+  const [flashSaleDeadline, setFlashSaleDeadline] = useState(null);
+  const [flashSaleCountdown, setFlashSaleCountdown] = useState({
+    hours: "--",
+    minutes: "--",
+    seconds: "--",
+  });
   const [showRankingModal, setShowRankingModal] = useState(false);
   const [showFlashSaleModal, setShowFlashSaleModal] = useState(false);
   const [showSuggestionModal, setShowSuggestionModal] = useState(false);
@@ -409,6 +409,12 @@ export default function MainPage() {
       badge,
     };
   };
+
+  useEffect(() => {
+    const initialDeadline = createFlashSaleDeadline();
+    setFlashSaleDeadline(initialDeadline);
+    setFlashSaleCountdown(getCountdownFromDeadline(initialDeadline));
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -559,7 +565,9 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
-    const tick = setInterval(() => {
+    if (!flashSaleDeadline) return undefined;
+
+    const updateCountdown = () => {
       const diff = flashSaleDeadline - Date.now();
       if (diff <= 0) {
         const nextDeadline = createFlashSaleDeadline();
@@ -568,7 +576,10 @@ export default function MainPage() {
       } else {
         setFlashSaleCountdown(getCountdownFromDeadline(flashSaleDeadline));
       }
-    }, 1000);
+    };
+
+    updateCountdown();
+    const tick = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(tick);
   }, [flashSaleDeadline]);
