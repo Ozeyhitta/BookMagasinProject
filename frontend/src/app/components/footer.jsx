@@ -259,14 +259,13 @@ export default function Footer() {
         <div className="container">
           <div className="company-info">
             <div className="certification-badge">
-              <div className="badge-content">BCT</div>
+              <div className="badge-content">UTE</div>
             </div>
             <div className="company-details">
               <h4>CÔNG TY CỔ PHẦN THƯƠNG MẠI DỊCH VỤ MÊ KÔNG COM</h4>
               <p>
                 <MapPin size={16} className="inline-icon" />
-                Địa chỉ: 332 Luy Bán Bích, Phường Tân Phú, TP. Hồ Chí Minh -
-                MST: 0303615027
+                Địa chỉ: 1 Võ Văn Ngân, Phường Thủ Đức, TP Hồ Chí Minh
               </p>
               <p>
                 <Phone size={16} className="inline-icon" />

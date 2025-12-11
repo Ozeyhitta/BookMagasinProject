@@ -472,7 +472,9 @@ export default function ProcessOrders() {
                         </div>
                         <div>
                           <span className="label">Địa chỉ</span>
-                          <p className="muted">{updateDetail.shippingAddress || "-"}</p>
+                          <p className="muted">
+                            {updateDetail.shippingAddress || "-"}
+                          </p>
                         </div>
                         <div>
                           <span className="label">Ghi chú</span>
@@ -483,23 +485,36 @@ export default function ProcessOrders() {
                         <div className="detail-items__header">
                           <strong>Sản phẩm khách đặt</strong>
                           <div className="item-stats">
-                            <span className="badge">{updateItems.length} đầu sách</span>
+                            <span className="badge">
+                              {updateItems.length} đầu sách
+                            </span>
                             <span className="badge badge--accent">
-                              {updateItems.reduce((sum, it) => sum + (it.quantity || 0), 0)} quyển
+                              {updateItems.reduce(
+                                (sum, it) => sum + (it.quantity || 0),
+                                0
+                              )}{" "}
+                              quyển
                             </span>
                           </div>
                         </div>
                         <div className="detail-card-list compact">
                           {updateItems.length === 0 && (
-                            <div className="detail-empty">Chưa có sản phẩm.</div>
+                            <div className="detail-empty">
+                              Chưa có sản phẩm.
+                            </div>
                           )}
                           {updateItems.map((it) => {
                             const qty = it.quantity || 0;
                             const unit = it.price || 0;
                             const lineTotal = qty * unit;
-                            const shortTitle = (it.bookTitle || "Sách").slice(0, 2).toUpperCase();
+                            const shortTitle = (it.bookTitle || "Sách")
+                              .slice(0, 2)
+                              .toUpperCase();
                             return (
-                              <div className="detail-card" key={`${it.id}-update`}>
+                              <div
+                                className="detail-card"
+                                key={`${it.id}-update`}
+                              >
                                 <div className="detail-thumb">
                                   {it.imageUrl ? (
                                     <img src={it.imageUrl} alt={it.bookTitle} />
@@ -510,13 +525,21 @@ export default function ProcessOrders() {
                                 <div className="detail-card__content">
                                   <div className="detail-card__top">
                                     <div>
-                                      <p className="detail-card__title">{it.bookTitle}</p>
-                                      <p className="detail-card__meta">Mã: {it.bookCode || it.bookId || "-"}</p>
+                                      <p className="detail-card__title">
+                                        {it.bookTitle}
+                                      </p>
+                                      <p className="detail-card__meta">
+                                        Mã: {it.bookCode || it.bookId || "-"}
+                                      </p>
                                     </div>
-                                    <div className="detail-card__price">{unit.toLocaleString("vi-VN")} ₫</div>
+                                    <div className="detail-card__price">
+                                      {unit.toLocaleString("vi-VN")} ₫
+                                    </div>
                                   </div>
                                   <div className="detail-card__bottom">
-                                    <span className="pill muted">SL: {qty}</span>
+                                    <span className="pill muted">
+                                      SL: {qty}
+                                    </span>
                                     <span className="detail-card__line-total">
                                       {lineTotal.toLocaleString("vi-VN")} ₫
                                     </span>
@@ -533,7 +556,11 @@ export default function ProcessOrders() {
             </div>
 
             <div className="modal-actions">
-              <button className="ghost" onClick={closeUpdateModal} disabled={actionLoading}>
+              <button
+                className="ghost"
+                onClick={closeUpdateModal}
+                disabled={actionLoading}
+              >
                 Bỏ qua
               </button>
               <button
@@ -640,7 +667,9 @@ export default function ProcessOrders() {
                       </div>
                       <div className="detail-meta__full">
                         <span className="label">Địa chỉ giao</span>
-                        <p className="muted">{detailData.shippingAddress || "-"}</p>
+                        <p className="muted">
+                          {detailData.shippingAddress || "-"}
+                        </p>
                       </div>
                       <div className="detail-meta__full">
                         <span className="label">Ghi chú</span>
@@ -704,7 +733,9 @@ export default function ProcessOrders() {
                           const qty = it.quantity || 0;
                           const unit = it.price || 0;
                           const lineTotal = qty * unit;
-                          const shortTitle = (it.bookTitle || "Sách").slice(0, 2).toUpperCase();
+                          const shortTitle = (it.bookTitle || "Sách")
+                            .slice(0, 2)
+                            .toUpperCase();
                           return (
                             <div className="detail-card" key={it.id}>
                               <div className="detail-thumb">
@@ -717,8 +748,12 @@ export default function ProcessOrders() {
                               <div className="detail-card__content">
                                 <div className="detail-card__top">
                                   <div>
-                                    <p className="detail-card__title">{it.bookTitle}</p>
-                                    <p className="detail-card__meta">Mã: {it.bookCode || it.bookId || "-"}</p>
+                                    <p className="detail-card__title">
+                                      {it.bookTitle}
+                                    </p>
+                                    <p className="detail-card__meta">
+                                      Mã: {it.bookCode || it.bookId || "-"}
+                                    </p>
                                   </div>
                                   <div className="detail-card__price">
                                     {unit.toLocaleString("vi-VN")} ₫
@@ -771,5 +806,3 @@ export default function ProcessOrders() {
     </div>
   );
 }
-
-
