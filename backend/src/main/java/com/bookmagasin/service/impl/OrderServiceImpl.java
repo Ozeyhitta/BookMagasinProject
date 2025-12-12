@@ -217,7 +217,8 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponseDto updateOrderStatus(Integer orderId, String newStatus) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
 
         EStatusBooking status = EStatusBooking.valueOf(newStatus.trim().toUpperCase());
         order.setStatus(status);
@@ -365,9 +366,6 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-
-
-
         // 2️⃣ Lấy order item
         OrderItem item = order.getBooks().stream()
                 .filter(i -> i.getId() == orderItemId)
@@ -401,7 +399,6 @@ public class OrderServiceImpl implements OrderService {
             // Giữ item lại với quantity=0
             orderItemRepository.save(item);
         }
-
 
         // 7️⃣ Nếu tất cả item đều 0 => mark order RETURNED
         boolean allReturned = order.getBooks().stream()
@@ -443,23 +440,22 @@ public class OrderServiceImpl implements OrderService {
 
         return OrderMapper.toResponseDto(order);
     }
+
     private Date getDeliveredOrCompletedTime(Order order) {
         return order.getOrderStatusHistories().stream()
-                .filter(h ->
-                        h.getEOrderHistory() == EOrderHistory.DELIVERED ||
-                                h.getEOrderHistory() == EOrderHistory.COMPLETED
-                )
+                .filter(h -> h.getEOrderHistory() == EOrderHistory.DELIVERED ||
+                        h.getEOrderHistory() == EOrderHistory.COMPLETED)
                 .map(OrderStatusHistory::getStatusChangeDate)
                 .sorted((d1, d2) -> d2.compareTo(d1))
                 .findFirst()
                 .orElse(null);
     }
+
     private boolean isWithinOneDay(Date deliveredTime) {
-        if (deliveredTime == null) return false;
+        if (deliveredTime == null)
+            return false;
         long diffMs = new Date().getTime() - deliveredTime.getTime();
         return diffMs <= 24L * 60 * 60 * 1000; // 24 hours
     }
-
-
 
 }

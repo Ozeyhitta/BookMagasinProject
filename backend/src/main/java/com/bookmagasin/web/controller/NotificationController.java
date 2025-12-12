@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/notifications")
+@RequestMapping("/api/notifications")
 public class NotificationController {
 
     private final NotificationService service;
@@ -44,8 +44,7 @@ public class NotificationController {
     @PutMapping("/{id}")
     public ResponseEntity<NotificationResponseDto> updateNotification(
             @PathVariable Integer id,
-            @RequestBody NotificationDto dto
-    ) {
+            @RequestBody NotificationDto dto) {
         try {
             NotificationResponseDto updated = service.updateNotification(id, dto);
             return ResponseEntity.ok(updated);
@@ -71,8 +70,7 @@ public class NotificationController {
     @PostMapping("/mark-read/{notificationId}/user/{userId}")
     public ResponseEntity<Void> markNotificationAsRead(
             @PathVariable Integer notificationId,
-            @PathVariable Integer userId
-    ) {
+            @PathVariable Integer userId) {
         try {
             service.markAsRead(userId, notificationId);
             return ResponseEntity.ok().build();
@@ -108,11 +106,12 @@ public class NotificationController {
                 .toList();
 
         return ResponseEntity.ok(
-                new java.util.HashMap<>() {{
-                    put("customer", customer);
-                    put("staff", staff);
-                    put("admin", admin);
-                }}
-        );
+                new java.util.HashMap<>() {
+                    {
+                        put("customer", customer);
+                        put("staff", staff);
+                        put("admin", admin);
+                    }
+                });
     }
 }

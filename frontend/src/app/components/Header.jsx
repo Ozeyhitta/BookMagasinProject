@@ -70,6 +70,7 @@ export default function Header() {
       }
     } catch (err) {
       console.error("Lỗi khi lấy số thông báo chưa đọc:", err);
+      setNotifCount(0);
     }
   };
 
@@ -114,13 +115,15 @@ export default function Header() {
     const query = searchTerm.trim();
     if (!query) return text;
     const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
-    return text.split(regex).map((part, index) =>
-      part.toLowerCase() === query.toLowerCase() ? (
-        <mark key={`${part}-${index}`}>{part}</mark>
-      ) : (
-        <span key={`${part}-${index}`}>{part}</span>
-      )
-    );
+    return text
+      .split(regex)
+      .map((part, index) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <mark key={`${part}-${index}`}>{part}</mark>
+        ) : (
+          <span key={`${part}-${index}`}>{part}</span>
+        )
+      );
   };
 
   const loadSuggestionCatalog = useCallback(async () => {
@@ -189,7 +192,12 @@ export default function Header() {
     if (searchTerm.trim() && !suggestionPool.length && !isSuggestionLoading) {
       loadSuggestionCatalog();
     }
-  }, [searchTerm, suggestionPool.length, isSuggestionLoading, loadSuggestionCatalog]);
+  }, [
+    searchTerm,
+    suggestionPool.length,
+    isSuggestionLoading,
+    loadSuggestionCatalog,
+  ]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -409,9 +417,7 @@ export default function Header() {
               style={{ position: "relative" }}
             >
               <ShoppingCart className="icon" />
-              {cartCount > 0 && (
-                <span className="badge-dot">{cartCount}</span>
-              )}
+              {cartCount > 0 && <span className="badge-dot">{cartCount}</span>}
               <p>Giỏ Hàng</p>
             </div>
           </div>

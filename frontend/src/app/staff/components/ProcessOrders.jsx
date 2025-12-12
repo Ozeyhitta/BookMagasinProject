@@ -140,6 +140,8 @@ export default function ProcessOrders() {
         },
       });
       if (Array.isArray(res.data) && res.data.length) {
+        console.log("📋 Orders from API:", res.data);
+        console.log("📋 First order ID:", res.data[0]?.id);
         setOrders(mapOrders(res.data));
       } else {
         setOrders([]);
@@ -218,15 +220,22 @@ export default function ProcessOrders() {
 
   const handleUpdate = async () => {
     if (!selectedOrder) return;
+    console.log("🔍 selectedOrder:", selectedOrder);
+    console.log("🔍 selectedOrder.id:", selectedOrder.id);
+    console.log("🔍 selectedOrder.displayId:", selectedOrder.displayId);
     setActionLoading(true);
     try {
+      console.log(
+        `📡 Calling PUT /orders/${selectedOrder.id}/status with status: ${newStatus}`
+      );
       await axiosClient.put(`/orders/${selectedOrder.id}/status`, {
-        status: newStatus,
+        status: newStatus.trim().toUpperCase(),
       });
       await fetchOrders();
       closeUpdateModal();
     } catch (err) {
-      console.warn("Update status failed", err);
+      console.warn("❌ Update status failed", err);
+      console.warn("❌ Error response:", err.response);
       alert("Cập nhật thất bại");
     } finally {
       setActionLoading(false);

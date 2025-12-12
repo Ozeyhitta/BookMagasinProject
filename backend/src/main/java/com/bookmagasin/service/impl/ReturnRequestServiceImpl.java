@@ -64,20 +64,20 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
 
     @Override
     @Transactional
-    public ReturnRequestResponseDto createReturnRequest(Integer orderId, Integer orderItemId, Integer quantity, String reason) {
+    public ReturnRequestResponseDto createReturnRequest(Integer orderId, Integer orderItemId, Integer quantity,
+            String reason) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
         // 🔥 Check return allowed within 1 day
         Date deliveredAt = getDeliveredTime(order);
 
         if (deliveredAt == null) {
-            throw new RuntimeException("Đơn hàng chưa được giao nên không thể trả hàng");
+            throw new RuntimeException("Đơn hàng chưa được giao hoặc hoàn tất nên không thể trả hàng");
         }
 
         if (!isWithinOneDay(deliveredAt)) {
             throw new RuntimeException("Chỉ được trả hàng trong vòng 1 ngày sau khi giao");
         }
-
 
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
                 .orElseThrow(() -> new RuntimeException("Order item not found"));
@@ -85,7 +85,7 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
         // Kiểm tra xem đã có return request pending cho order item này chưa
         Optional<ReturnRequest> existingRequest = returnRequestRepository
                 .findByOrder_IdAndOrderItem_Id(orderId, orderItemId);
-        
+
         if (existingRequest.isPresent() && existingRequest.get().getStatus() == RequestStatus.PENDING) {
             throw new RuntimeException("Đã có yêu cầu trả hàng đang chờ xử lý cho sản phẩm này");
         }
@@ -96,7 +96,8 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
         }
 
         if (quantity > orderItem.getQuantity()) {
-            throw new RuntimeException("Số lượng trả không được vượt quá số lượng đã mua. Còn lại: " + orderItem.getQuantity());
+            throw new RuntimeException(
+                    "Số lượng trả không được vượt quá số lượng đã mua. Còn lại: " + orderItem.getQuantity());
         }
 
         ReturnRequest returnRequest = new ReturnRequest();
@@ -113,14 +114,15 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
 
     @Override
     @Transactional
-    public List<ReturnRequestResponseDto> createMultiReturnRequest(Integer orderId, List<ReturnItemDto> items, String reason) {
+    public List<ReturnRequestResponseDto> createMultiReturnRequest(Integer orderId, List<ReturnItemDto> items,
+            String reason) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         // 🔥 Check return allowed within 1 day
         Date deliveredAt = getDeliveredTime(order);
         if (deliveredAt == null) {
-            throw new RuntimeException("Đơn hàng chưa được giao nên không thể trả hàng");
+            throw new RuntimeException("Đơn hàng chưa được giao hoặc hoàn tất nên không thể trả hàng");
         }
         if (!isWithinOneDay(deliveredAt)) {
             throw new RuntimeException("Chỉ được trả hàng trong vòng 1 ngày sau khi giao");
@@ -145,7 +147,8 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
                     .findByOrder_IdAndOrderItem_Id(orderId, orderItemId);
 
             if (existingRequest.isPresent() && existingRequest.get().getStatus() == RequestStatus.PENDING) {
-                throw new RuntimeException("Đã có yêu cầu trả hàng đang chờ xử lý cho sản phẩm: " + orderItem.getBook().getTitle());
+                throw new RuntimeException(
+                        "Đã có yêu cầu trả hàng đang chờ xử lý cho sản phẩm: " + orderItem.getBook().getTitle());
             }
 
             // Validate quantity
@@ -154,7 +157,8 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
             }
 
             if (quantity > orderItem.getQuantity()) {
-                throw new RuntimeException("Số lượng trả không được vượt quá số lượng đã mua cho sản phẩm: " + orderItem.getBook().getTitle() + ". Còn lại: " + orderItem.getQuantity());
+                throw new RuntimeException("Số lượng trả không được vượt quá số lượng đã mua cho sản phẩm: "
+                        + orderItem.getBook().getTitle() + ". Còn lại: " + orderItem.getQuantity());
             }
 
             ReturnRequest returnRequest = new ReturnRequest();
@@ -212,9 +216,9 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
         Integer orderId = returnRequest.getOrder().getId();
         Integer orderItemId = returnRequest.getOrderItem().getId();
         Integer quantity = returnRequest.getQuantity();
-        String bookTitle = returnRequest.getOrderItem().getBook() != null 
-            ? returnRequest.getOrderItem().getBook().getTitle() 
-            : "Sách";
+        String bookTitle = returnRequest.getOrderItem().getBook() != null
+                ? returnRequest.getOrderItem().getBook().getTitle()
+                : "Sách";
 
         // Thực hiện return book thực sự
         try {
@@ -236,7 +240,7 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
                 .orElseThrow(() -> new RuntimeException("OrderItem not found after return"));
         entityManager.refresh(orderItem);
         returnRequest.setOrderItem(orderItem);
-        
+
         // Reload Order để đảm bảo reference được quản lý
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -261,8 +265,8 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
             if (order != null && order.getUser() != null) {
                 Notification noti = new Notification();
                 noti.setTitle("Yêu cầu trả hàng đã được duyệt");
-                noti.setMessage("Yêu cầu trả " + quantity + " quyển sách \"" 
-                    + bookTitle + "\" đã được duyệt");
+                noti.setMessage("Yêu cầu trả " + quantity + " quyển sách \""
+                        + bookTitle + "\" đã được duyệt");
                 noti.setType("CUSTOMER");
                 noti.setSendDate(new Date());
 
@@ -312,9 +316,10 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
             if (returnRequest.getOrder().getUser() != null) {
                 Notification noti = new Notification();
                 noti.setTitle("Yêu cầu trả hàng đã bị từ chối");
-                noti.setMessage("Yêu cầu trả " + returnRequest.getQuantity() + " quyển sách \"" 
-                    + returnRequest.getOrderItem().getBook().getTitle() + "\" đã bị từ chối" 
-                    + (rejectionReason != null && !rejectionReason.trim().isEmpty() ? ". Lý do: " + rejectionReason : ""));
+                noti.setMessage("Yêu cầu trả " + returnRequest.getQuantity() + " quyển sách \""
+                        + returnRequest.getOrderItem().getBook().getTitle() + "\" đã bị từ chối"
+                        + (rejectionReason != null && !rejectionReason.trim().isEmpty() ? ". Lý do: " + rejectionReason
+                                : ""));
                 noti.setType("CUSTOMER");
                 noti.setSendDate(new Date());
 
@@ -346,9 +351,12 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
                 .map(ReturnRequestMapper::toResponseDto)
                 .collect(Collectors.toList());
     }
+
     private Date getDeliveredTime(Order order) {
+        // Cho phép trả hàng nếu đơn đã DELIVERED hoặc COMPLETED
         return order.getOrderStatusHistories().stream()
-                .filter(h -> h.getEOrderHistory().name().equals("DELIVERED"))
+                .filter(h -> h.getEOrderHistory().name().equals("DELIVERED") ||
+                        h.getEOrderHistory().name().equals("COMPLETED"))
                 .map(h -> h.getStatusChangeDate())
                 .sorted((d1, d2) -> d2.compareTo(d1)) // newest first
                 .findFirst()
@@ -356,7 +364,8 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
     }
 
     private boolean isWithinOneDay(Date deliveredDate) {
-        if (deliveredDate == null) return false;
+        if (deliveredDate == null)
+            return false;
 
         long diff = System.currentTimeMillis() - deliveredDate.getTime();
         long oneDayMs = 24L * 60 * 60 * 1000;
@@ -364,6 +373,4 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
         return diff <= oneDayMs;
     }
 
-
 }
-
