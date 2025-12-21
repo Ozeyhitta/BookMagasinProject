@@ -440,6 +440,119 @@
 .avatarInput {
   display: none;
 }
+
+/* Avatar URL Input Section */
+.avatarUrlSection {
+  margin-bottom: 24px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+}
+
+.avatarUrlLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.avatarUrlInputWrapper {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.avatarUrlInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  background-color: #fff;
+  color: #333;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.avatarUrlInput:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.avatarUrlInput::placeholder {
+  color: #999;
+}
+
+.avatarUrlInputError {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.avatarUrlInputError:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.avatarUrlInputValidating {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.avatarUrlSubmitButton {
+  padding: 10px 20px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.avatarUrlSubmitButton:hover:not(:disabled) {
+  background-color: #357abd;
+  transform: translateY(-1px);
+}
+
+.avatarUrlSubmitButton:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.avatarUrlSubmitButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.avatarUrlError {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.avatarUrlError::before {
+  content: "⚠";
+  font-size: 16px;
+}
+
+.avatarUrlSuccess {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .buttonGroup {
   display: flex;
   flex-direction: column;
