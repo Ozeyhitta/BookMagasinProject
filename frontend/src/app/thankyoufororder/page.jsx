@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import styles from "./thankyoufororder.module.css";
 
-export default function ThankYouPage() {
+function ThankYouPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paymentStatus = searchParams.get("status");
@@ -436,5 +436,32 @@ export default function ThankYouPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback component
+function ThankYouPageFallback() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "400px",
+        fontSize: "18px",
+        color: "#666",
+      }}
+    >
+      Đang tải trang cảm ơn...
+    </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function ThankYouPage() {
+  return (
+    <Suspense fallback={<ThankYouPageFallback />}>
+      <ThankYouPageContent />
+    </Suspense>
   );
 }
