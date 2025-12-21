@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import styles from "./mainpage.module.css";
-import ProductCard from "../category/ProductCard"; // ✅ reuse CategoryPage’s ProductCard
+import ProductCard from "../category/ProductCard"; // ✅ reuse CategoryPage's ProductCard
 import { ChevronLeft, ChevronRight, BookText } from "lucide-react";
 import { buildApiUrl } from "../../utils/apiConfig";
+import { useIsMounted } from "../../utils/hydration-safe";
 
 const FLASH_SALE_VISIBLE_COUNT = 5;
 const FLASH_SALE_MAX_ITEMS = 15;
@@ -11,9 +12,26 @@ const NEW_SECTION_PAGE_SIZE = 12;
 const CATEGORY_SECTION_PAGE_SIZE = 8;
 const SUGGESTION_LIMIT = 20;
 
-const createFlashSaleDeadline = () => Date.now() + 60 * 60 * 1000;
+// Hydration-safe deadline creation - only runs on client
+const createFlashSaleDeadline = () => {
+  if (typeof window === "undefined") {
+    // Return a fixed timestamp during SSR to prevent hydration mismatch
+    return Date.now() + 60 * 60 * 1000;
+  }
+  return Date.now() + 60 * 60 * 1000;
+};
 
+// Hydration-safe countdown calculation
 const getCountdownFromDeadline = (deadline) => {
+  if (typeof window === "undefined") {
+    // Return placeholder during SSR
+    return {
+      hours: "--",
+      minutes: "--",
+      seconds: "--",
+    };
+  }
+  
   const diff = Math.max(0, deadline - Date.now());
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -410,11 +428,16 @@ export default function MainPage() {
     };
   };
 
+  const isMounted = useIsMounted();
+
   useEffect(() => {
+    // Only initialize countdown after component has mounted (client-side)
+    if (!isMounted) return;
+
     const initialDeadline = createFlashSaleDeadline();
     setFlashSaleDeadline(initialDeadline);
     setFlashSaleCountdown(getCountdownFromDeadline(initialDeadline));
-  }, []);
+  }, [isMounted]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -565,7 +588,8 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
-    if (!flashSaleDeadline) return undefined;
+    // Only run countdown timer after component has mounted
+    if (!isMounted || !flashSaleDeadline) return undefined;
 
     const updateCountdown = () => {
       const diff = flashSaleDeadline - Date.now();
@@ -582,7 +606,7 @@ export default function MainPage() {
     const tick = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(tick);
-  }, [flashSaleDeadline]);
+  }, [flashSaleDeadline, isMounted]);
 
   useEffect(() => {
     if (bestSellers.length > 0 || books.length === 0) return;

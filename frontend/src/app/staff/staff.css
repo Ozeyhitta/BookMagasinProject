@@ -82,6 +82,60 @@ body,
   align-items: center;
 }
 
+/* ======================================================
+   LOGOUT SECTION
+====================================================== */
+.logout-section {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0f172a;
+}
+
+.logout-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 25px;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 15px;
+  background: transparent;
+  border: none;
+  color: white;
+  text-align: left;
+  font-family: inherit;
+}
+
+.logout-button:hover:not(:disabled) {
+  background: #dc2626;
+  font-weight: bold;
+}
+
+.logout-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.logout-button.logging-out {
+  background: rgba(220, 38, 38, 0.3);
+  cursor: wait;
+}
+
+.logout-button .icon {
+  display: flex;
+  align-items: center;
+  color: inherit;
+}
+
+.logout-button .label {
+  flex: 1;
+}
+
 
 /* ======================================================
    GENERAL CARD LAYOUT

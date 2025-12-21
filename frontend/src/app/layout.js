@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import Footer from "./components/footer";
 import ChatbotButton from "./components/chatbot/ChatbotButton";
 import { ensureHttpClients } from "../utils/httpClientSetup";
+import { useIsMounted } from "../utils/hydration-safe";
 
 ensureHttpClients();
 export default function RootLayout({ children }) {
   const pathname = usePathname();
+  const isMounted = useIsMounted();
 
   // Các trang không cần Header
   const noHeaderPages = [
@@ -24,10 +26,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body suppressHydrationWarning>
-        {showHeader && <Header />}
+        {isMounted && showHeader && <Header />}
         <main>{children}</main>
-        <ChatbotButton />
-        {showFooter && <Footer />}
+        {isMounted && <ChatbotButton />}
+        {isMounted && showFooter && <Footer />}
       </body>
     </html>
   );

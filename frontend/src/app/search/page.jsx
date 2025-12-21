@@ -380,7 +380,7 @@ export default function SearchPage() {
                     onChange={handleChange}
                     className={styles.select}
                 >
-                    <option value="all">Thể loại sách: Tất cả</option> 
+                    <option value="all">Thể loại sách: Tất cả</option>
                     {categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
                             {cat.name}
@@ -397,7 +397,7 @@ export default function SearchPage() {
                 >
                     <option value="all">Tác giả: Tất cả</option>
                     {authors.map((auth) => (
-                        <option key={auth.name} value={auth.value}> 
+                        <option key={auth.name} value={auth.value}>
                                 {auth.name}
                         </option>
                     ))}
@@ -499,9 +499,34 @@ export default function SearchPage() {
                         />
                     ))}
                 </div>
-                
-                <Pagination /> 
+
+                <Pagination />
             </div>
         </div>
+    );
+}
+
+// Loading fallback component
+function SearchPageFallback() {
+    return (
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '200px',
+            fontSize: '18px',
+            color: '#666'
+        }}>
+            Đang tải trang tìm kiếm...
+        </div>
+    );
+}
+
+// Main page component with Suspense boundary
+export default function SearchPage() {
+    return (
+        <Suspense fallback={<SearchPageFallback />}>
+            <SearchPageContent />
+        </Suspense>
     );
 }

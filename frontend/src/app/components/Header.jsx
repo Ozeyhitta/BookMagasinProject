@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import "../components/header.css";
 import { buildApiUrl } from "../../utils/apiConfig";
 import SupportRequestButton from "./requestsupport/SupportRequestButton";
+import { useIsMounted } from "../../utils/hydration-safe";
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -18,8 +19,12 @@ export default function Header() {
   const [suggestionError, setSuggestionError] = useState("");
   const router = useRouter();
   const searchWrapperRef = useRef(null);
+  const isMounted = useIsMounted();
 
+  // Only access localStorage after component has mounted (client-side)
   useEffect(() => {
+    if (!isMounted) return;
+
     const handleCartUpdate = () => {
       const newCount = parseInt(localStorage.getItem("cartCount") || "0");
       setCartCount(newCount);
@@ -27,14 +32,12 @@ export default function Header() {
 
     window.addEventListener("cart-updated", handleCartUpdate);
     return () => window.removeEventListener("cart-updated", handleCartUpdate);
-  }, []);
+  }, [isMounted]);
 
+  // Initialize auth state after mount
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
+    if (!isMounted) return;
 
-  useEffect(() => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
     setIsLoggedIn(!!token);
@@ -43,7 +46,7 @@ export default function Header() {
       fetchCartCount(userId);
       fetchUnreadCount(userId);
     }
-  }, []);
+  }, [isMounted]);
 
   const fetchCartCount = async (userId) => {
     try {
@@ -75,6 +78,8 @@ export default function Header() {
   };
 
   useEffect(() => {
+    if (!isMounted) return;
+
     const savedCount = localStorage.getItem("cartCount");
     if (savedCount) setCartCount(parseInt(savedCount));
 
@@ -96,7 +101,7 @@ export default function Header() {
 
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  }, [isMounted]);
 
   const goToOrderHistory = () => router.push("/orderhistory");
   const goToNotifications = () => router.push("/notifications");
@@ -159,21 +164,25 @@ export default function Header() {
 
   // Refresh unread count when tab gains focus (simple live update)
   useEffect(() => {
+    if (!isMounted) return;
+
     const onFocus = () => {
       const userId = localStorage.getItem("userId");
       if (userId) fetchUnreadCount(userId);
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, []);
+  }, [isMounted]);
 
   // Optional polling every 30s to catch new notifications
   useEffect(() => {
+    if (!isMounted) return;
+
     const userId = localStorage.getItem("userId");
     if (!userId) return;
     const timer = setInterval(() => fetchUnreadCount(userId), 30000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isMounted]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -228,6 +237,8 @@ export default function Header() {
     isSuggestionOpen && trimmedSearch.length > 0;
 
   const handleLogout = async () => {
+    if (!isMounted) return;
+
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Bạn chưa đăng nhập!");

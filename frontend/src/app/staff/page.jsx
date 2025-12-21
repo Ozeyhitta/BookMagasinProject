@@ -9,6 +9,7 @@ import {
   Star,
   RotateCcw,
   MessageCircle,
+  LogOut,
 } from "lucide-react";
 import axiosClient from "../../utils/axiosClient";
 
@@ -24,6 +25,7 @@ import CustomerSupport from "./components/CustomerSupport"; // 🔹 mới
 
 export default function StaffPage() {
   const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -93,6 +95,39 @@ export default function StaffPage() {
 
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const handleLogout = () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm("Bạn có chắc chắn muốn đăng xuất không?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    try {
+      // Clear all authentication-related localStorage items
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("role");
+      localStorage.removeItem("cartCount");
+
+      // Optional: Clear any other cached auth state
+      // sessionStorage.clear(); // Uncomment if you use sessionStorage
+
+      // Show success message
+      alert("Đăng xuất thành công!");
+
+      // Redirect to login page
+      // Using replace to prevent back button navigation
+      router.replace("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      alert("Có lỗi xảy ra khi đăng xuất. Vui lòng thử lại.");
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
     <div className="staff-container">
       {/* Sidebar */}
@@ -112,6 +147,21 @@ export default function StaffPage() {
           ))}
         </ul>
 
+        {/* Logout Button */}
+        <div className="logout-section">
+          <button
+            className={`logout-button ${isLoggingOut ? "logging-out" : ""}`}
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            <span className="icon">
+              <LogOut size={20} />
+            </span>
+            <span className="label">
+              {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+            </span>
+          </button>
+        </div>
       </aside>
 
       {/* Main content */}
