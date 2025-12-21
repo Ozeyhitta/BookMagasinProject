@@ -75,12 +75,43 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         mailSender.send(msg);
     }
 
+    /**
+     * Validates password strength:
+     * - At least 8 characters
+     * - At least 1 uppercase letter
+     * - At least 1 lowercase letter
+     * - At least 1 special character (!@#$%^&*)
+     * - At least 1 digit
+     */
+    private void validatePassword(String password) {
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("Mật khẩu không được để trống");
+        }
+
+        // Regex explanation:
+        // ^(?=.*[a-z])  - Lookahead: must contain at least one lowercase letter
+        // (?=.*[A-Z])   - Lookahead: must contain at least one uppercase letter
+        // (?=.*[!@#$%^&*]) - Lookahead: must contain at least one special character
+        // (?=.*\d)      - Lookahead: must contain at least one digit
+        // .{8,}$        - At least 8 characters total
+        String strongPasswordRegex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\\d).{8,}$";
+        
+        if (!password.matches(strongPasswordRegex)) {
+            throw new IllegalArgumentException(
+                "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (!@#$%^&*)"
+            );
+        }
+    }
+
     @Override
     @Transactional
     public void resetPassword(String email, String newPassword) {
 
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
+
+        // Validate password strength before resetting
+        validatePassword(newPassword);
 
         account.setPassword(passwordEncoder.encode(newPassword));
         accountRepository.save(account);

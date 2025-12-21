@@ -18,6 +18,25 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
 
+  // Password validation regex
+  // Explanation:
+  // ^(?=.*[a-z])  - Lookahead: must contain at least one lowercase letter
+  // (?=.*[A-Z])   - Lookahead: must contain at least one uppercase letter
+  // (?=.*[!@#$%^&*]) - Lookahead: must contain at least one special character
+  // (?=.*\d)      - Lookahead: must contain at least one digit
+  // .{8,}$        - At least 8 characters total
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*\d).{8,}$/;
+
+  const validatePassword = (password) => {
+    if (!password) {
+      return "Mật khẩu không được để trống";
+    }
+    if (!strongPasswordRegex.test(password)) {
+      return "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (!@#$%^&*)";
+    }
+    return null;
+  };
+
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((s) => ({ ...s, [name]: value }));
@@ -27,6 +46,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setMsg(null);
     setLoading(true);
+
+    // ⚠️ Validate password strength
+    const passwordError = validatePassword(form.password);
+    if (passwordError) {
+      setMsg({ type: "error", text: passwordError });
+      setLoading(false);
+      return;
+    }
 
     // ⚠️ Kiểm tra mật khẩu nhập lại
     if (form.password !== form.confirmPassword) {
@@ -49,7 +76,10 @@ export default function RegisterPage() {
         }
       );
 
-      if (!res.ok) throw new Error((await res.text()) || "Đăng ký thất bại");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Đăng ký thất bại");
+      }
 
       const data = await res.json();
       setMsg({

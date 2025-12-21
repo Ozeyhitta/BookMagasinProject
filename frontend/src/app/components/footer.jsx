@@ -262,10 +262,10 @@ export default function Footer() {
               <div className="badge-content">UTE</div>
             </div>
             <div className="company-details">
-              <h4>CÔNG TY CỔ PHẦN THƯƠNG MẠI DỊCH VỤ MÊ KÔNG COM</h4>
+              <h4>TRƯỜNG ĐẠI HỌC SƯ PHẠM KỸ THUẬT TP.HCM</h4>
               <p>
                 <MapPin size={16} className="inline-icon" />
-                Địa chỉ: 1 Võ Văn Ngân, Phường Thủ Đức, TP Hồ Chí Minh
+                Địa chỉ: Số 1 Võ Văn Ngân, Phường Thủ Đức, TP Hồ Chí Minh
               </p>
               <p>
                 <Phone size={16} className="inline-icon" />

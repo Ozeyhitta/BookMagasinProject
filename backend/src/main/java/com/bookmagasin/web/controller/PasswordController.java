@@ -50,6 +50,9 @@ public class PasswordController {
                     request.get("newPassword")
             );
             return ResponseEntity.ok("✅ Mật khẩu đã được đặt lại thành công!");
+        } catch (IllegalArgumentException e) {
+            // Password validation errors
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
