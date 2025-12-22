@@ -29,7 +29,7 @@ services:
     expose:
       - "8080"
     restart: unless-stopped
-  
+
 
   nginx:
     image: nginx:alpine
